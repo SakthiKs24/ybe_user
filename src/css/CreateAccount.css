@@ -1,0 +1,192 @@
+/* Create Account Page */
+.create-account-page {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #FFFFFF 0%, #FFE8F5 100%);
+  }
+  
+  /* Header */
+  .ca-header {
+    padding: 20px 60px;
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .ca-header .logo-img {
+    height: 40px;
+    width: auto;
+  }
+  
+  /* Container */
+  .ca-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 100px);
+    padding: 40px 20px;
+  }
+  
+  /* Card */
+  .ca-card {
+    background: white;
+    border: 3px solid #FF027D;
+    border-radius: 30px;
+    padding: 50px 60px;
+    max-width: 740px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(255, 2, 125, 0.2);
+  }
+  
+  /* Back Button */
+  .back-btn {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    background: white;
+    border: 2px solid #ddd;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    font-size: 24px;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+  }
+  
+  .back-btn:hover {
+    border-color: #FF027D;
+    color: #FF027D;
+    transform: translateX(-3px);
+  }
+  
+  
+  
+  /* Title */
+  .ca-title {
+    font-size: 36px;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  
+  .ca-subtitle {
+    font-size: 16px;
+    color: #666;
+    text-align: center;
+    margin-bottom: 35px;
+  }
+  
+  /* Form */
+  .ca-form {
+    width: 100%;
+  }
+  
+  .form-group {
+    margin-bottom: 25px;
+  }
+  
+  .form-label {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 10px;
+  }
+  
+  .form-input {
+    width: 100%;
+    padding: 16px 20px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+    font-family: inherit;
+  }
+  
+  .form-input:focus {
+    outline: none;
+    border-color: #FF027D;
+  }
+  
+  .form-input::placeholder {
+    color: #999;
+  }
+  
+  /* Sign Up Button */
+  .signup-submit-btn {
+    width: 50%;
+    margin-left: 130px;
+    padding: 18px;
+    background: linear-gradient(180deg, #FF003F 0%, #FF5300 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    transition: all 0.3s;
+    box-shadow: 0 5px 20px rgba(255, 2, 125, 0.3);
+  }
+  
+  .signup-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 2, 125, 0.4);
+  }
+  
+  /* Sign In Link */
+  .signin-link {
+    text-align: center;
+    font-size: 15px;
+    color: #666;
+  }
+  
+  .signin-link a {
+    color: #FF027D;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  
+  .signin-link a:hover {
+    text-decoration: underline;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .ca-header {
+      padding: 15px 30px;
+    }
+  
+    .ca-card {
+      padding: 40px 30px;
+      max-width: 90%;
+    }
+  
+    .ca-title {
+      font-size: 28px;
+    }
+  
+    .ca-subtitle {
+      font-size: 14px;
+    }
+  
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+    }
+  
+    .ca-avatar {
+      width: 70px;
+      height: 70px;
+    }
+  
+    .avatar-letter {
+      font-size: 35px;
+    }
+  }

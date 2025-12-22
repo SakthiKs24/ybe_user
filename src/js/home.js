@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import '../css/home.css';
 
 function Home() {
   const [formData, setFormData] = useState({
@@ -10,8 +9,19 @@ function Home() {
     motherTongue: 'Select'
   });
 
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupData, setPopupData] = useState({
+    profileFor: 'Myself',
+    interestedIn: 'Both'
+  });
+
   const handleSubmit = () => {
-    console.log('Form submitted:', formData);
+    setShowPopup(true);
+  };
+
+  const handlePopupContinue = () => {
+    console.log('Form submitted:', { ...formData, ...popupData });
+    setShowPopup(false);
     alert('Finding your match...');
   };
 
@@ -160,12 +170,108 @@ function Home() {
       position: 'relative',
     },
     image: {
-    //   borderRadius: '1.5rem',
-    //   boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)',
       width: '100%',
       height: '700px',
       paddingLeft: '75px',
       objectFit: 'cover',
+    },
+    popupOverlay: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+    },
+    popupContainer: {
+      background: 'white',
+      borderRadius: '1.5rem',
+      padding: '2.5rem',
+      maxWidth: '500px',
+      width: '90%',
+      boxShadow: '0 20px 50px rgba(0, 0, 0, 0.3)',
+    },
+    popupIcon: {
+      width: '60px',
+      height: '60px',
+      margin: '0 auto 1.5rem',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    popupTitle: {
+      fontSize: '1.5rem',
+      fontWeight: 'bold',
+      color: '#111827',
+      textAlign: 'center',
+      marginBottom: '2rem',
+    },
+    popupSection: {
+      marginBottom: '2rem',
+    },
+    popupSectionTitle: {
+      fontSize: '1.1rem',
+      fontWeight: '600',
+      color: '#111827',
+      marginBottom: '1rem',
+    },
+    optionGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: '0.75rem',
+      marginBottom: '1rem',
+    },
+    optionButton: {
+      padding: '0.75rem 1rem',
+      borderRadius: '0.5rem',
+      border: '2px solid #e5e7eb',
+      background: 'white',
+      cursor: 'pointer',
+      fontSize: '0.95rem',
+      fontWeight: '500',
+      color: '#374151',
+      transition: 'all 0.2s',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '0.5rem',
+    },
+    optionButtonSelected: {
+      borderColor: '#ef4444',
+      background: '#fef2f2',
+      color: '#ef4444',
+    },
+    checkIcon: {
+      width: '16px',
+      height: '16px',
+      borderRadius: '50%',
+      border: '2px solid #d1d5db',
+      display: 'inline-block',
+      position: 'relative',
+    },
+    checkIconSelected: {
+      backgroundColor: '#ef4444',
+      borderColor: '#ef4444',
+    },
+    continueButton: {
+      // width: '100%',
+      padding: '0.875rem',
+      background: 'linear-gradient(90deg, #ef4444, #ec4899)',
+      color: 'white',
+      fontWeight: '600',
+      borderRadius: '9999px',
+      border: 'none',
+      fontSize: '1rem',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      marginTop: '1rem',
+      marginLeft: '190px',
+      paddingLeft: '25px',
+      paddingRight: '25px'
     },
   };
 
@@ -190,7 +296,7 @@ function Home() {
               onMouseEnter={(e) => e.target.style.color = '#ef4444'}
               onMouseLeave={(e) => e.target.style.color = '#374151'}
             >
-              Login ▼
+              Login 
             </button>
             <button 
               style={styles.navButton}
@@ -352,6 +458,88 @@ function Home() {
           </div>
         </div>
       </main>
+
+      {/* Popup Modal */}
+      {showPopup && (
+        <div style={styles.popupOverlay} onClick={() => setShowPopup(false)}>
+          <div style={styles.popupContainer} onClick={(e) => e.stopPropagation()}>
+            {/* Heart Icon */}
+            <div style={styles.popupIcon}>
+  <img src="/images/logo1.png" alt="Logo" style={styles.logo} />
+</div>
+
+
+            <h3 style={styles.popupSectionTitle}>This Profile is for</h3>
+
+            {/* Profile For Section */}
+            <div style={styles.popupSection}>
+              <div style={styles.optionGrid}>
+                {['Myself', 'My Son', 'My daughter', 'My friend', 'My sister'].map((option) => (
+                  <button
+                    key={option}
+                    style={{
+                      ...styles.optionButton,
+                      ...(popupData.profileFor === option ? styles.optionButtonSelected : {})
+                    }}
+                    onClick={() => setPopupData({...popupData, profileFor: option})}
+                  >
+                    <span style={{
+                      ...styles.checkIcon,
+                      ...(popupData.profileFor === option ? styles.checkIconSelected : {})
+                    }}>
+                      {popupData.profileFor === option && (
+                        <svg width="12" height="12" viewBox="0 0 12 12" style={{position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)'}}>
+                          <path d="M2 6l2.5 2.5L10 3" stroke="white" strokeWidth="2" fill="none"/>
+                        </svg>
+                      )}
+                    </span>
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Interested In Section */}
+            <div style={styles.popupSection}>
+              <h3 style={styles.popupSectionTitle}>Interested in</h3>
+              <div style={styles.optionGrid}>
+                {['Dating', 'Marrying', 'Both'].map((option) => (
+                  <button
+                    key={option}
+                    style={{
+                      ...styles.optionButton,
+                      ...(popupData.interestedIn === option ? styles.optionButtonSelected : {})
+                    }}
+                    onClick={() => setPopupData({...popupData, interestedIn: option})}
+                  >
+                    <span style={{
+                      ...styles.checkIcon,
+                      ...(popupData.interestedIn === option ? styles.checkIconSelected : {})
+                    }}>
+                      {popupData.interestedIn === option && (
+                        <svg width="12" height="12" viewBox="0 0 12 12" style={{position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)'}}>
+                          <path d="M2 6l2.5 2.5L10 3" stroke="white" strokeWidth="2" fill="none"/>
+                        </svg>
+                      )}
+                    </span>
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Continue Button */}
+            <button
+              style={styles.continueButton}
+              onClick={handlePopupContinue}
+              onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+              onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

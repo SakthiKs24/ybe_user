@@ -1,0 +1,153 @@
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    /* backdrop-filter: blur(4px); */
+  }
+  
+  /* Modal Content */
+  .modal-content {
+    background: white;
+    border: 2px solid #FF027DA8;
+    border-radius: 30px;
+    padding: 50px 60px;
+    max-width: 750px;
+    width: 90%;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(255, 2, 125, 0.3);
+  }
+  
+  /* Close Button */
+  .modal-close {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    background: none;
+    border: none;
+    font-size: 36px;
+    color: #666;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.3s;
+  }
+  
+  .modal-close:hover {
+    color: #FF027D;
+  }
+  
+  /* Modal Title */
+  .modal-title {
+    font-size: 36px;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  
+  .modal-subtitle {
+    font-size: 16px;
+    color: #666;
+    text-align: center;
+    margin-bottom: 35px;
+  }
+  
+  /* Form Styles */
+  .login-form {
+    width: 100%;
+  }
+  
+  .form-group {
+    margin-bottom: 25px;
+  }
+  
+  .form-label {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 10px;
+  }
+  
+  .form-input {
+    width: 100%;
+    padding: 16px 20px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+    font-family: inherit;
+  }
+  
+  .form-input:focus {
+    outline: none;
+    border-color: #FF027D;
+  }
+  
+  .form-input::placeholder {
+    color: #999;
+  }
+  
+  /* Login Button */
+  .login-btn {
+    width: 50%;
+    padding: 18px;
+    margin-left: 150px;
+    /* background: linear-gradient(180deg, #FF027D 0%, #FF2149 100%); */
+    background:linear-gradient(180deg, #FF003F 0%, #FF5300 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    transition: all 0.3s;
+    box-shadow: 0 5px 20px rgba(255, 2, 125, 0.3);
+  }
+  
+  .login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 2, 125, 0.4);
+  }
+  
+  /* Signup Link */
+  .signup-link {
+    text-align: center;
+    font-size: 15px;
+    color: #666;
+  }
+  
+  .signup-link a {
+    color: #FF027D;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  
+  .signup-link a:hover {
+    text-decoration: underline;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .modal-content {
+      padding: 40px 30px;
+      max-width: 90%;
+    }
+  
+    .modal-title {
+      font-size: 28px;
+    }
+  
+    .modal-subtitle {
+      font-size: 14px;
+    }
+  }

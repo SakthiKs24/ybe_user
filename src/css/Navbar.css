@@ -1,0 +1,81 @@
+/* Header Styles */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 80px;
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .logo-img {
+    height: 40px;
+    width: auto;
+  }
+  
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 50px;
+  }
+  
+  .nav a {
+    text-decoration: none;
+    color: #000;
+    font-size: 16px;
+    font-weight: 600;
+    transition: color 0.3s;
+  }
+  
+  .nav a:hover {
+    color: #FF1654;
+  }
+  
+  .login-link {
+    color: #000 !important;
+  }
+  
+  .signup-btn {
+    padding: 12px 32px;
+    border: none;
+    background: linear-gradient(180deg, #FF003F 0%, #FF5300 100%);
+    color: white;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(255, 22, 84, 0.2);
+  }
+  
+  .signup-btn:hover {
+    background: linear-gradient(135deg, #FF003F 0%, #FF5300 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 22, 84, 0.3);
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .header {
+      padding: 20px 30px;
+    }
+  
+    .nav {
+      gap: 25px;
+    }
+  
+    .nav a {
+      font-size: 14px;
+    }
+  
+    .signup-btn {
+      padding: 10px 24px;
+      font-size: 14px;
+    }
+  }

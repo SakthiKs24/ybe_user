@@ -1,0 +1,250 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+.homepage {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFD6E5 100%);
+}
+
+/* Main Content */
+.main-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 60px 80px;
+  gap: 80px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Left Section */
+.left-section {
+  flex: 1;
+  max-width: 600px;
+}
+
+.main-heading {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #000;
+  margin-bottom: 24px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.highlight {
+  color: #FF1654;
+}
+
+.subheading {
+  font-size: 18px;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 35px;
+}
+
+.cta-btn {
+  padding: 16px 48px;
+  background: linear-gradient(180deg, #FF003F 0%, #FF5300 100%);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 6px 20px rgba(255, 0, 63, 0.25);
+  margin-bottom: 35px;
+}
+
+.cta-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(255, 0, 63, 0.4);
+}
+
+/* Trustpilot Section */
+.trustpilot {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.trustpilot-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.star-icon {
+  color: #00B67A;
+  font-size: 24px;
+  background: #00B67A;
+  color: white;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.trustpilot-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000;
+}
+
+.trustpilot-rating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stars {
+  color: #FFB800;
+  font-size: 18px;
+  letter-spacing: 2px;
+}
+
+.rating-text {
+  font-size: 16px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Right Section */
+.right-section {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  max-width: 600px;
+}
+
+.hero-image {
+  position: relative;
+  width: 100%;
+  max-width: 550px;
+  border-radius: 40px;
+  overflow: visible;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.hero-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 40px;
+}
+
+.stats-badge {
+  position: absolute;
+  top: 300px;
+  left: 430px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  backdrop-filter: blur(10px);
+  border: 2px solid #FF027DA8; 
+
+}
+
+.stats-icon {
+  font-size: 24px;
+  background: #FFE8F5;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stats-content {
+  text-align: left;
+}
+
+.stats-growth {
+  color: #FF1654;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+
+.stats-number {
+  font-size: 24px;
+  font-weight: 800;
+  color: #000;
+  margin-bottom: 2px;
+}
+
+.stats-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .main-content {
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 40px;
+    gap: 60px;
+  }
+
+  .left-section {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .cta-btn {
+    margin: 0 auto 40px;
+    display: block;
+  }
+
+  .trustpilot {
+    justify-content: center;
+  }
+
+  .right-section {
+    max-width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-heading {
+    font-size: 40px;
+    line-height: 50px;
+  }
+
+  .subheading {
+    font-size: 18px;
+  }
+
+  .cta-btn {
+    padding: 16px 40px;
+    font-size: 16px;
+  }
+
+  .hero-image {
+    max-width: 100%;
+  }
+
+  .main-content {
+    padding: 40px 20px;
+  }
+}
