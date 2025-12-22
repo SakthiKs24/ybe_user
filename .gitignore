@@ -52,3 +52,4 @@ public/*.cache
 *.bak
 *.tmp
 *.lock
+src/firebase.js
