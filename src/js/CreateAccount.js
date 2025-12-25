@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, query, where, getDocs, runTransaction } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import '../css/CreateAccount.css';
 import Navbar from './Navbar';
+import { COUNTRIES_DATA } from '../js/countriesData';
 
 export default function CreateAccount() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function CreateAccount() {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
+    countryCode: '+91',
     mobile: '',
     password: '',
     confirmPassword: '',
@@ -25,7 +27,6 @@ export default function CreateAccount() {
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error for this field when user types
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -34,40 +35,34 @@ export default function CreateAccount() {
   const validateForm = () => {
     const newErrors = {};
 
-    // Full Name validation
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required';
     }
 
-    // Email validation
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Invalid email format';
     }
 
-    // Mobile validation
     if (!formData.mobile.trim()) {
       newErrors.mobile = 'Mobile number is required';
-    } else if (!/^\d{10}$/.test(formData.mobile.replace(/\D/g, ''))) {
-      newErrors.mobile = 'Mobile number must be 10 digits';
+    } else if (!/^\d{7,15}$/.test(formData.mobile.replace(/\D/g, ''))) {
+      newErrors.mobile = 'Mobile number must be 7-15 digits';
     }
 
-    // Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
 
-    // Confirm Password validation
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    // Date of Birth validation
     if (!formData.dateOfBirth) {
       newErrors.dateOfBirth = 'Date of birth is required';
     } else {
@@ -79,7 +74,6 @@ export default function CreateAccount() {
       }
     }
 
-    // Gender validation
     if (!formData.gender) {
       newErrors.gender = 'Please select your gender';
     }
@@ -88,11 +82,74 @@ export default function CreateAccount() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const generateUserId = async () => {
-    // Generate a random user ID 
-    const randomNum = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
-    return `YBE${randomNum}`;
+  // Check if email or phone already exists
+  const checkExistingUser = async (email, phoneNumber) => {
+    try {
+      // Check email
+      const emailQuery = query(
+        collection(db, 'users'),
+        where('email', '==', email.trim().toLowerCase())
+      );
+      const emailSnapshot = await getDocs(emailQuery);
+      
+      if (!emailSnapshot.empty) {
+        return { exists: true, type: 'email' };
+      }
+
+      // Check phone number
+      const phoneQuery = query(
+        collection(db, 'users'),
+        where('phoneNumber', '==', phoneNumber)
+      );
+      const phoneSnapshot = await getDocs(phoneQuery);
+      
+      if (!phoneSnapshot.empty) {
+        return { exists: true, type: 'phone' };
+      }
+
+      return { exists: false };
+    } catch (error) {
+      console.error('Error checking existing user:', error);
+      throw error;
+    }
   };
+
+  // Generate userId from RegisteredUsers collection
+  const generateUserId = async () => {
+    try {
+      // ✅ Correct path
+      const counterRef = doc(db, 'users', 'RegisteredUsers');
+  
+      const userId = await runTransaction(db, async (transaction) => {
+        const snapshot = await transaction.get(counterRef);
+  
+        if (!snapshot.exists()) {
+          throw new Error('RegisteredUsers counter document not found');
+        }
+  
+        const currentCount = snapshot.data().totalCount || 0;
+  
+        // ✅ increment ONCE
+        const newCount = currentCount + 1;
+  
+        // ✅ generate ID from SAME value
+        const newUserId = `YBE${String(newCount).padStart(8, '0')}`;
+  
+        // ✅ update SAME document
+        transaction.update(counterRef, {
+          totalCount: newCount
+        });
+  
+        return newUserId;
+      });
+  
+      return userId;
+    } catch (error) {
+      console.error('Error generating userId:', error);
+      throw error;
+    }
+  };
+  
 
   const handleSubmit = async () => {
     if (!validateForm()) {
@@ -106,7 +163,31 @@ export default function CreateAccount() {
     setLoading(true);
 
     try {
-      // Create user in Firebase Authentication
+      // Combine country code with mobile number
+      const fullPhoneNumber = `${formData.countryCode}${formData.mobile.trim()}`;
+
+      // Check if user already exists
+      const existingUser = await checkExistingUser(formData.email, fullPhoneNumber);
+      
+      if (existingUser.exists) {
+        if (existingUser.type === 'email') {
+          setErrors({ email: 'This email is already registered' });
+          toast.error('This email is already registered. Please use a different email or sign in.', {
+            position: "top-right",
+            autoClose: 4000,
+          });
+        } else if (existingUser.type === 'phone') {
+          setErrors({ mobile: 'This mobile number is already registered' });
+          toast.error('This mobile number is already registered. Please use a different number or sign in.', {
+            position: "top-right",
+            autoClose: 4000,
+          });
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Create Firebase Auth user
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email.trim(),
@@ -114,21 +195,20 @@ export default function CreateAccount() {
       );
 
       const user = userCredential.user;
+      
+      // Generate userId from RegisteredUsers
       const userId = await generateUserId();
-      const currentDate = new Date().toISOString().split('T')[0]; 
+      const currentDate = new Date().toISOString().split('T')[0];
 
       // Create user document in Firestore
-      const userDocRef = doc(db, 'users', user.uid);
+      const userDocRef = doc(db, 'users', userId);
       await setDoc(userDocRef, {
-        // User provided data
         name: formData.fullName.trim(),
-        email: formData.email.trim(),
-        phoneNumber: formData.mobile.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phoneNumber: fullPhoneNumber,
         dateOfBirth: formData.dateOfBirth,
         userGender: formData.gender,
         userId: userId,
-        
-        // Default values
         aboutMe: "",
         blockedUsers: [],
         bodyBuild: "",
@@ -209,13 +289,11 @@ export default function CreateAccount() {
 
       console.log('User account created successfully:', userId);
 
-      // Show success toast
       toast.success('Account created successfully! Redirecting to dashboard...', {
         position: "top-right",
         autoClose: 2000,
       });
 
-      // Redirect to dashboard after a short delay
       setTimeout(() => {
         navigate('/dashboard');
       }, 2000);
@@ -223,7 +301,6 @@ export default function CreateAccount() {
     } catch (error) {
       console.error('Sign up error:', error);
       
-      // Handle specific Firebase auth errors
       switch (error.code) {
         case 'auth/email-already-in-use':
           setErrors({ email: 'This email is already registered' });
@@ -254,8 +331,6 @@ export default function CreateAccount() {
 
   return (
     <div className="create-account-page">
-      {/* <Navbar onLoginClick={() => setIsLoginOpen(true)} /> */}
-
       <header className="ca-header">
         <div className="logo">
           <img src="/images/logo.png" alt="Ibe Logo" className="logo-img" />
@@ -289,8 +364,7 @@ export default function CreateAccount() {
               )}
             </div>
 
-           
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '25px' }}>
+            <div className="form-group">
               <div>
                 <label className="form-label">Email Address</label>
                 <input
@@ -307,17 +381,39 @@ export default function CreateAccount() {
                   </span>
                 )}
               </div>
+            </div>
 
+            <div className="form-group">
               <div>
                 <label className="form-label">Mobile Number</label>
-                <input
-                  type="tel"
-                  className="form-input"
-                  value={formData.mobile}
-                  onChange={(e) => handleChange('mobile', e.target.value)}
-                  placeholder="Enter mobile number"
-                  disabled={loading}
-                />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <select
+                    className="form-input"
+                    value={formData.countryCode}
+                    onChange={(e) => handleChange('countryCode', e.target.value)}
+                    disabled={loading}
+                    style={{ 
+                      width: '140px', 
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {COUNTRIES_DATA.map((country) => (
+                      <option key={country.code} value={country.dial_code}>
+                        {country.name} ({country.dial_code})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="tel"
+                    className="form-input"
+                    value={formData.mobile}
+                    onChange={(e) => handleChange('mobile', e.target.value.replace(/\D/g, ''))}
+                    placeholder="Enter mobile number"
+                    disabled={loading}
+                    style={{ flex: 1 }}
+                  />
+                </div>
                 {errors.mobile && (
                   <span style={{ color: '#FF027D', fontSize: '13px', marginTop: '5px', display: 'block' }}>
                     {errors.mobile}

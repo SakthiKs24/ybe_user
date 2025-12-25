@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; 
-import { auth, db } from '../firebase';
+import { auth, db , googleProvider} from '../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import '../css/Login.css';
+import { signInWithPopup } from "firebase/auth";
 
 export default function Login({ isOpen, onClose }) {
   const navigate = useNavigate(); 
@@ -99,7 +100,63 @@ export default function Login({ isOpen, onClose }) {
       setLoading(false);
     }
   };
-
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError("");
+  
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+  
+      console.log("Google user:", user.uid);
+  
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+  
+      // ✅ IF USER EXISTS → LOGIN
+      if (userDoc.exists()) {
+        toast.success("Login successful!", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+  
+        setTimeout(() => {
+          onClose();
+          navigate("/dashboard");
+        }, 1500);
+      } 
+      // IF USER DOES NOT EXIST → REDIRECT TO SIGNUP
+      else {
+        console.log("User not found. Redirecting to signup.");
+  
+        toast.info("Please complete signup to continue", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+  
+        setTimeout(() => {
+          onClose();
+          navigate("/create-account", {
+            state: {
+              email: user.email,
+              name: user.displayName,
+              photoURL: user.photoURL,
+              provider: "google",
+              uid: user.uid,
+            },
+          });
+        }, 1500);
+      }
+  
+    } catch (error) {
+      console.error("Google login error:", error);
+      setError("Google sign-in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleSubmit();
@@ -167,6 +224,34 @@ export default function Login({ isOpen, onClose }) {
           >
             {loading ? 'Logging in...' : 'Log in'}
           </button>
+          <div className="social-login">
+            <button
+              className="social-btn google"
+              onClick={handleGoogleLogin}
+              disabled={loading}
+            >
+              <img
+                src="/images/google.png"
+                alt="Google"
+              />
+            </button>
+
+            <button className="social-btn facebook" >
+              <img
+                src="/images/fb.png"
+                alt="Facebook"
+                className="social-icon"
+              />
+            </button>
+
+            <button className="social-btn phone" >
+              <img
+                src="/images/phone.png"
+                alt="Facebook"
+                className="social-icon"
+              />
+            </button>
+          </div>
 
           <p className="signup-link">
             New to Platform? <a href="/signup">Sign up</a>

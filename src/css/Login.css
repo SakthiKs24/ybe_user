@@ -151,3 +151,29 @@
       font-size: 14px;
     }
   }
+  .social-login {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .social-btn {
+    width: 70px;
+    height: 44px;
+    border-radius: 30px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .social-btn img {
+    width: 30px;
+  }
+  
+ 
+  
