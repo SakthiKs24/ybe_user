@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, db, googleProvider } from '../firebase';
+import { auth, db, googleProvider, facebookProvider } from '../firebase';
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -25,7 +25,8 @@ export default function Login({ isOpen, onClose }) {
   const [otp, setOtp] = useState("");
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+const [loadingEmail, setLoadingEmail] = useState(false);
+const [loadingSocial, setLoadingSocial] = useState(false);
 
   if (!isOpen) return null;
 
@@ -40,7 +41,7 @@ export default function Login({ isOpen, onClose }) {
       return;
     }
 
-    setLoading(true);
+setLoadingEmail(true);
     setError('');
 
     try {
@@ -108,11 +109,11 @@ export default function Login({ isOpen, onClose }) {
           setError('Login failed. Please try again.');
       }
     } finally {
-      setLoading(false);
+      setLoadingEmail(false);
     }
   };
   const handleGoogleLogin = async () => {
-    setLoading(true);
+    setLoadingSocial(true);
     setError("");
 
     try {
@@ -163,7 +164,7 @@ export default function Login({ isOpen, onClose }) {
       console.error("Google login error:", error);
       setError("Google sign-in failed. Please try again.");
     } finally {
-      setLoading(false);
+      setLoadingSocial(false);
     }
   };
 
@@ -171,82 +172,82 @@ export default function Login({ isOpen, onClose }) {
 
   const fullPhoneNumber = `${country.dial_code}${phone}`;
 
-const setupRecaptcha = () => {
-  if (!window.recaptchaVerifier) {
-    window.recaptchaVerifier = new RecaptchaVerifier(
-      "recaptcha-container", // container ID or element
-      {
-        size: "invisible",
-        callback: () => {
-          console.log("reCAPTCHA solved");
+  const setupRecaptcha = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(
+        "recaptcha-container", // container ID or element
+        {
+          size: "invisible",
+          callback: () => {
+            console.log("reCAPTCHA solved");
+          },
+          "expired-callback": () => {
+            console.log("reCAPTCHA expired");
+          },
         },
-        "expired-callback": () => {
-          console.log("reCAPTCHA expired");
-        },
-      },
-      auth // ✅ third argument is auth
-    );
-  }
-};
+        auth // ✅ third argument is auth
+      );
+    }
+  };
 
 
-const sendOtp = async () => {
-  if (!phone) {
-    setError("Enter phone number with country code");
-    return;
-  }
+  const sendOtp = async () => {
+    if (!phone) {
+      setError("Enter phone number with country code");
+      return;
+    }
 
-  setLoading(true);
-  setError("");
+    setLoadingSocial(true);
+    setError("");
 
-  try {
-    // if (!window.recaptchaVerifier) {
-    //   window.recaptchaVerifier = new RecaptchaVerifier(
-    //     auth,
-    //     "recaptcha-container",
-    //     {
-    //       size: "invisible",
-    //       callback: () => {
-    //         console.log("reCAPTCHA solved");
-    //       },
-    //       "expired-callback": () => {
-    //         console.log("reCAPTCHA expired");
-    //       },
-    //     }
-    //   );
-    // }
-        setupRecaptcha();
+    try {
+      // if (!window.recaptchaVerifier) {
+      //   window.recaptchaVerifier = new RecaptchaVerifier(
+      //     auth,
+      //     "recaptcha-container",
+      //     {
+      //       size: "invisible",
+      //       callback: () => {
+      //         console.log("reCAPTCHA solved");
+      //       },
+      //       "expired-callback": () => {
+      //         console.log("reCAPTCHA expired");
+      //       },
+      //     }
+      //   );
+      // }
+      setupRecaptcha();
 
-    console.log("FULL PHONE:", fullPhoneNumber);
-    console.log("AUTH OBJECT:", auth);
+      console.log("FULL PHONE:", fullPhoneNumber);
+      console.log("AUTH OBJECT:", auth);
 
-    console.log("Sending OTP to:", fullPhoneNumber);
+      console.log("Sending OTP to:", fullPhoneNumber);
 
-    const result = await signInWithPhoneNumber(
-      auth,
-      fullPhoneNumber,
-      window.recaptchaVerifier
-    );
+      const result = await signInWithPhoneNumber(
+        auth,
+        fullPhoneNumber,
+        window.recaptchaVerifier
+      );
 
-    setConfirmationResult(result);
-    toast.success("OTP sent successfully");
-  } catch (err) {
-    console.log("Sending OTP to:", fullPhoneNumber);
-    console.error("OTP ERROR FULL OBJECT:", err);
-    console.error("OTP ERROR CODE:", err.code);
-    console.error("OTP ERROR MESSAGE:", err.message);
+      setConfirmationResult(result);
+      toast.success("OTP sent successfully");
+    } catch (err) {
+      console.log("Sending OTP to:", fullPhoneNumber);
+      console.error("OTP ERROR FULL OBJECT:", err);
+      console.error("OTP ERROR CODE:", err.code);
+      console.error("OTP ERROR MESSAGE:", err.message);
 
-    setError(err.message || "Failed to send OTP");
-  } finally {
-    setLoading(false);
-  }
-};
+      setError(err.message || "Failed to send OTP");
+    } finally {
+      setLoadingSocial(false);
+    }
+  };
 
 
   const verifyOtp = async () => {
     if (!otp || !confirmationResult) return;
 
-    setLoading(true);
+    setLoadingSocial(true);
     setError("");
 
     try {
@@ -273,9 +274,52 @@ const sendOtp = async () => {
     } catch {
       setError("Invalid OTP");
     } finally {
-      setLoading(false);
+      setLoadingSocial(false);
     }
   };
+
+  const handleFacebookLogin = async () => {
+    setLoadingSocial(true);
+    setError("");
+
+    try {
+      const result = await signInWithPopup(auth, facebookProvider);
+      const user = result.user;
+
+      console.log("Facebook user:", user.uid);
+
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        toast.success("Login successful!", { autoClose: 2000 });
+        setTimeout(() => {
+          onClose();
+          navigate("/dashboard");
+        }, 1500);
+      } else {
+        toast.info("Please complete signup", { autoClose: 2000 });
+        setTimeout(() => {
+          onClose();
+          navigate("/create-account", {
+            state: {
+              email: user.email,
+              name: user.displayName,
+              photoURL: user.photoURL,
+              provider: "facebook",
+              uid: user.uid,
+            },
+          });
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Facebook login error:", error);
+      setError("Facebook sign-in failed. Please try again.");
+    } finally {
+      setLoadingSocial(false);
+    }
+  };
+
 
 
   const handleKeyPress = (e) => {
@@ -318,7 +362,7 @@ const sendOtp = async () => {
                 onChange={(e) => handleChange('email', e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Enter your email"
-                disabled={loading}
+                disabled={loadingEmail}
               />
             </div>
 
@@ -331,27 +375,27 @@ const sendOtp = async () => {
                   onChange={(e) => handleChange('password', e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Enter your password"
-                  disabled={loading}
+                  disabled={loadingEmail}
                 />
               </div>
 
               <button
                 onClick={handleSubmit}
                 className="login-btn"
-                disabled={loading}
+                disabled={loadingEmail}
                 style={{
-                  opacity: loading ? 0.7 : 1,
-                  cursor: loading ? 'not-allowed' : 'pointer'
+                  opacity: loadingEmail ? 0.7 : 1,
+                  cursor: loadingEmail ? 'not-allowed' : 'pointer'
                 }}
               >
-                {loading ? 'Logging in...' : 'Log in'}
+                {loadingEmail ? 'Logging in...' : 'Log in'}
               </button>
 
               <div className="social-login">
                 <button
                   className="social-btn google"
                   onClick={handleGoogleLogin}
-                  disabled={loading}
+                  disabled={loadingSocial}
                 >
                   <img
                     src="/images/google.png"
@@ -359,25 +403,28 @@ const sendOtp = async () => {
                   />
                 </button>
 
-                {/* <button className="social-btn facebook" >
-              <img
-                src="/images/fb.png"
-                alt="Facebook"
-                className="social-icon"
-              />
-            </button> */}
+                <button
+                  className="social-btn facebook"
+                  onClick={handleFacebookLogin}
+                  disabled={loadingSocial}
+                >
+                  <img
+                    src="/images/fb.png"
+                    alt="Facebook"
+                    className="social-icon"
+                  />
+                </button>
 
-                <button className="social-btn phone" onClick={() => setShowPhoneLogin(!showPhoneLogin)} disabled={loading} >
+
+                <button className="social-btn phone" onClick={() => setShowPhoneLogin(!showPhoneLogin)} disabled={loadingSocial} >
                   <img
                     src="/images/phone.png"
                     alt="Phone"
                     className="social-icon"
                   />
                 </button>
+                <div id="recaptcha-container"></div>
               </div>
-              <div id="recaptcha-container"></div>
-
-
               <p className="signup-link">
                 New to Platform? <a href="/signup">Sign up</a>
               </p>
@@ -413,14 +460,14 @@ const sendOtp = async () => {
                       placeholder="Enter phone number"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      disabled={loading}
+                      disabled={loadingSocial}
                     />
                   </div>
                   <br></br>
                   <button
                     className="login-btn"
                     onClick={sendOtp}
-                    disabled={loading}
+                    disabled={loadingSocial}
                   >
                     Send OTP
                   </button>
@@ -434,13 +481,13 @@ const sendOtp = async () => {
                     placeholder="Enter OTP"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
-                    disabled={loading}
+                    disabled={loadingSocial}
                   />
 
                   <button
                     className="login-btn"
                     onClick={verifyOtp}
-                    disabled={loading}
+                    disabled={loadingSocial}
                   >
                     Verify OTP
                   </button>
