@@ -53,3 +53,4 @@ public/*.cache
 *.tmp
 *.lock
 src/firebase.js
+src/firebase.js

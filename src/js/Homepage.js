@@ -5,11 +5,23 @@ import '../css/Homepage.css';
 
 export default function Homepage() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [loginKey, setLoginKey] = useState(0); // new key for Login
 
+  const openLogin = () => {
+    setLoginKey(prev => prev + 1); // increment key to reset Login state
+    setIsLoginOpen(true);
+  };
   return (
     <div className="homepage">
       <Navbar onLoginClick={() => setIsLoginOpen(true)} />
-      <Login isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      {isLoginOpen && (
+        <Login
+          key={loginKey}      // <-- this forces a fresh component
+          isOpen={isLoginOpen}
+          onClose={() => setIsLoginOpen(false)}
+        />
+      )}
+      {/* <Login isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} /> */}
 
       <main className="main-content">
         <div className="left-section">
@@ -21,7 +33,7 @@ export default function Homepage() {
             Join thousands of people finding their<br />
             soulmate through our trusted platform
           </p>
-          
+
           <button className="cta-btn">
             Find Your match
           </button>
@@ -40,8 +52,8 @@ export default function Homepage() {
 
         <div className="right-section">
           <div className="hero-image">
-            <img 
-              src="/images/homepage.png" 
+            <img
+              src="/images/homepage.png"
               alt="Happy couple"
             />
 

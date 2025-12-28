@@ -155,8 +155,8 @@
     display: flex;
     justify-content: center;
     gap: 16px;
-    margin-top: 20px;
-    margin-bottom: 20px;
+    margin-top: 10px;
+    margin-bottom: 10px;
   }
   
   .social-btn {
@@ -172,8 +172,79 @@
   }
   
   .social-btn img {
-    width: 30px;
-  }
+  width: 22px;
+  height: 22px;
+  object-fit: contain;   
+}
   
+.country-select {
+  width: 140px;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.phone-row {
+  display: flex;
+  gap: 8px;
+}
+
+.phone-input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.error-box {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 10px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* Phone input wrapper - looks like form-input */
+.phone-input-wrapper {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+
+.phone-input-wrapper:focus-within {
+  border-color: #FF027D;
+}
+
+/* Country code dropdown styled as input */
+.phone-country-select {
+  border: none;
+  padding: 16px 14px;
+  font-size: 16px;
+  background: white;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  color: #000;
+}
+
+/* Phone number input */
+.phone-number-input {
+  flex: 1;
+  border: none;
+  padding: 20px 25px;
+  font-size: 16px;
+  outline: none;
+  font-family: inherit;
+}
+
+/* Placeholder */
+.phone-number-input::placeholder {
+  color: #999;
+}
+
+
  
   
