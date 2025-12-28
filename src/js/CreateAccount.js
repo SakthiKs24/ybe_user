@@ -398,14 +398,14 @@ export default function CreateAccount() {
                     onChange={(e) => handleChange('countryCode', e.target.value)}
                     disabled={loading}
                     style={{ 
-                      width: '140px', 
+                      width: '100px', 
                       cursor: loading ? 'not-allowed' : 'pointer',
                       fontSize: '14px'
                     }}
                   >
                     {COUNTRIES_DATA.map((country) => (
                       <option key={country.code} value={country.dial_code}>
-                        {country.name} ({country.dial_code})
+                        {country.dial_code}
                       </option>
                     ))}
                   </select>
