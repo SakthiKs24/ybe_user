@@ -20,7 +20,8 @@ export default function CreateAccount() {
     password: '',
     confirmPassword: '',
     dateOfBirth: '',
-    gender: ''
+    gender: '',
+    genderPreference: ''  
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -77,6 +78,10 @@ export default function CreateAccount() {
     if (!formData.gender) {
       newErrors.gender = 'Please select your gender';
     }
+
+    if (!formData.genderPreference) {
+      newErrors.genderPreference = 'Please select gender preference';
+    }    
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -232,7 +237,7 @@ export default function CreateAccount() {
         degree: "",
         doj: currentDate,
         fcmToken: "",
-        genderPreference: "",
+        genderPreference: formData.genderPreference,
         growUpCountry: "",
         height: "",
         isDisabled: false,
@@ -496,6 +501,28 @@ export default function CreateAccount() {
                   </span>
                 )}
               </div>
+              <div>
+                <label className="form-label">Gender Preference</label>
+                <select
+                  className="form-input"
+                  value={formData.genderPreference}
+                  onChange={(e) => handleChange('genderPreference', e.target.value)}
+                  disabled={loading}
+                  style={{ cursor: loading ? 'not-allowed' : 'pointer' }}
+                >
+                  <option value="">Select Preference</option>
+                  <option value="Men">Men</option>
+                  <option value="Women">Women</option>
+                  <option value="Everyone">Everyone</option>
+                </select>
+
+                {errors.genderPreference && (
+                  <span style={{ color: '#FF027D', fontSize: '13px', marginTop: '5px', display: 'block' }}>
+                    {errors.genderPreference}
+                  </span>
+                )}
+              </div>
+
             </div>
 
             <button 
