@@ -294,13 +294,13 @@ export default function CreateAccount() {
 
       console.log('User account created successfully:', userId);
 
-      toast.success('Account created successfully! Redirecting to dashboard...', {
+      toast.success('Account created successfully!', {
         position: "top-right",
         autoClose: 2000,
       });
 
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate('/profile-setup');
       }, 2000);
 
     } catch (error) {
