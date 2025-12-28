@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "target": "ybedatingapp-user",
+    "site": "ybe-user",
     "public": "build",
     "ignore": [
       "firebase.json",
