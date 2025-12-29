@@ -459,7 +459,7 @@ export default function ProfileSetup() {
     }
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     // Photo validation - at least 3 photos required
     if (currentStep === 6) {
       const uploadedCount = uploadedPhotos.filter(p => p).length;
@@ -471,6 +471,11 @@ export default function ProfileSetup() {
         return;
       }
     }
+
+    // Save current step data before moving to next step
+    await saveCurrentStepData();
+
+    // Move to next step
     setCurrentStep(prev => Math.min(prev + 1, 8));
   };
 
@@ -482,8 +487,87 @@ export default function ProfileSetup() {
     }
   };
 
-  const skipStep = () => {
-    nextStep();
+  // Function to save current step data to Firebase
+  const saveCurrentStepData = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        console.warn('User not authenticated, skipping save');
+        return;
+      }
+
+      // Query to find the user document by email
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('email', '==', user.email));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        console.warn('User profile not found, skipping save');
+        return;
+      }
+
+      // Get the actual userId from the document
+      const userDoc = querySnapshot.docs[0];
+      const userId = userDoc.id;
+      const userDocRef = doc(db, 'users', userId);
+
+      // Prepare update object based on current step
+      const updateData = {
+        updatedAt: new Date()
+      };
+
+      // Step 1: Created For and Looking For
+      if (currentStep === 1) {
+        updateData.createdFor = profileData.createdFor;
+        updateData.lookingFor = profileData.lookingFor;
+      }
+
+      // Step 2: Basic Info
+      if (currentStep === 2) {
+        updateData.height = profileData.height;
+        updateData.religion = profileData.religion;
+        updateData.community = profileData.community;
+        updateData.motherTongue = profileData.motherTongue;
+      }
+
+      // Step 3: Location
+      if (currentStep === 3) {
+        updateData.originCountry = profileData.originCountry;
+        updateData.settledCountry = profileData.settledCountry;
+        updateData.growUpCountry = profileData.growUpCountry;
+      }
+
+      // Step 4: Education
+      if (currentStep === 4) {
+        updateData.degree = profileData.degree;
+        updateData.dayJob = profileData.dayJob;
+        updateData.status = profileData.maritalStatus;
+      }
+
+      // Step 5: Lifestyle
+      if (currentStep === 5) {
+        updateData.bodyBuild = profileData.bodyBuild;
+        updateData.selectedLikesInvolvesMap = profileData.selectedLikesInvolvesMap;
+        updateData.selectedPersonalityTraitsMap = profileData.selectedPersonalityTraitsMap;
+      }
+
+      // Step 6: Photos (already saved on upload, but we can update the array)
+      if (currentStep === 6) {
+        updateData.profileImageUrls = profileData.profileImageUrls.filter(url => url !== '');
+      }
+
+      // Step 7: About Me
+      if (currentStep === 7) {
+        updateData.aboutMe = profileData.aboutMe;
+      }
+
+      // Update the document
+      await updateDoc(userDocRef, updateData);
+      console.log(`Step ${currentStep} data saved successfully`);
+    } catch (error) {
+      console.error('Error saving step data:', error);
+      // Don't show error to user, just log it
+    }
   };
 
   const completeProfile = async () => {
@@ -670,7 +754,6 @@ export default function ProfileSetup() {
               </div>
 
               <div className="btn-group">
-                <button className="btn btn-secondary" onClick={skipStep}>Skip</button>
                 <button className="btn btn-primary" onClick={nextStep}>Continue</button>
               </div>
             </div>
@@ -760,7 +843,6 @@ export default function ProfileSetup() {
               </div>
 
               <div className="btn-group">
-                <button className="btn btn-secondary" onClick={skipStep}>Skip</button>
                 <button className="btn btn-primary" onClick={nextStep}>Continue</button>
               </div>
             </div>
@@ -818,7 +900,6 @@ export default function ProfileSetup() {
               </div>
 
               <div className="btn-group">
-                <button className="btn btn-secondary" onClick={skipStep}>Skip</button>
                 <button className="btn btn-primary" onClick={nextStep}>Continue</button>
               </div>
             </div>
@@ -897,7 +978,6 @@ export default function ProfileSetup() {
               </div>
 
               <div className="btn-group">
-                <button className="btn btn-secondary" onClick={skipStep}>Skip</button>
                 <button className="btn btn-primary" onClick={nextStep}>Continue</button>
               </div>
             </div>
@@ -1018,7 +1098,6 @@ export default function ProfileSetup() {
               </div>
 
               <div className="btn-group">
-                <button className="btn btn-secondary" onClick={skipStep}>Skip</button>
                 <button
                   className="btn btn-primary"
                   onClick={nextStep}
@@ -1115,7 +1194,6 @@ export default function ProfileSetup() {
     </div>
 
     <div className="btn-group" style={{ marginTop: '30px' }}>
-      <button className="btn btn-secondary" onClick={skipStep}>Skip</button>
       <button
         className="btn btn-primary"
         onClick={nextStep}
@@ -1143,7 +1221,6 @@ export default function ProfileSetup() {
               </div>
 
               <div className="btn-group">
-                <button className="btn btn-secondary" onClick={skipStep}>Skip</button>
                 <button
                   className="btn btn-primary"
                   onClick={completeProfile}
