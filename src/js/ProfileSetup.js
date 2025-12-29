@@ -576,17 +576,6 @@ export default function ProfileSetup() {
       return `/images/${baseName}_unselected.png`;
     };
 
-    // Calculate progress width based on current step
-    // The line fills from center of first icon (25px) to center of the icon before current step
-    // With 4 icons evenly spaced, each segment is approximately 33.33% of the total width
-    const getProgressWidth = () => {
-      if (currentStep === 2) return '0px'; // Basic Info - no segments filled yet
-      if (currentStep === 3) return 'calc(33.33% - 25px)'; // Location - fill from icon 1 to icon 2
-      if (currentStep === 4) return 'calc(66.66% - 25px)'; // Education - fill from icon 1 to icon 3
-      if (currentStep === 5) return 'calc(100% - 50px)'; // Lifestyle - fill from icon 1 to icon 4
-      return '0px';
-    };
-
     return (
       <div className="progress-bar" data-step={currentStep}>
         <div className={`progress-step ${getStepStatus(2)}`}>
@@ -613,10 +602,6 @@ export default function ProfileSetup() {
           </div>
           <span className="progress-label">Lifestyle</span>
         </div>
-        <div 
-          className="progress-line-fill" 
-          style={{ width: getProgressWidth() }}
-        ></div>
       </div>
     );
   };

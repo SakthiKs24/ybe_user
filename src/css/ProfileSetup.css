@@ -140,25 +140,27 @@
     position: relative;
   }
   
-  .progress-bar::before {
+  /* Individual lines between icons */
+  .progress-step::after {
     content: '';
     position: absolute;
     top: 25px;
-    left: 25px;
-    right: 25px;
+    left: calc(50% + 35px); /* Start 10px after right edge of icon (50% center + 25px half icon + 10px padding) */
+    width: calc(110px - 10px); /* Gap between icons minus 10px right padding */
     height: 2px;
     background: #ddd;
     z-index: 0;
+    transition: background 0.3s ease;
   }
 
-  .progress-line-fill {
-    position: absolute;
-    top: 25px;
-    left: 25px;
-    height: 2px;
-    background: #FF027D;
-    z-index: 1;
-    transition: width 0.3s ease;
+  /* Hide line after last icon */
+  .progress-step:last-child::after {
+    display: none;
+  }
+
+  /* Completed line - red color (line after a completed step should be red) */
+  .progress-step.completed::after {
+    background: #FF3141;
   }
   
   .progress-step {
@@ -218,8 +220,18 @@
   
   .progress-label {
     font-size: 12px;
-    color: #666;
+    color: #FF3141;
     font-weight: 500;
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  .progress-step.active .progress-label,
+  .progress-step.completed .progress-label {
+    color: #FF3141;
+  }
+  
+  .progress-step:not(.active):not(.completed) .progress-label {
+    color: #666;
   }
   
   /* Form Section */
