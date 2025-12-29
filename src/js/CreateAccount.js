@@ -220,6 +220,7 @@ export default function CreateAccount() {
         community: "",
         country: "",
         createdAt: new Date(),
+        createdFor: "",
         currentDiscountPercentage: 0,
         currentPosition: {
           address: "",

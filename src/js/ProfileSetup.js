@@ -4,11 +4,12 @@ import { auth, db } from '../firebase';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import '../css/ProfileSetup.css';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function ProfileSetup() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
-  const [uploadedPhotos, setUploadedPhotos] = useState([false, false, false]);
+  const [uploadedPhotos, setUploadedPhotos] = useState([false, false, false, false, false, false]);
   const [loading, setLoading] = useState(false);
   const totalSteps = 8;
 
@@ -122,34 +123,78 @@ export default function ProfileSetup() {
     });
   };
 
-  const handlePhotoUpload = (event, index) => {
+  const handlePhotoUpload = async (event, index) => {
     const file = event.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
+      try {
+        setLoading(true);
+        
+        // Get current user
+        const user = auth.currentUser;
+        if (!user) {
+          toast.error('User not authenticated');
+          return;
+        }
+  
+        // Query to find the user document by email
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('email', '==', user.email));
+        const querySnapshot = await getDocs(q);
+  
+        if (querySnapshot.empty) {
+          toast.error('User profile not found');
+          return;
+        }
+  
+        // Get the actual userId from the document
+        const userDoc = querySnapshot.docs[0];
+        const userId = userDoc.id;
+  
+        // Create storage reference
+        const storage = getStorage();
+        const fileName = `${userId}_${file.name}`;
+        const storageRef = ref(storage, `profile-images/${fileName}`);
+  
+        // Upload file
+        await uploadBytes(storageRef, file);
+        
+        // Get download URL
+        const downloadURL = await getDownloadURL(storageRef);
+  
+        // Update state with the Firebase Storage URL
         setProfileData(prev => {
           const newUrls = [...prev.profileImageUrls];
-          newUrls[index] = e.target.result;
+          newUrls[index] = downloadURL;
           return { ...prev, profileImageUrls: newUrls };
         });
+        
         setUploadedPhotos(prev => {
           const newUploaded = [...prev];
           newUploaded[index] = true;
           return newUploaded;
         });
-      };
-      reader.readAsDataURL(file);
+  
+        toast.success('Photo uploaded successfully!');
+      } catch (error) {
+        console.error('Error uploading photo:', error);
+        toast.error('Failed to upload photo. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
   const nextStep = () => {
-    // Photo validation now at step 6
-    if (currentStep === 6 && !uploadedPhotos.every(p => p)) {
-      toast.error('Please upload all 3 photos to continue', {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      return;
+    // Photo validation - at least 3 photos required
+    if (currentStep === 6) {
+      const uploadedCount = uploadedPhotos.filter(p => p).length;
+      if (uploadedCount < 3) {
+        toast.error('Please upload at least 3 photos to continue', {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        return;
+      }
     }
     setCurrentStep(prev => Math.min(prev + 1, 8));
   };
@@ -192,6 +237,7 @@ export default function ProfileSetup() {
       // Update user document with profile data
       const userDocRef = doc(db, 'users', userId);
       await updateDoc(userDocRef, {
+        createdFor: profileData.createdFor, 
         height: profileData.height,
         religion: profileData.religion,
         motherTongue: profileData.motherTongue,
@@ -290,7 +336,7 @@ export default function ProfileSetup() {
           {/* Step 2: Basic Info */}
           {currentStep === 2 && (
             <div className="step">
-              <div className="progress-bar">
+              <div className="progress-bar" >
                 <div className="progress-step active">
                   <div className="progress-icon">
                     <img src="/images/basic_info.png" alt="Basic Info" />
@@ -632,68 +678,103 @@ export default function ProfileSetup() {
             </div>
           )}
 
-          {/* Step 6: Photo Upload (moved from step 5) */}
-          {currentStep === 6 && (
-            <div className="step">
-              <h2 className="section-title">Upload Your Photo</h2>
-              <p className="subtitle">We'd love to see you. Upload a photo for your dating journey.</p>
+          {/* Step 6: Photo Upload */}
+{currentStep === 6 && (
+  <div className="step">
+    <h2 className="section-title">Upload Your Photo</h2>
+    <p className="subtitle">We'd love to see you. Upload a photo for your dating journey.</p>
 
-              <div className="photo-upload-grid">
-                <div
-                  className={`photo-box-main ${profileData.profileImageUrls[0] ? 'has-image' : ''}`}
-                  onClick={() => document.getElementById('photo0').click()}
-                >
-                  <input
-                    type="file"
-                    id="photo0"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={(e) => handlePhotoUpload(e, 0)}
-                  />
-                  {profileData.profileImageUrls[0] ? (
-                    <img src={profileData.profileImageUrls[0]} alt="Upload 1" />
-                  ) : (
-                    <>
-                      <div className="photo-icon-large">+</div>
-                    </>
-                  )}
-                </div>
-                <div className="photo-upload-small">
-                  {[1, 2].map(index => (
-                    <div
-                      key={index}
-                      className={`photo-box-small ${profileData.profileImageUrls[index] ? 'has-image' : ''}`}
-                      onClick={() => document.getElementById(`photo${index}`).click()}
-                    >
-                      <input
-                        type="file"
-                        id={`photo${index}`}
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={(e) => handlePhotoUpload(e, index)}
-                      />
-                      {profileData.profileImageUrls[index] ? (
-                        <img src={profileData.profileImageUrls[index]} alt={`Upload ${index + 1}`} />
-                      ) : (
-                        <div className="photo-icon-small">+</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+    <div className="photo-upload-container">
+      {/* Main large photo */}
+      <div className="photo-main-section">
+        <div
+          className={`photo-box-main ${profileData.profileImageUrls[0] ? 'has-image' : ''}`}
+          onClick={() => document.getElementById('photo0').click()}
+        >
+          <input
+            type="file"
+            id="photo0"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => handlePhotoUpload(e, 0)}
+          />
+          {profileData.profileImageUrls[0] ? (
+            <>
+              <img src={profileData.profileImageUrls[0]} alt="Upload 1" />
+              <div className="photo-change-overlay">
+                <span className="camera-icon">📷</span>
+                <span>Change Photo</span>
               </div>
-
-              <div className="btn-group" style={{ marginTop: '30px' }}>
-                <button className="btn btn-secondary" onClick={skipStep}>Skip</button>
-                <button
-                  className="btn btn-primary"
-                  onClick={nextStep}
-                  disabled={!uploadedPhotos.every(p => p)}
-                >
-                  Continue
-                </button>
-              </div>
+            </>
+          ) : (
+            <div className="photo-placeholder">
+              <div className="photo-icon-large">+</div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Right side - 2 small photos */}
+      <div className="photo-right-section">
+        {[1, 2].map(index => (
+          <div
+            key={index}
+            className={`photo-box-small ${profileData.profileImageUrls[index] ? 'has-image' : ''}`}
+            onClick={() => document.getElementById(`photo${index}`).click()}
+          >
+            <input
+              type="file"
+              id={`photo${index}`}
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={(e) => handlePhotoUpload(e, index)}
+            />
+            {profileData.profileImageUrls[index] ? (
+              <img src={profileData.profileImageUrls[index]} alt={`Upload ${index + 1}`} />
+            ) : (
+              <div className="photo-icon-small">+</div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Bottom row - 3 small photos */}
+    <div className="photo-bottom-row">
+      {[3, 4, 5].map(index => (
+        <div
+          key={index}
+          className={`photo-box-bottom ${profileData.profileImageUrls[index] ? 'has-image' : ''}`}
+          onClick={() => document.getElementById(`photo${index}`).click()}
+        >
+          <input
+            type="file"
+            id={`photo${index}`}
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => handlePhotoUpload(e, index)}
+          />
+          {profileData.profileImageUrls[index] ? (
+            <img src={profileData.profileImageUrls[index]} alt={`Upload ${index + 1}`} />
+          ) : (
+            <div className="photo-icon-small">+</div>
+          )}
+        </div>
+      ))}
+    </div>
+
+    <div className="btn-group" style={{ marginTop: '30px' }}>
+      <button className="btn btn-secondary" onClick={skipStep}>Skip</button>
+      <button
+        className="btn btn-primary"
+        onClick={nextStep}
+        disabled={uploadedPhotos.filter(p => p).length < 3}
+      >
+        Continue
+      </button>
+    </div>
+  </div>
+)}
 
           {/* Step 7: About Me */}
           {currentStep === 7 && (
@@ -728,7 +809,9 @@ export default function ProfileSetup() {
           {/* Step 8: Success */}
           {currentStep === 8 && (
             <div className="step">
-              <div className="success-icon">🎉</div>
+              <div className="success-icon">
+                <img src="/images/setup.png" alt="Success" />
+              </div>
               <h1 className="title">You're All Set! 🎉</h1>
               <p className="subtitle">Your profile is ready. Start searching and find your perfect match!</p>
 
