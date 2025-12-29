@@ -31,7 +31,23 @@ export default function ProfileSetup() {
       tvShows: [], vacations: []
     },
     profileImageUrls: ['', '', ''],
-    aboutMe: ''
+    aboutMe: '',
+    bodyBuild: '',
+    // Personality Traits - Single select (String)
+    personalityType: '',
+    starSign: '',
+    drink: '',
+    smoke: '',
+    exercise: '',
+    // Personality Traits - Multi select (Array)
+    weatherType: [],
+    poison: [],
+    tripsType: [],
+    pets: [],
+    weekendNight: [],
+    weekendActivities: [],
+    eveningRoutine: [],
+    passions: []
   });
 
   // Height options
@@ -63,6 +79,203 @@ export default function ProfileSetup() {
     "Rome", "San Francisco", "Seoul", "Shanghai", "Singapore", "Sydney", 
     "Tokyo", "Toronto", "Trivandrum", "Vancouver", "Zurich"
   ];
+
+  // Physical Build Type options
+  const physicalBuildType = [
+    "Slim/Lean",
+    "Athletic/Toned",
+    "Average/Medium Build",
+    "Broad Shoulders",
+    "Muscular",
+    "Stocky/Heavily Built",
+    "Full-Figured/Plus-Size",
+    "Petite/Small Frame",
+    "Tall and Lean",
+    "Prefer Not to Say"
+  ];
+
+  // Personality Traits Map
+  const personalityTraitsMap = {
+    personalityType: ["Introvert", "Extrovert", "Ambivert"],
+    starSign: [
+      "Aries",
+      "Taurus",
+      "Gemini",
+      "Cancer",
+      "Leo",
+      "Virgo",
+      "Libra",
+      "Scorpio",
+      "Sagittarius",
+      "Capricorn",
+      "Aquarius",
+      "Pisces"
+    ],
+    drink: [
+      "Not at all",
+      "On special occasions",
+      "Once in a week",
+      "Every day"
+    ],
+    smoke: ["Fancy", "Occasionally", "Not interested"],
+    exercise: ["Daily", "Often", "Rarely", "No"],
+    weatherType: [
+      "Sunny and warm",
+      "Cloudy",
+      "Cool for a cozy vibe",
+      "Rainy",
+      "Snowy and cold",
+      "Breezy",
+      "Hot or tropical"
+    ],
+    poison: [
+      "Tea",
+      "Coffee",
+      "Beer",
+      "Vodka",
+      "Gin",
+      "Whiskey",
+      "Rum",
+      "Bandy",
+      "Teetotaller"
+    ],
+    tripsType: ["A solo trip", "a family trip", "friend's trip"],
+    pets: [
+      "Dog",
+      "Cat",
+      "Fish",
+      "Bird",
+      "Rabbit",
+      "Hamster",
+      "Guinea Pig",
+      "Lizard",
+      "Snake",
+      "Turtle",
+      "Ferret",
+      "Hedgehog",
+      "Doesn't like pets"
+    ],
+    weekendNight: [
+      "Party night",
+      "A candle light dinner",
+      "Movie night",
+      "Night out",
+      "A cosy night at home"
+    ],
+    weekendActivities: [
+      "Watching TV",
+      "Movies",
+      "Restaurants",
+      "Hike",
+      "Exercising",
+      "Time with friends",
+      "Time with family",
+      "Shopping",
+      "Browsing online",
+      "Weekend sleep"
+    ],
+    eveningRoutine: ["Cook at home", "Dine out", "Movie", "Reading"],
+    passions: [
+      "Painting",
+      "Drawing",
+      "Writing",
+      "Photography",
+      "Playing instruments",
+      "Composing",
+      "Singing",
+      "Acting",
+      "Performing Arts",
+      "Crafting",
+      "Graphic Design",
+      "Illustration",
+      "Fashion Design",
+      "Filmmaking",
+      "Directing",
+      "Dancing",
+      "Choreography",
+      "Reading",
+      "Learning new languages",
+      "Studying history",
+      "Philosophy",
+      "Science",
+      "Innovation",
+      "Technology",
+      "Coding",
+      "Psychology",
+      "Political activism",
+      "Entrepreneurship",
+      "Business development",
+      "Running",
+      "Yoga",
+      "Pilates",
+      "Weightlifting",
+      "Body building",
+      "Sports",
+      "Swimming",
+      "Water sports",
+      "Cycling",
+      "Mountain biking",
+      "Rock climbing",
+      "Hiking",
+      "Surfing",
+      "Skateboarding",
+      "Martial arts",
+      "Zumba",
+      "Charity work",
+      "Animal rescue and care",
+      "Teaching",
+      "Self-improvement and growth",
+      "Mindfulness or meditation",
+      "Investing",
+      "Public speaking",
+      "Leadership development",
+      "Networking",
+      "Meeting people",
+      "Spirituality",
+      "Religion",
+      "Business",
+      "Marketing",
+      "Branding",
+      "Real estate investment",
+      "Stock trading",
+      "Investments",
+      "Social media",
+      "Digital marketing",
+      "Camping",
+      "Fishing",
+      "Hunting",
+      "Gardening",
+      "Farming",
+      "Bird watching",
+      "Beach-combing",
+      "Kayaking",
+      "Canoeing",
+      "Paddle boarding",
+      "Stargazing",
+      "Astronomy",
+      "Gaming board games",
+      "Cyber-security",
+      "Ethical hacking",
+      "Podcasting",
+      "Content creation",
+      "Graphic design",
+      "Animation",
+      "AI and machine learning",
+      "Parenting",
+      "Family",
+      "Romantic relationships",
+      "Pet care",
+      "Mentoring",
+      "Coaching",
+      "Fashion",
+      "Styling",
+      "Home décor",
+      "Interior design",
+      "Cooking",
+      "Baking",
+      "Public service"
+    ]
+  };
 
   // Lifestyle data
   const lifestyleCategories = {
@@ -108,6 +321,21 @@ export default function ProfileSetup() {
 
   const handleLifestyleToggle = (category, option) => {
     setProfileData(prev => {
+      // Single-select fields should use handleLifestyleSingleSelect, but just in case
+      const isSingleSelect = ['relaxWay', 'sleepingHabit', 'childrenView'].includes(category);
+      if (isSingleSelect) {
+        const currentSelection = prev.selectedLikesInvolvesMap[category] || [];
+        const isSelected = currentSelection.includes(option);
+        return {
+          ...prev,
+          selectedLikesInvolvesMap: {
+            ...prev.selectedLikesInvolvesMap,
+            [category]: isSelected ? [] : [option] // Array with single item or empty array
+          }
+        };
+      }
+      
+      // Multi-select fields
       const currentSelections = prev.selectedLikesInvolvesMap[category] || [];
       const isSelected = currentSelections.includes(option);
       
@@ -119,6 +347,44 @@ export default function ProfileSetup() {
             ? currentSelections.filter(item => item !== option)
             : [...currentSelections, option]
         }
+      };
+    });
+  };
+
+  const handleLifestyleSingleSelect = (category, option) => {
+    setProfileData(prev => {
+      const currentSelection = prev.selectedLikesInvolvesMap[category] || [];
+      const isSelected = currentSelection.includes(option);
+      
+      return {
+        ...prev,
+        selectedLikesInvolvesMap: {
+          ...prev.selectedLikesInvolvesMap,
+          [category]: isSelected ? [] : [option] // Array with single item or empty array
+        }
+      };
+    });
+  };
+
+  // Handler for personality traits single-select (String fields)
+  const handlePersonalitySingleSelect = (field, value) => {
+    setProfileData(prev => ({
+      ...prev,
+      [field]: prev[field] === value ? '' : value
+    }));
+  };
+
+  // Handler for personality traits multi-select (Array fields)
+  const handlePersonalityMultiSelect = (field, option) => {
+    setProfileData(prev => {
+      const currentSelections = prev[field] || [];
+      const isSelected = currentSelections.includes(option);
+      
+      return {
+        ...prev,
+        [field]: isSelected
+          ? currentSelections.filter(item => item !== option)
+          : [...currentSelections, option]
       };
     });
   };
@@ -251,6 +517,22 @@ export default function ProfileSetup() {
         selectedLikesInvolvesMap: profileData.selectedLikesInvolvesMap,
         profileImageUrls: profileData.profileImageUrls.filter(url => url !== ''),
         aboutMe: profileData.aboutMe,
+        bodyBuild: profileData.bodyBuild,
+        // Personality Traits - Single Select (String)
+        personalityType: profileData.personalityType || '',
+        starSign: profileData.starSign || '',
+        drink: profileData.drink || '',
+        smoke: profileData.smoke || '',
+        exercise: profileData.exercise || '',
+        // Personality Traits - Multi Select (Array)
+        weatherType: profileData.weatherType || [],
+        poison: profileData.poison || [],
+        tripsType: profileData.tripsType || [],
+        pets: profileData.pets || [],
+        weekendNight: profileData.weekendNight || [],
+        weekendActivities: profileData.weekendActivities || [],
+        eveningRoutine: profileData.eveningRoutine || [],
+        passions: profileData.passions || [],
         updatedAt: new Date()
       });
 
@@ -272,6 +554,73 @@ export default function ProfileSetup() {
     navigate('/dashboard');
   };
 
+  // Render progress bar based on current step
+  const renderProgressBar = () => {
+    if (currentStep === 1 || currentStep >= 8) return null;
+    
+    const getStepStatus = (stepNumber) => {
+      if (currentStep === stepNumber) return 'active';
+      if (currentStep > stepNumber) return 'completed';
+      return '';
+    };
+
+    const getImageSrc = (baseName, stepNumber) => {
+      const status = getStepStatus(stepNumber);
+      if (status === 'active' || status === 'completed') {
+        return `/images/${baseName}_selected.png`;
+      }
+      // For basic_info, use basic_info.png for unselected, others use _unselected
+      if (baseName === 'basic_info') {
+        return `/images/${baseName}.png`;
+      }
+      return `/images/${baseName}_unselected.png`;
+    };
+
+    // Calculate progress width based on current step
+    // The line fills from center of first icon (25px) to center of the icon before current step
+    // With 4 icons evenly spaced, each segment is approximately 33.33% of the total width
+    const getProgressWidth = () => {
+      if (currentStep === 2) return '0px'; // Basic Info - no segments filled yet
+      if (currentStep === 3) return 'calc(33.33% - 25px)'; // Location - fill from icon 1 to icon 2
+      if (currentStep === 4) return 'calc(66.66% - 25px)'; // Education - fill from icon 1 to icon 3
+      if (currentStep === 5) return 'calc(100% - 50px)'; // Lifestyle - fill from icon 1 to icon 4
+      return '0px';
+    };
+
+    return (
+      <div className="progress-bar" data-step={currentStep}>
+        <div className={`progress-step ${getStepStatus(2)}`}>
+          <div className="progress-icon">
+            <img src={getImageSrc('basic_info', 2)} alt="Basic Info" />
+          </div>
+          <span className="progress-label">Basic Info</span>
+        </div>
+        <div className={`progress-step ${getStepStatus(3)}`}>
+          <div className="progress-icon">
+            <img src={getImageSrc('location', 3)} alt="Location" />
+          </div>
+          <span className="progress-label">Location</span>
+        </div>
+        <div className={`progress-step ${getStepStatus(4)}`}>
+          <div className="progress-icon">
+            <img src={getImageSrc('education', 4)} alt="Education" />
+          </div>
+          <span className="progress-label">Education</span>
+        </div>
+        <div className={`progress-step ${getStepStatus(5)}`}>
+          <div className="progress-icon">
+            <img src={getImageSrc('lifestyle', 5)} alt="Lifestyle" />
+          </div>
+          <span className="progress-label">Lifestyle</span>
+        </div>
+        <div 
+          className="progress-line-fill" 
+          style={{ width: getProgressWidth() }}
+        ></div>
+      </div>
+    );
+  };
+
   return (
     <div className="profile-setup-page">
       <header className="ps-header">
@@ -279,8 +628,21 @@ export default function ProfileSetup() {
       </header>
 
       <div className="ps-container">
+        {/* Progress Section - Above the card */}
+        {currentStep > 1 && currentStep < 8 && (
+          <div className="progress-section">
+            <h1 className="progress-title">Create Your Profile</h1>
+            <p className="progress-subtitle">Let's set up your profile to find the perfect match</p>
+            {renderProgressBar()}
+          </div>
+        )}
+
         <div className="ps-card">
-          {currentStep > 1 && currentStep < 8 && <button className="back-btn" onClick={goBack}>←</button>}
+          {currentStep > 1 && currentStep < 8 && (
+            <button className="back-btn" onClick={goBack}>
+              <img src="/images/back.png" alt="Back" />
+            </button>
+          )}
 
           {/* Step 1: Profile For & Interests */}
           {currentStep === 1 && (
@@ -336,33 +698,6 @@ export default function ProfileSetup() {
           {/* Step 2: Basic Info */}
           {currentStep === 2 && (
             <div className="step">
-              <div className="progress-bar" >
-                <div className="progress-step active">
-                  <div className="progress-icon">
-                    <img src="/images/basic_info.png" alt="Basic Info" />
-                  </div>
-                  <span className="progress-label">Basic Info</span>
-                </div>
-                <div className="progress-step">
-                  <div className="progress-icon">
-                    <img src="/images/location.png" alt="Location" />
-                  </div>
-                  <span className="progress-label">Location</span>
-                </div>
-                <div className="progress-step">
-                  <div className="progress-icon">
-                    <img src="/images/education.png" alt="Education" />
-                  </div>
-                  <span className="progress-label">Education</span>
-                </div>
-                <div className="progress-step">
-                  <div className="progress-icon">
-                    <img src="/images/lifestyle.png" alt="Lifestyle" />
-                  </div>
-                  <span className="progress-label">Lifestyle</span>
-                </div>
-              </div>
-
               <h2 className="section-title"> Basic Info</h2>
 
               <div className="two-col">
@@ -425,33 +760,6 @@ export default function ProfileSetup() {
           {/* Step 3: Location */}
           {currentStep === 3 && (
             <div className="step">
-              <div className="progress-bar">
-                <div className="progress-step completed">
-                  <div className="progress-icon">
-                    <img src="/images/basic_info.png" alt="Basic Info" />
-                  </div>
-                  <span className="progress-label">Basic Info</span>
-                </div>
-                <div className="progress-step active">
-                  <div className="progress-icon">
-                    <img src="/images/location.png" alt="Location" />
-                  </div>
-                  <span className="progress-label">Location</span>
-                </div>
-                <div className="progress-step">
-                  <div className="progress-icon">
-                    <img src="/images/education.png" alt="Education" />
-                  </div>
-                  <span className="progress-label">Education</span>
-                </div>
-                <div className="progress-step">
-                  <div className="progress-icon">
-                    <img src="/images/lifestyle.png" alt="Lifestyle" />
-                  </div>
-                  <span className="progress-label">Lifestyle</span>
-                </div>
-              </div>
-
               <h2 className="section-title"> Location</h2>
 
               <div className="form-group">
@@ -510,33 +818,6 @@ export default function ProfileSetup() {
           {/* Step 4: Education & Career */}
           {currentStep === 4 && (
             <div className="step">
-              <div className="progress-bar">
-                <div className="progress-step completed">
-                  <div className="progress-icon">
-                    <img src="/images/basic_info.png" alt="Basic Info" />
-                  </div>
-                  <span className="progress-label">Basic Info</span>
-                </div>
-                <div className="progress-step completed">
-                  <div className="progress-icon">
-                    <img src="/images/location.png" alt="Location" />
-                  </div>
-                  <span className="progress-label">Location</span>
-                </div>
-                <div className="progress-step active">
-                  <div className="progress-icon">
-                    <img src="/images/education.png" alt="Education" />
-                  </div>
-                  <span className="progress-label">Education</span>
-                </div>
-                <div className="progress-step">
-                  <div className="progress-icon">
-                    <img src="/images/lifestyle.png" alt="Lifestyle" />
-                  </div>
-                  <span className="progress-label">Lifestyle</span>
-                </div>
-              </div>
-
               <h2 className="section-title"> Education & Career</h2>
 
               <div className="form-group">
@@ -616,47 +897,45 @@ export default function ProfileSetup() {
           {/* Step 5: Lifestyle (moved from step 6) */}
           {currentStep === 5 && (
             <div className="step">
-              <div className="progress-bar">
-                <div className="progress-step completed">
-                  <div className="progress-icon">
-                    <img src="/images/basic_info.png" alt="Basic Info" />
-                  </div>
-                  <span className="progress-label">Basic Info</span>
-                </div>
-                <div className="progress-step completed">
-                  <div className="progress-icon">
-                    <img src="/images/location.png" alt="Location" />
-                  </div>
-                  <span className="progress-label">Location</span>
-                </div>
-                <div className="progress-step completed">
-                  <div className="progress-icon">
-                    <img src="/images/education.png" alt="Education" />
-                  </div>
-                  <span className="progress-label">Education</span>
-                </div>
-                <div className="progress-step active">
-                  <div className="progress-icon">
-                    <img src="/images/lifestyle.png" alt="Lifestyle" />
-                  </div>
-                  <span className="progress-label">Lifestyle</span>
-                </div>
-              </div>
-
               <h2 className="section-title">Lifestyle</h2>
 
               <div className="lifestyle-container">
-                {Object.entries(lifestyleCategories).map(([key, options]) => (
+                {/* Physical Build Type - Single Select */}
+                <div className="lifestyle-category">
+                  <label className="form-label">Physical Build Type</label>
+                  <div className="radio-group">
+                    {physicalBuildType.map(option => (
+                      <div className="radio-option" key={option}>
+                        <input
+                          type="radio"
+                          name="bodyBuild"
+                          id={`bodyBuild-${option}`}
+                          checked={profileData.bodyBuild === option}
+                          onChange={() => handleChange('bodyBuild', option)}
+                        />
+                        <label htmlFor={`bodyBuild-${option}`}>{option}</label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Personality Traits - Single Select Fields */}
+                {Object.entries(personalityTraitsMap).filter(([key]) => 
+                  ['personalityType', 'starSign', 'drink', 'smoke', 'exercise'].includes(key)
+                ).map(([key, options]) => (
                   <div className="lifestyle-category" key={key}>
-                    <label className="form-label">{key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}</label>
-                    <div className="checkbox-group">
+                    <label className="form-label">
+                      {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
+                    </label>
+                    <div className="radio-group">
                       {options.map(option => (
-                        <div className="checkbox-option" key={option}>
+                        <div className="radio-option" key={option}>
                           <input
-                            type="checkbox"
+                            type="radio"
+                            name={key}
                             id={`${key}-${option}`}
-                            checked={profileData.selectedLikesInvolvesMap[key]?.includes(option) || false}
-                            onChange={() => handleLifestyleToggle(key, option)}
+                            checked={profileData[key] === option}
+                            onChange={() => handlePersonalitySingleSelect(key, option)}
                           />
                           <label htmlFor={`${key}-${option}`}>{option}</label>
                         </div>
@@ -664,6 +943,69 @@ export default function ProfileSetup() {
                     </div>
                   </div>
                 ))}
+
+                {/* Personality Traits - Multi Select Fields */}
+                {Object.entries(personalityTraitsMap).filter(([key]) => 
+                  ['weatherType', 'poison', 'tripsType', 'pets', 'weekendNight', 'weekendActivities', 'eveningRoutine', 'passions'].includes(key)
+                ).map(([key, options]) => (
+                  <div className="lifestyle-category" key={key}>
+                    <label className="form-label">
+                      {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
+                    </label>
+                    <div className="checkbox-group">
+                      {options.map(option => {
+                        const currentSelections = profileData[key] || [];
+                        const isSelected = currentSelections.includes(option);
+                        
+                        return (
+                          <div className="checkbox-option" key={option}>
+                            <input
+                              type="checkbox"
+                              id={`${key}-${option}`}
+                              checked={isSelected}
+                              onChange={() => handlePersonalityMultiSelect(key, option)}
+                            />
+                            <label htmlFor={`${key}-${option}`}>{option}</label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                {Object.entries(lifestyleCategories).map(([key, options]) => {
+                  const isSingleSelect = ['relaxWay', 'sleepingHabit', 'childrenView'].includes(key);
+                  
+                  return (
+                    <div className="lifestyle-category" key={key}>
+                      <label className="form-label">{key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}</label>
+                      <div className={isSingleSelect ? "radio-group" : "checkbox-group"}>
+                        {options.map(option => {
+                          const currentValue = profileData.selectedLikesInvolvesMap[key] || [];
+                          const isSelected = isSingleSelect 
+                            ? currentValue.includes(option)
+                            : currentValue.includes(option) || false;
+                          
+                          return (
+                            <div className={isSingleSelect ? "radio-option" : "checkbox-option"} key={option}>
+                              <input
+                                type={isSingleSelect ? "radio" : "checkbox"}
+                                name={isSingleSelect ? key : undefined}
+                                id={`${key}-${option}`}
+                                checked={isSelected}
+                                onChange={() => isSingleSelect 
+                                  ? handleLifestyleSingleSelect(key, option)
+                                  : handleLifestyleToggle(key, option)
+                                }
+                              />
+                              <label htmlFor={`${key}-${option}`}>{option}</label>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="btn-group">
