@@ -426,7 +426,7 @@ setLoadingEmail(true);
                 <div id="recaptcha-container"></div>
               </div>
               <p className="signup-link">
-                New to Platform? <a href="/signup">Sign up</a>
+                New to Platform? <a href="/create-account">Sign up</a>
               </p>
             </>
           )}
