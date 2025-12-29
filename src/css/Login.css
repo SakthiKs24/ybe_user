@@ -19,7 +19,7 @@
     border: 2px solid #FF027DA8;
     border-radius: 30px;
     padding: 50px 60px;
-    max-width: 750px;
+    max-width: 50%;
     width: 90%;
     position: relative;
     box-shadow: 0 20px 60px rgba(255, 2, 125, 0.3);
@@ -99,7 +99,7 @@
   .login-btn {
     width: 50%;
     padding: 18px;
-    margin-left: 150px;
+    /* margin-left: 150px; */
     /* background: linear-gradient(180deg, #FF027D 0%, #FF2149 100%); */
     background:linear-gradient(180deg, #FF003F 0%, #FF5300 100%);
     color: white;

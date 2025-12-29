@@ -180,13 +180,15 @@
 }
 
 .offer-banner {
-  background: #FFE8F5;
-  color: #FF2B45;
+  background: #FFD9D9;
+  color: #FF1034;
   padding: 15px 30px;
   border-radius: 10px;
   text-align: center;
+  font-family: 'Poppins', sans-serif;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 500;
+  border-radius: 40px;
   margin-bottom: 40px;
   max-width: 800px;
   margin-left: auto;
@@ -235,13 +237,14 @@
   background: #EDF1F4;
 }
 
-.header-platinum {
+.header-platinum,
+.header-premium {
   background: #FFEAB1;
 }
 
 .plan-icon-large {
   width: 120px;
-  height: 120px;
+  height: 72px;
   object-fit: contain;
 }
 
@@ -256,27 +259,28 @@
 }
 
 .feature-title {
+  font-family: 'Poppins', sans-serif;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   padding: 8px 12px;
   border-radius: 5px;
   margin-bottom: 12px;
   text-transform: uppercase;
+  text-align: center;
+  color: #FF482F;
 }
 
 .title-plus {
-  background: #FFE8F5;
-  color: #333;
+  background: #FFD0D8;
 }
 
 .title-gold {
-  background: #FFF8E1;
-  color: #333;
+  background: #EDF1F4;
 }
 
-.title-platinum {
-  background: #F5F5F5;
-  color: #333;
+.title-platinum,
+.title-premium {
+  background: #FFEAB1;
 }
 
 .feature-list {
@@ -321,19 +325,21 @@
 .plan-button {
   width: 100%;
   padding: 15px;
-  background: #FF2B45;
+  background: linear-gradient(180deg, #FF1C51 0%, #FF6D11 100%);
   color: white;
   border: none;
   border-radius: 0 0 15px 15px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: all 0.3s;
   margin-top: auto;
 }
 
 .plan-button:hover {
-  background: #E0243D;
+  background: linear-gradient(180deg, #E01A48 0%, #E0620F 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 28, 81, 0.4);
 }
 
 /* Responsive Design */

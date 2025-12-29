@@ -57,7 +57,7 @@ export default function Homepage() {
               alt="Happy couple"
             />
 
-            <div className="stats-badge">
+            {/* <div className="stats-badge">
               <div className="stats-icon">
                 <img src="/images/profile_badge.png" alt="Profile Badge" />
               </div>
@@ -66,7 +66,7 @@ export default function Homepage() {
                 <div className="stats-number">20,590</div>
                 <div className="stats-label">Verified Profiles</div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </main>

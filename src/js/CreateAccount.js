@@ -21,7 +21,7 @@ export default function CreateAccount() {
     confirmPassword: '',
     dateOfBirth: '',
     gender: '',
-    genderPreference: ''  
+    genderPreference: ''
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -81,7 +81,7 @@ export default function CreateAccount() {
 
     if (!formData.genderPreference) {
       newErrors.genderPreference = 'Please select gender preference';
-    }    
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -96,7 +96,7 @@ export default function CreateAccount() {
         where('email', '==', email.trim().toLowerCase())
       );
       const emailSnapshot = await getDocs(emailQuery);
-      
+
       if (!emailSnapshot.empty) {
         return { exists: true, type: 'email' };
       }
@@ -107,7 +107,7 @@ export default function CreateAccount() {
         where('phoneNumber', '==', phoneNumber)
       );
       const phoneSnapshot = await getDocs(phoneQuery);
-      
+
       if (!phoneSnapshot.empty) {
         return { exists: true, type: 'phone' };
       }
@@ -124,37 +124,37 @@ export default function CreateAccount() {
     try {
       // ✅ Correct path
       const counterRef = doc(db, 'users', 'RegisteredUsers');
-  
+
       const userId = await runTransaction(db, async (transaction) => {
         const snapshot = await transaction.get(counterRef);
-  
+
         if (!snapshot.exists()) {
           throw new Error('RegisteredUsers counter document not found');
         }
-  
+
         const currentCount = snapshot.data().totalCount || 0;
-  
+
         // ✅ increment ONCE
         const newCount = currentCount + 1;
-  
+
         // ✅ generate ID from SAME value
         const newUserId = `YBE${String(newCount).padStart(8, '0')}`;
-  
+
         // ✅ update SAME document
         transaction.update(counterRef, {
           totalCount: newCount
         });
-  
+
         return newUserId;
       });
-  
+
       return userId;
     } catch (error) {
       console.error('Error generating userId:', error);
       throw error;
     }
   };
-  
+
 
   const handleSubmit = async () => {
     if (!validateForm()) {
@@ -173,7 +173,7 @@ export default function CreateAccount() {
 
       // Check if user already exists
       const existingUser = await checkExistingUser(formData.email, fullPhoneNumber);
-      
+
       if (existingUser.exists) {
         if (existingUser.type === 'email') {
           setErrors({ email: 'This email is already registered' });
@@ -200,7 +200,7 @@ export default function CreateAccount() {
       );
 
       const user = userCredential.user;
-      
+
       // Generate userId from RegisteredUsers
       const userId = await generateUserId();
       const currentDate = new Date().toISOString().split('T')[0];
@@ -305,7 +305,7 @@ export default function CreateAccount() {
 
     } catch (error) {
       console.error('Sign up error:', error);
-      
+
       switch (error.code) {
         case 'auth/email-already-in-use':
           setErrors({ email: 'This email is already registered' });
@@ -391,17 +391,12 @@ export default function CreateAccount() {
             <div className="form-group">
               <div>
                 <label className="form-label">Mobile Number</label>
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div className="phone-input-wrapper">
                   <select
-                    className="form-input"
+                    className="country-code-select"
                     value={formData.countryCode}
                     onChange={(e) => handleChange('countryCode', e.target.value)}
                     disabled={loading}
-                    style={{ 
-                      width: '100px', 
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      fontSize: '14px'
-                    }}
                   >
                     {COUNTRIES_DATA.map((country) => (
                       <option key={country.code} value={country.dial_code}>
@@ -409,16 +404,19 @@ export default function CreateAccount() {
                       </option>
                     ))}
                   </select>
+
                   <input
                     type="tel"
-                    className="form-input"
-                    value={formData.mobile}
-                    onChange={(e) => handleChange('mobile', e.target.value.replace(/\D/g, ''))}
+                    className="phone-number-input"
                     placeholder="Enter mobile number"
+                    value={formData.mobile}
+                    onChange={(e) =>
+                      handleChange('mobile', e.target.value.replace(/\D/g, ''))
+                    }
                     disabled={loading}
-                    style={{ flex: 1 }}
                   />
                 </div>
+
                 {errors.mobile && (
                   <span style={{ color: '#FF027D', fontSize: '13px', marginTop: '5px', display: 'block' }}>
                     {errors.mobile}
@@ -525,8 +523,8 @@ export default function CreateAccount() {
 
             </div>
 
-            <button 
-              onClick={handleSubmit} 
+            <button
+              onClick={handleSubmit}
               className="signup-submit-btn"
               disabled={loading}
               style={{

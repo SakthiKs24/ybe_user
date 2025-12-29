@@ -161,68 +161,43 @@ export default function Upgrade() {
     const name = planName.toLowerCase();
     if (name.includes('plus')) return 'plus';
     if (name.includes('gold')) return 'gold';
-    if (name.includes('platinum') || name.includes('premium')) return 'platinum';
+    if (name.includes('platinum') || name.includes('premium')) return 'premium';
     return 'plus';
   };
 
   const planFeatures = {
-    plus: {
-      upgradeLikes: [
-        { text: 'Unlimited likes', enabled: true },
-        { text: 'See who likes you', enabled: false },
-        { text: 'Priority Likes', enabled: false, subtitle: 'Your likes will be seen sooner with priority likes.' }
-      ],
-      enhanceExperience: [
-        { text: 'Unlimited Rewinds', enabled: true },
-        { text: '1 free Boost per month', enabled: true },
-        { text: '3 free super likes per week', enabled: true },
-        { text: '3 free first impressions/week', enabled: false, subtitle: 'Stand out with a message before matching.' }
-      ],
-      premiumDiscovery: [
-        { text: 'Unlimited Rewinds', enabled: true },
-        { text: '1 free Boost per month', enabled: true },
-        { text: '3 free super likes per week', enabled: true },
-        { text: '3 free first impressions/week', enabled: false, subtitle: 'Stand out with a message before matching.' }
-      ]
-    },
-    gold: {
-      upgradeLikes: [
-        { text: 'Unlimited likes', enabled: true },
-        { text: 'See who likes you', enabled: true },
-        { text: 'Priority Likes', enabled: false, subtitle: 'Your likes will be seen sooner with priority likes.' }
-      ],
-      enhanceExperience: [
-        { text: 'Unlimited Rewinds', enabled: true },
-        { text: '1 free Boost per month', enabled: true },
-        { text: '3 free super likes per week', enabled: true },
-        { text: '3 free first impressions/week', enabled: false, subtitle: 'Stand out with a message before matching.' }
-      ],
-      premiumDiscovery: [
-        { text: 'Unlimited Rewinds', enabled: true },
-        { text: '1 free Boost per month', enabled: true },
-        { text: '3 free super likes per week', enabled: true },
-        { text: '3 free first impressions/week', enabled: false, subtitle: 'Stand out with a message before matching.' }
-      ]
-    },
-    platinum: {
-      upgradeLikes: [
-        { text: 'Unlimited likes', enabled: true },
-        { text: 'See who likes you', enabled: true },
-        { text: 'Priority Likes', enabled: true, subtitle: 'Your likes will be seen sooner with priority likes.' }
-      ],
-      enhanceExperience: [
-        { text: 'Unlimited Rewinds', enabled: true },
-        { text: '1 free Boost per month', enabled: true },
-        { text: '3 free super likes per week', enabled: true },
-        { text: '3 free first impressions/week', enabled: true, subtitle: 'Stand out with a message before matching.' }
-      ],
-      premiumDiscovery: [
-        { text: 'Unlimited Rewinds', enabled: true },
-        { text: '1 free Boost per month', enabled: true },
-        { text: '3 free super likes per week', enabled: true },
-        { text: '3 free first impressions/week', enabled: true, subtitle: 'Stand out with a message before matching.' }
-      ]
-    }
+    plus: [
+      { text: 'One month Subscription', enabled: true },
+      { text: 'Unlimited Likes', enabled: true },
+      { text: 'Unlimited Swipes', enabled: true },
+      { text: 'Unlimited Messages', enabled: true },
+      { text: 'See who liked you', enabled: true },
+      { text: 'Open to match page', enabled: true },
+      { text: 'Get a free star on the profile', enabled: false }
+    ],
+    premium: [
+      { text: 'Three month Subscription', enabled: true },
+      { text: 'Six month Subscription', enabled: false },
+      { text: 'Unlimited Likes', enabled: true },
+      { text: 'Unlimited Swipes', enabled: true },
+      { text: 'Unlimited Messages', enabled: true },
+      { text: 'See who liked you', enabled: true },
+      { text: 'Open to match page', enabled: true },
+      { text: 'Get a free star on the profile', enabled: true },
+      { text: 'Get two star on the profile.', enabled: false },
+      { text: 'One Profile boost to enhance the profile', enabled: true },
+      { text: 'Three Profile boost to enhance the profile', enabled: false }
+    ],
+    gold: [
+      { text: 'Six month Subscription', enabled: true },
+      { text: 'Unlimited Likes', enabled: true },
+      { text: 'Unlimited Swipes', enabled: true },
+      { text: 'Unlimited Messages', enabled: true },
+      { text: 'See who liked you', enabled: true },
+      { text: 'Open to match page', enabled: true },
+      { text: 'Get two star on the profile.', enabled: true },
+      { text: 'Three Profile boost to enhance the profile', enabled: true }
+    ]
   };
 
   const getPlanDisplayName = (planName, type) => {
@@ -289,8 +264,12 @@ export default function Upgrade() {
             const badge = getPlanBadge(type);
 
             const planImage = type === 'plus' ? '/images/ybe_plus.png' 
-              : type === 'gold' ? '/images/ybe_gold.png' 
+              : type === 'premium' ? '/images/ybe_gold.png' 
               : '/images/ybe_platinum.png';
+            
+            const planTitle = type === 'plus' ? 'Upgrade to Plus' 
+              : type === 'premium' ? 'Upgrade to Premium'
+              : 'Upgrade to Gold';
 
             return (
               <div key={index} className={`plan-card plan-${type}`}>
@@ -300,9 +279,9 @@ export default function Upgrade() {
 
                 <div className="plan-body">
                   <div className="feature-section">
-                    <div className={`feature-title title-${type}`}>Upgrade your likes:</div>
+                    <div className={`feature-title title-${type}`}>{planTitle}</div>
                     <div className="feature-list">
-                      {features.upgradeLikes.map((feature, idx) => (
+                      {features.map((feature, idx) => (
                         <div key={idx} className="feature-item">
                           {feature.enabled ? (
                             <span className="checkmark">✓</span>
@@ -310,47 +289,6 @@ export default function Upgrade() {
                             <span className="lock">🔒</span>
                           )}
                           <span className={feature.enabled ? '' : 'disabled'}>{feature.text}</span>
-                          {feature.subtitle && (
-                            <div className="feature-subtitle">{feature.subtitle}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="feature-section">
-                    <div className={`feature-title title-${type}`}>Enhance your Experience:</div>
-                    <div className="feature-list">
-                      {features.enhanceExperience.map((feature, idx) => (
-                        <div key={idx} className="feature-item">
-                          {feature.enabled ? (
-                            <span className="checkmark">✓</span>
-                          ) : (
-                            <span className="lock">🔒</span>
-                          )}
-                          <span className={feature.enabled ? '' : 'disabled'}>{feature.text}</span>
-                          {feature.subtitle && (
-                            <div className="feature-subtitle">{feature.subtitle}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="feature-section">
-                    <div className={`feature-title title-${type}`}>Premium Discovery:</div>
-                    <div className="feature-list">
-                      {features.premiumDiscovery.map((feature, idx) => (
-                        <div key={idx} className="feature-item">
-                          {feature.enabled ? (
-                            <span className="checkmark">✓</span>
-                          ) : (
-                            <span className="lock">🔒</span>
-                          )}
-                          <span className={feature.enabled ? '' : 'disabled'}>{feature.text}</span>
-                          {feature.subtitle && (
-                            <div className="feature-subtitle">{feature.subtitle}</div>
-                          )}
                         </div>
                       ))}
                     </div>
