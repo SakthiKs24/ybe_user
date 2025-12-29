@@ -18,6 +18,7 @@ export default function ProfileSetup() {
     lookingFor: '',
     height: '',
     religion: '',
+    community: '',
     motherTongue: '',
     originCountry: '',
     settledCountry: '',
@@ -33,21 +34,23 @@ export default function ProfileSetup() {
     profileImageUrls: ['', '', ''],
     aboutMe: '',
     bodyBuild: '',
-    // Personality Traits - Single select (String)
-    personalityType: '',
-    starSign: '',
-    drink: '',
-    smoke: '',
-    exercise: '',
-    // Personality Traits - Multi select (Array)
-    weatherType: [],
-    poison: [],
-    tripsType: [],
-    pets: [],
-    weekendNight: [],
-    weekendActivities: [],
-    eveningRoutine: [],
-    passions: []
+    selectedPersonalityTraitsMap: {
+      // Single select (String)
+      personalityType: '',
+      starSign: '',
+      drink: '',
+      smoke: '',
+      exercise: '',
+      // Multi select (Array)
+      weatherType: [],
+      poison: [],
+      tripsType: [],
+      pets: [],
+      weekendNight: [],
+      weekendActivities: [],
+      eveningRoutine: [],
+      passions: []
+    }
   });
 
   // Height options
@@ -370,21 +373,27 @@ export default function ProfileSetup() {
   const handlePersonalitySingleSelect = (field, value) => {
     setProfileData(prev => ({
       ...prev,
-      [field]: prev[field] === value ? '' : value
+      selectedPersonalityTraitsMap: {
+        ...prev.selectedPersonalityTraitsMap,
+        [field]: prev.selectedPersonalityTraitsMap[field] === value ? '' : value
+      }
     }));
   };
 
   // Handler for personality traits multi-select (Array fields)
   const handlePersonalityMultiSelect = (field, option) => {
     setProfileData(prev => {
-      const currentSelections = prev[field] || [];
+      const currentSelections = prev.selectedPersonalityTraitsMap[field] || [];
       const isSelected = currentSelections.includes(option);
       
       return {
         ...prev,
-        [field]: isSelected
-          ? currentSelections.filter(item => item !== option)
-          : [...currentSelections, option]
+        selectedPersonalityTraitsMap: {
+          ...prev.selectedPersonalityTraitsMap,
+          [field]: isSelected
+            ? currentSelections.filter(item => item !== option)
+            : [...currentSelections, option]
+        }
       };
     });
   };
@@ -506,6 +515,7 @@ export default function ProfileSetup() {
         createdFor: profileData.createdFor, 
         height: profileData.height,
         religion: profileData.religion,
+        community: profileData.community,
         motherTongue: profileData.motherTongue,
         originCountry: profileData.originCountry,
         settledCountry: profileData.settledCountry,
@@ -515,24 +525,10 @@ export default function ProfileSetup() {
         lookingFor: profileData.lookingFor,
         status: profileData.maritalStatus,
         selectedLikesInvolvesMap: profileData.selectedLikesInvolvesMap,
+        selectedPersonalityTraitsMap: profileData.selectedPersonalityTraitsMap,
         profileImageUrls: profileData.profileImageUrls.filter(url => url !== ''),
         aboutMe: profileData.aboutMe,
         bodyBuild: profileData.bodyBuild,
-        // Personality Traits - Single Select (String)
-        personalityType: profileData.personalityType || '',
-        starSign: profileData.starSign || '',
-        drink: profileData.drink || '',
-        smoke: profileData.smoke || '',
-        exercise: profileData.exercise || '',
-        // Personality Traits - Multi Select (Array)
-        weatherType: profileData.weatherType || [],
-        poison: profileData.poison || [],
-        tripsType: profileData.tripsType || [],
-        pets: profileData.pets || [],
-        weekendNight: profileData.weekendNight || [],
-        weekendActivities: profileData.weekendActivities || [],
-        eveningRoutine: profileData.eveningRoutine || [],
-        passions: profileData.passions || [],
         updatedAt: new Date()
       });
 
@@ -735,6 +731,34 @@ export default function ProfileSetup() {
                 </select>
               </div>
 
+              <div className="form-group">
+                <label className="form-label">Community</label>
+                <select
+                  className="form-select"
+                  name="community"
+                  value={profileData.community}
+                  onChange={(e) => handleChange('community', e.target.value)}
+                >
+                  <option value="">Select Community</option>
+                  <option value="Malayali">Malayali</option>
+                  <option value="Punjabi">Punjabi</option>
+                  <option value="Gujarati">Gujarati</option>
+                  <option value="Telugu">Telugu</option>
+                  <option value="Sunni">Sunni</option>
+                  <option value="Shia">Shia</option>
+                  <option value="Tamil">Tamil</option>
+                  <option value="Bengali">Bengali</option>
+                  <option value="Marathi">Marathi</option>
+                  <option value="Urdu">Urdu</option>
+                  <option value="Kannada">Kannada</option>
+                  <option value="Marwari">Marwari</option>
+                  <option value="Sindhi">Sindhi</option>
+                  <option value="Kashmiri">Kashmiri</option>
+                  <option value="Rajasthani">Rajasthani</option>
+                  <option value="Jatt">Jatt</option>
+                </select>
+              </div>
+
               <div className="btn-group">
                 <button className="btn btn-secondary" onClick={skipStep}>Skip</button>
                 <button className="btn btn-primary" onClick={nextStep}>Continue</button>
@@ -919,7 +943,7 @@ export default function ProfileSetup() {
                             type="radio"
                             name={key}
                             id={`${key}-${option}`}
-                            checked={profileData[key] === option}
+                            checked={profileData.selectedPersonalityTraitsMap[key] === option}
                             onChange={() => handlePersonalitySingleSelect(key, option)}
                           />
                           <label htmlFor={`${key}-${option}`}>{option}</label>
@@ -939,7 +963,7 @@ export default function ProfileSetup() {
                     </label>
                     <div className="checkbox-group">
                       {options.map(option => {
-                        const currentSelections = profileData[key] || [];
+                        const currentSelections = profileData.selectedPersonalityTraitsMap[key] || [];
                         const isSelected = currentSelections.includes(option);
                         
                         return (
