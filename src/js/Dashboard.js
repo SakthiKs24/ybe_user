@@ -259,7 +259,7 @@ export default function Dashboard() {
           <img src="/images/logo.png" alt="Ybe Logo" className="header-logo" />
           <nav className="header-nav">
             <a href="#" className="nav-link active">Matches</a>
-            <a href="#" className="nav-link">Messages</a>
+            <a href="/chat" className="nav-link" onClick={(e) => { e.preventDefault(); navigate('/chat'); }}>Messages</a>
           </nav>
         </div>
         <div className="header-center">
@@ -270,9 +270,6 @@ export default function Dashboard() {
         </div>
         <div className="header-right">
           <button className="upgrade-btn" onClick={() => navigate('/upgrade')}>Upgrade now</button>
-          <button className="icon-btn">
-            <img src="/images/notification.png" alt="Notifications" className="notification-icon" />
-          </button>
           <button className="icon-btn" onClick={() => setShowLogoutModal(true)}>
             <img src="/images/profile.png" alt="Profile" className="profile-icon-img" />
           </button>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../firebase';
+import { auth, db } from '../firebase';
+import { signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import '../css/Upgrade.css';
@@ -11,6 +12,7 @@ export default function Upgrade() {
   const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState({ code: 'GBP', symbol: '£' });
   const [userCountry, setUserCountry] = useState('GB');
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Currency mapping
   const currencyMap = {
@@ -322,6 +324,22 @@ export default function Upgrade() {
     return null;
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast.success('Logged out successfully!', {
+        position: "top-right",
+        autoClose: 2000,
+      });
+      setTimeout(() => {
+        navigate('/');
+      }, 1000);
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Failed to logout. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="upgrade-loading">
@@ -338,7 +356,7 @@ export default function Upgrade() {
           <img src="/images/logo.png" alt="Ybe Logo" className="header-logo" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }} />
           <nav className="header-nav">
             <a href="#" className="nav-link">Matches</a>
-            <a href="#" className="nav-link">Messages</a>
+            <a href="/chat" className="nav-link" onClick={(e) => { e.preventDefault(); navigate('/chat'); }}>Messages</a>
           </nav>
         </div>
         <div className="header-center">
@@ -349,10 +367,7 @@ export default function Upgrade() {
         </div>
         <div className="header-right">
           <button className="upgrade-btn">Upgrade now</button>
-          <button className="icon-btn">
-            <img src="/images/notification.png" alt="Notifications" className="notification-icon" />
-          </button>
-          <button className="icon-btn" onClick={() => navigate('/dashboard')}>
+          <button className="icon-btn" onClick={() => setShowLogoutModal(true)}>
             <img src="/images/profile.png" alt="Profile" className="profile-icon-img" />
           </button>
         </div>
@@ -412,6 +427,33 @@ export default function Upgrade() {
           })}
         </div>
       </div>
+
+      {/* Logout Modal */}
+      {showLogoutModal && (
+        <div className="modal-overlay" onClick={() => setShowLogoutModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to logout?</p>
+            <div className="modal-buttons">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="btn-cancel"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowLogoutModal(false);
+                  handleLogout();
+                }}
+                className="btn-confirm"
+              >
+                Yes, Sure
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
