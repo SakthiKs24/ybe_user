@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import '../css/Upgrade.css';
 
@@ -104,6 +104,110 @@ export default function Upgrade() {
     detectCountry();
   }, []);
 
+  // Get currency conversion rate from Firebase
+  const getLatestCurrencyConversionRate = async () => {
+    try {
+      const docRef = doc(db, 'currencyConversion', 'currency_conversion');
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const timestampString = data.timestamp;
+
+        if (timestampString) {
+          const parsedTimestamp = new Date(timestampString);
+          const now = new Date();
+          const difference = now - parsedTimestamp;
+          const hoursDiff = difference / (1000 * 60 * 60);
+
+          if (hoursDiff < 24) {
+            // Data is less than 24 hours old
+            return {
+              conversionRates: data.rawResponse || data.conversionRates || {},
+              timestamp: timestampString,
+              result: data.result || 'success'
+            };
+          }
+        }
+      }
+
+      // If data is older than 24 hours or doesn't exist, fetch latest
+      return await fetchLatestConversionRate();
+    } catch (error) {
+      console.error('Error getting currency conversion rate:', error);
+      return await fetchLatestConversionRate();
+    }
+  };
+
+  // Fetch latest conversion rate from API and save to Firebase
+  const fetchLatestConversionRate = async () => {
+    try {
+      const response = await fetch('https://v6.exchangerate-api.com/v6/27aa2996e2f324ccee797a24/latest/GBP');
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Parse the response similar to ExchangeConversionResponseModel
+        const result = data.result || '';
+        const conversionRates = data.conversion_rates || {};
+        
+        // Convert all values to numbers (they might be strings)
+        const parsedRates = {};
+        Object.keys(conversionRates).forEach(key => {
+          parsedRates[key] = typeof conversionRates[key] === 'number' 
+            ? conversionRates[key] 
+            : parseFloat(conversionRates[key]) || 1.0;
+        });
+
+        const now = new Date().toISOString();
+
+        // Save to Firebase
+        await setDoc(doc(db, 'currencyConversion', 'currency_conversion'), {
+          timestamp: now,
+          rawResponse: parsedRates,
+          conversionRates: parsedRates,
+          result: result
+        });
+
+        return {
+          conversionRates: parsedRates,
+          timestamp: now,
+          result: result
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching latest conversion rate:', error);
+    }
+
+    return {
+      conversionRates: {},
+      timestamp: new Date().toISOString(),
+      result: 'error'
+    };
+  };
+
+  // Apply currency conversion to plans
+  const applyCurrencyConversion = async (planArray, targetCurrency) => {
+    try {
+      const conversionData = await getLatestCurrencyConversionRate();
+      const conversionRates = conversionData.conversionRates || {};
+
+      if (targetCurrency && targetCurrency !== 'GBP' && conversionRates[targetCurrency]) {
+        const conversionRate = conversionRates[targetCurrency];
+        const discountRate = 1.0; // You can add discount logic here if needed
+
+        return planArray.map(plan => ({
+          ...plan,
+          cost: parseFloat((plan.cost * conversionRate * discountRate).toFixed(2))
+        }));
+      }
+    } catch (error) {
+      console.error('Error applying currency conversion:', error);
+    }
+
+    return planArray;
+  };
+
   // Fetch subscription plans
   useEffect(() => {
     const fetchPlans = async () => {
@@ -111,9 +215,10 @@ export default function Upgrade() {
         const docRef = doc(db, 'subscription', 'plans');
         const docSnap = await getDoc(docRef);
 
+        let planArray = [];
+
         if (docSnap.exists()) {
           const data = docSnap.data();
-          const planArray = [];
 
           // Sort plans by key (plan_1, plan_2, plan_3)
           Object.keys(data)
@@ -131,16 +236,18 @@ export default function Upgrade() {
                 ...planData
               });
             });
-
-          setPlans(planArray);
         } else {
           // Default plans if Firestore doesn't have data
-          setPlans([
+          planArray = [
             { name: 'Ybe Plus', cost: 20, validityDays: 30, type: 'plus' },
             { name: 'Ybe Premium', cost: 50, validityDays: 90, type: 'premium' },
             { name: 'Ybe Gold', cost: 90, validityDays: 180, type: 'gold' }
-          ]);
+          ];
         }
+
+        // Apply currency conversion
+        const convertedPlans = await applyCurrencyConversion(planArray, currency.code);
+        setPlans(convertedPlans);
       } catch (error) {
         console.error('Error fetching subscription plans:', error);
         // Default plans on error
@@ -154,8 +261,10 @@ export default function Upgrade() {
       }
     };
 
-    fetchPlans();
-  }, []);
+    if (currency.code) {
+      fetchPlans();
+    }
+  }, [currency.code]);
 
   const getPlanType = (planName) => {
     const name = planName.toLowerCase();
