@@ -7,10 +7,108 @@ import {
   RecaptchaVerifier,
   signInWithPhoneNumber,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import '../css/Login.css';
 import { COUNTRIES_DATA } from "../js/countriesData.js";
+
+// Helper function to get current location
+const getCurrentLocation = () => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation is not supported by this browser'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // Try to reverse geocode to get address details
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+          );
+          const data = await response.json();
+          
+          const address = data.display_name || '';
+          const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || '';
+          const countryCode = data.address?.country_code?.toUpperCase() || '';
+          
+          resolve({
+            address: address,
+            city: city,
+            countryCode: countryCode,
+            latitude: latitude.toString(),
+            longitude: longitude.toString()
+          });
+        } catch (error) {
+          // If reverse geocoding fails, just return coordinates
+          console.warn('Reverse geocoding failed, using coordinates only:', error);
+          resolve({
+            address: '',
+            city: '',
+            countryCode: '',
+            latitude: latitude.toString(),
+            longitude: longitude.toString()
+          });
+        }
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        // Return empty location object if user denies or error occurs
+        resolve({
+          address: '',
+          city: '',
+          countryCode: '',
+          latitude: '',
+          longitude: ''
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  });
+};
+
+// Helper function to update user location
+const updateUserLocation = async (userId) => {
+  try {
+    const currentPosition = await getCurrentLocation();
+    console.log('Location retrieved:', currentPosition);
+    
+    // Try to find user by userId first
+    let userDocRef = doc(db, 'users', userId);
+    let userDoc = await getDoc(userDocRef);
+    
+    // If user not found by userId, try to find by email
+    if (!userDoc.exists()) {
+      const user = auth.currentUser;
+      if (user && user.email) {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('email', '==', user.email));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const foundDoc = querySnapshot.docs[0];
+          userDocRef = doc(db, 'users', foundDoc.id);
+        }
+      }
+    }
+    
+    await updateDoc(userDocRef, {
+      currentPosition: currentPosition
+    });
+    
+    console.log('User location updated successfully');
+  } catch (error) {
+    console.error('Error updating user location:', error);
+    // Don't throw - location update failure shouldn't block login
+  }
+};
 
 export default function Login({ isOpen, onClose }) {
   const navigate = useNavigate();
@@ -63,6 +161,9 @@ setLoadingEmail(true);
         const userData = userDoc.data();
         console.log('User data from Firestore:', userData);
 
+        // Update user location
+        await updateUserLocation(user.uid);
+
         toast.success('Login successful! Redirecting to dashboard...', {
           position: "top-right",
           autoClose: 2000,
@@ -78,6 +179,17 @@ setLoadingEmail(true);
           navigate('/dashboard');
         }, 1500);
       } else {
+        // Try to find user by email
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('email', '==', user.email));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const foundDoc = querySnapshot.docs[0];
+          // Update user location
+          await updateUserLocation(foundDoc.id);
+        }
+        
         console.log('No user document found in Firestore');
         onClose();
         navigate('/dashboard');
@@ -127,6 +239,9 @@ setLoadingEmail(true);
 
       // ✅ IF USER EXISTS → LOGIN
       if (userDoc.exists()) {
+        // Update user location
+        await updateUserLocation(user.uid);
+
         toast.success("Login successful!", {
           position: "top-right",
           autoClose: 2000,
@@ -257,6 +372,9 @@ setLoadingEmail(true);
       const userDoc = await getDoc(doc(db, "users", user.uid));
 
       if (userDoc.exists()) {
+        // Update user location
+        await updateUserLocation(user.uid);
+
         toast.success("Login successful!");
         onClose();
         navigate("/dashboard");
@@ -292,6 +410,9 @@ setLoadingEmail(true);
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
+        // Update user location
+        await updateUserLocation(user.uid);
+
         toast.success("Login successful!", { autoClose: 2000 });
         setTimeout(() => {
           onClose();

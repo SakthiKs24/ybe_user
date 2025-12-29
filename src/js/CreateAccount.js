@@ -8,6 +8,68 @@ import '../css/CreateAccount.css';
 import Navbar from './Navbar';
 import { COUNTRIES_DATA } from '../js/countriesData';
 
+// Helper function to get current location
+const getCurrentLocation = () => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation is not supported by this browser'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // Try to reverse geocode to get address details
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+          );
+          const data = await response.json();
+          
+          const address = data.display_name || '';
+          const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || '';
+          const countryCode = data.address?.country_code?.toUpperCase() || '';
+          
+          resolve({
+            address: address,
+            city: city,
+            countryCode: countryCode,
+            latitude: latitude.toString(),
+            longitude: longitude.toString()
+          });
+        } catch (error) {
+          // If reverse geocoding fails, just return coordinates
+          console.warn('Reverse geocoding failed, using coordinates only:', error);
+          resolve({
+            address: '',
+            city: '',
+            countryCode: '',
+            latitude: latitude.toString(),
+            longitude: longitude.toString()
+          });
+        }
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        // Return empty location object if user denies or error occurs
+        resolve({
+          address: '',
+          city: '',
+          countryCode: '',
+          latitude: '',
+          longitude: ''
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  });
+};
+
 export default function CreateAccount() {
   const navigate = useNavigate();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -205,6 +267,23 @@ export default function CreateAccount() {
       const userId = await generateUserId();
       const currentDate = new Date().toISOString().split('T')[0];
 
+      // Get current location
+      let currentPosition = {
+        address: "",
+        city: "",
+        countryCode: "",
+        latitude: "",
+        longitude: ""
+      };
+      
+      try {
+        currentPosition = await getCurrentLocation();
+        console.log('Location retrieved:', currentPosition);
+      } catch (error) {
+        console.warn('Could not get location:', error);
+        // Continue with empty location if user denies or error occurs
+      }
+
       // Create user document in Firestore
       const userDocRef = doc(db, 'users', userId);
       await setDoc(userDocRef, {
@@ -222,13 +301,7 @@ export default function CreateAccount() {
         createdAt: new Date(),
         createdFor: "",
         currentDiscountPercentage: 0,
-        currentPosition: {
-          address: "",
-          city: "",
-          countryCode: "",
-          latitude: "",
-          longitude: ""
-        },
+        currentPosition: currentPosition,
         dailyLimit: {
           date: currentDate,
           profileViewCount: 0,
