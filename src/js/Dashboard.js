@@ -2,24 +2,43 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, documentId } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+import '../css/Dashboard.css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
+  const [allUsers, setAllUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  
+  // Filter states
+  const [filters, setFilters] = useState({
+    location: 'Newyork, USA',
+    interestedIn: 'Women',
+    sortBy: 'High Match',
+    distance: [0, 15],
+    age: [20, 38],
+    maritalStatus: {
+      neverMarried: false,
+      divorced: false,
+      widowed: false
+    }
+  });
 
-  // Replace your existing useEffect with this improved version
+  // Fetch current user data
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         try {
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
+          const usersRef = collection(db, 'users');
+          const q = query(usersRef, where('email', '==', user.email));
+          const querySnapshot = await getDocs(q);
           
-          if (userDoc.exists()) {
+          if (!querySnapshot.empty) {
+            const userDoc = querySnapshot.docs[0];
             setUserData({
               uid: user.uid,
               email: user.email,
@@ -32,14 +51,163 @@ export default function Dashboard() {
           setLoading(false);
         }
       } else {
-        // No user logged in, redirect to home
         navigate('/');
       }
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [navigate]);
+
+  // Fetch all users excluding current user and blocked users
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!userData?.uid) return;
+      
+      try {
+        const usersRef = collection(db, 'users');
+        let userQuery;
+        
+        // Build query based on gender preference and profileDiscovery
+        const genderPreference = filters.interestedIn;
+        
+        if (genderPreference === 'Men') {
+          userQuery = query(
+            usersRef,
+            where('profileDiscovery', '==', true),
+            where('userGender', '==', 'male')
+          );
+        } else if (genderPreference === 'Women') {
+          userQuery = query(
+            usersRef,
+            where('profileDiscovery', '==', true),
+            where('userGender', '==', 'female')
+          );
+        } else {
+          // Both - only filter by profileDiscovery
+          userQuery = query(
+            usersRef,
+            where('profileDiscovery', '==', true)
+          );
+        }
+        
+        const querySnapshot = await getDocs(userQuery);
+        
+        // Map snapshot to users, exclude current user
+        const users = [];
+        querySnapshot.forEach((doc) => {
+          if (doc.id !== userData.uid) {
+            users.push({
+              id: doc.id,
+              userId: doc.id,
+              ...doc.data()
+            });
+          }
+        });
+        
+        // Collect all user IDs to check blocks
+        const userIds = users.map((user) => user.userId || user.id);
+        
+        // Fetch block documents in chunks of 30 (Firestore limit)
+        const userBlockMap = {};
+        
+        for (let i = 0; i < userIds.length; i += 30) {
+          const chunk = userIds.slice(
+            i,
+            i + 30 > userIds.length ? userIds.length : i + 30
+          );
+          
+          if (chunk.length === 0) continue;
+          
+          const blockQuery = query(
+            collection(db, 'block'),
+            where(documentId(), 'in', chunk)
+          );
+          
+          const blockSnapshot = await getDocs(blockQuery);
+          
+          blockSnapshot.forEach((doc) => {
+            const data = doc.data();
+            const blockedBy = data.blockedBy || [];
+            userBlockMap[doc.id] = Array.isArray(blockedBy) ? blockedBy : [];
+          });
+        }
+        
+        // Filter users based on block status
+        const filteredUsers = users.filter((user) => {
+          const userId = user.userId || user.id;
+          const blockedBy = userBlockMap[userId] || [];
+          return !blockedBy.includes(userData.uid);
+        });
+        
+        setAllUsers(filteredUsers);
+        setFilteredUsers(filteredUsers);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        toast.error('Failed to load users');
+      }
+    };
+
+    fetchUsers();
+  }, [userData?.uid, filters.interestedIn]);
+
+  // Apply filters
+  useEffect(() => {
+    let filtered = [...allUsers];
+
+    // Note: Gender filter is already applied in fetchUsers based on filters.interestedIn
+
+    // Filter by age
+    filtered = filtered.filter(user => {
+      if (!user.age) return false;
+      const age = parseInt(user.age) || 0;
+      return age >= filters.age[0] && age <= filters.age[1];
+    });
+
+    // Filter by marital status
+    if (filters.maritalStatus.neverMarried || filters.maritalStatus.divorced || filters.maritalStatus.widowed) {
+      filtered = filtered.filter(user => {
+        const status = user.status?.toLowerCase() || '';
+        return (
+          (filters.maritalStatus.neverMarried && (status === 'single' || status === 'never married')) ||
+          (filters.maritalStatus.divorced && status === 'divorced') ||
+          (filters.maritalStatus.widowed && status === 'widowed')
+        );
+      });
+    }
+
+    // Sort by
+    if (filters.sortBy === 'High Match') {
+      // Sort by match score (you can implement match algorithm later)
+      filtered.sort((a, b) => {
+        // Placeholder: sort by name for now
+        return (a.name || '').localeCompare(b.name || '');
+      });
+    } else if (filters.sortBy === 'Online') {
+      // Sort by online status (you can add online status field later)
+      filtered.sort((a, b) => {
+        return (b.online || false) - (a.online || false);
+      });
+    }
+
+    setFilteredUsers(filtered);
+  }, [filters, allUsers]);
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+  };
+
+  const handleCheckboxChange = (category, key) => {
+    setFilters(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [key]: !prev[category][key]
+      }
+    }));
+  };
 
   const handleLogout = async () => {
     try {
@@ -57,342 +225,301 @@ export default function Dashboard() {
     }
   };
 
+  const calculateAge = (birthDate) => {
+    if (!birthDate) return null;
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const formatHeight = (height) => {
+    if (!height) return '';
+    const [ft, inch] = height.split('.');
+    return `${ft}'${inch}"`;
+  };
+
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      }}>
-        <div style={{
-          fontSize: '24px',
-          color: 'white',
-          fontWeight: '600'
-        }}>
-          Loading...
-        </div>
+      <div className="dashboard-loading">
+        <img src="/images/logo.png" alt="Ybe Logo" className="loading-logo" />
       </div>
-      
     );
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '40px 20px'
-    }}>
+    <div className="dashboard-container">
       {/* Header */}
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        marginBottom: '40px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <h1 style={{
-          fontSize: '36px',
-          fontWeight: '700',
-          color: 'white',
-          margin: 0
-        }}>
-          Dashboard
-        </h1>
-        <button
-  onClick={() => setShowLogoutModal(true)}
-  style={{
-    padding: '12px 30px',
-    background: 'rgba(255, 255, 255, 0.2)',
-    border: '2px solid white',
-    borderRadius: '50px',
-    color: 'white',
-    fontSize: '16px',
-    fontWeight: '600',
-    cursor: 'pointer'
-  }}
->
-  Logout
-</button>
-
-      </div>
-
-      {/* Main Content */}
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto'
-      }}>
-        {/* Welcome Card */}
-        <div style={{
-          background: 'white',
-          borderRadius: '20px',
-          padding: '40px',
-          marginBottom: '30px',
-          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h2 style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#333',
-            marginBottom: '10px'
-          }}>
-            Welcome back, {userData?.name || 'User'}! 👋
-          </h2>
-          <p style={{
-            fontSize: '16px',
-            color: '#666',
-            marginBottom: '30px'
-          }}>
-            Here's what's happening with your dating journey today.
-          </p>
-
-          {/* User Info */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '20px'
-          }}>
-            <div style={{
-              padding: '20px',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              borderRadius: '15px',
-              color: 'white'
-            }}>
-              <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '5px' }}>Email</div>
-              <div style={{ fontSize: '18px', fontWeight: '600' }}>{userData?.email || 'N/A'}</div>
-            </div>
-
-            <div style={{
-              padding: '20px',
-              background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-              borderRadius: '15px',
-              color: 'white'
-            }}>
-              <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '5px' }}>User ID</div>
-              <div style={{ fontSize: '18px', fontWeight: '600' }}>{userData?.uid?.substring(0, 8) || 'N/A'}...</div>
-            </div>
-
-            <div style={{
-              padding: '20px',
-              background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-              borderRadius: '15px',
-              color: 'white'
-            }}>
-              <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '5px' }}>Status</div>
-              <div style={{ fontSize: '18px', fontWeight: '600' }}>Active</div>
-            </div>
+      <header className="dashboard-header">
+        <div className="header-left">
+          <img src="/images/logo.png" alt="Ybe Logo" className="header-logo" />
+          <nav className="header-nav">
+            <a href="#" className="nav-link active">Matches</a>
+            <a href="#" className="nav-link">Messages</a>
+          </nav>
+        </div>
+        <div className="header-center">
+          <div className="search-box">
+            <span className="search-icon">🔍</span>
+            <input type="text" placeholder="Search" className="search-input" />
           </div>
         </div>
-
-        {/* Stats Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '25px',
-          marginBottom: '30px'
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '20px',
-            padding: '30px',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)'
-          }}>
-            <div style={{
-              fontSize: '48px',
-              marginBottom: '10px'
-            }}>💝</div>
-            <div style={{
-              fontSize: '32px',
-              fontWeight: '700',
-              color: '#333',
-              marginBottom: '5px'
-            }}>12</div>
-            <div style={{
-              fontSize: '16px',
-              color: '#666'
-            }}>Matches</div>
-          </div>
-
-          <div style={{
-            background: 'white',
-            borderRadius: '20px',
-            padding: '30px',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)'
-          }}>
-            <div style={{
-              fontSize: '48px',
-              marginBottom: '10px'
-            }}>💬</div>
-            <div style={{
-              fontSize: '32px',
-              fontWeight: '700',
-              color: '#333',
-              marginBottom: '5px'
-            }}>8</div>
-            <div style={{
-              fontSize: '16px',
-              color: '#666'
-            }}>Messages</div>
-          </div>
-
-          <div style={{
-            background: 'white',
-            borderRadius: '20px',
-            padding: '30px',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)'
-          }}>
-            <div style={{
-              fontSize: '48px',
-              marginBottom: '10px'
-            }}>👀</div>
-            <div style={{
-              fontSize: '32px',
-              fontWeight: '700',
-              color: '#333',
-              marginBottom: '5px'
-            }}>45</div>
-            <div style={{
-              fontSize: '16px',
-              color: '#666'
-            }}>Profile Views</div>
-          </div>
-
-          <div style={{
-            background: 'white',
-            borderRadius: '20px',
-            padding: '30px',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)'
-          }}>
-            <div style={{
-              fontSize: '48px',
-              marginBottom: '10px'
-            }}>⭐</div>
-            <div style={{
-              fontSize: '32px',
-              fontWeight: '700',
-              color: '#333',
-              marginBottom: '5px'
-            }}>23</div>
-            <div style={{
-              fontSize: '16px',
-              color: '#666'
-            }}>Likes Received</div>
-          </div>
+        <div className="header-right">
+          <button className="upgrade-btn" onClick={() => navigate('/upgrade')}>Upgrade now</button>
+          <button className="icon-btn">
+            <img src="/images/notification.png" alt="Notifications" className="notification-icon" />
+          </button>
+          <button className="icon-btn" onClick={() => setShowLogoutModal(true)}>
+            <img src="/images/profile.png" alt="Profile" className="profile-icon-img" />
+          </button>
         </div>
+      </header>
 
-        {/* Recent Activity */}
-        <div style={{
-          background: 'white',
-          borderRadius: '20px',
-          padding: '40px',
-          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h3 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: '#333',
-            marginBottom: '25px'
-          }}>
-            Recent Activity
-          </h3>
+      <div className="dashboard-content">
+        {/* Left Sidebar - Filters */}
+        <aside className="filters-sidebar">
+          <h2 className="sidebar-title">New matches</h2>
+          
+          <div className="filter-section">
+            <label className="filter-label">Location</label>
+            <select 
+              className="filter-select"
+              value={filters.location}
+              onChange={(e) => handleFilterChange('location', e.target.value)}
+            >
+              <option>Newyork, USA</option>
+              <option>Bengaluru, Karnataka</option>
+              <option>Mumbai, Maharashtra</option>
+              <option>Delhi, India</option>
+            </select>
+          </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {[
-              { icon: '💝', text: 'You matched with Sarah', time: '2 hours ago' },
-              { icon: '💬', text: 'New message from Alex', time: '5 hours ago' },
-              { icon: '👀', text: 'Your profile was viewed 5 times', time: '1 day ago' },
-              { icon: '⭐', text: 'You received 3 new likes', time: '2 days ago' }
-            ].map((activity, index) => (
-              <div key={index} style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '20px',
-                background: '#f8f9fa',
-                borderRadius: '15px',
-                transition: 'all 0.3s'
-              }}>
-                <div style={{ fontSize: '32px', marginRight: '20px' }}>
-                  {activity.icon}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    color: '#333',
-                    marginBottom: '5px'
-                  }}>
-                    {activity.text}
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#999' }}>
-                    {activity.time}
-                  </div>
-                </div>
+          <div className="filter-section">
+            <label className="filter-label">Interested in</label>
+            <div className="radio-group">
+              {['Women', 'Men', 'Both'].map(option => (
+                <label key={option} className="radio-label">
+                  <input
+                    type="radio"
+                    name="interestedIn"
+                    value={option}
+                    checked={filters.interestedIn === option}
+                    onChange={(e) => handleFilterChange('interestedIn', e.target.value)}
+                  />
+                  <span>{option}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-section">
+            <label className="filter-label">Sort By</label>
+            <div className="radio-group">
+              {['Online', 'offline', 'High Match'].map(option => (
+                <label key={option} className="radio-label">
+                  <input
+                    type="radio"
+                    name="sortBy"
+                    value={option}
+                    checked={filters.sortBy === option}
+                    onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+                  />
+                  <span>{option}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-section">
+            <label className="filter-label">Distance</label>
+            <div className="slider-container">
+              <div className="slider-labels">
+                <span>0 km</span>
+                <span>5 km</span>
+                <span>10 km</span>
+                <span>15 km</span>
+                <span>20 km</span>
+                <span>25 km</span>
               </div>
-            ))}
+              <input
+                type="range"
+                min="0"
+                max="25"
+                value={filters.distance[1]}
+                onChange={(e) => handleFilterChange('distance', [0, parseInt(e.target.value)])}
+                className="slider"
+              />
+            </div>
           </div>
-        </div>
+
+          <div className="filter-section">
+            <label className="filter-label">Age</label>
+            <div className="slider-container">
+              <div className="slider-labels">
+                <span>20</span>
+                <span>30</span>
+                <span>40</span>
+                <span>50</span>
+                <span>60</span>
+              </div>
+              <div className="range-inputs">
+                <input
+                  type="range"
+                  min="20"
+                  max="60"
+                  value={filters.age[0]}
+                  onChange={(e) => handleFilterChange('age', [parseInt(e.target.value), filters.age[1]])}
+                  className="slider"
+                />
+                <input
+                  type="range"
+                  min="20"
+                  max="60"
+                  value={filters.age[1]}
+                  onChange={(e) => handleFilterChange('age', [filters.age[0], parseInt(e.target.value)])}
+                  className="slider"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="filter-section">
+            <label className="filter-label">MARITAL STATUS</label>
+            <div className="checkbox-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={filters.maritalStatus.neverMarried}
+                  onChange={() => handleCheckboxChange('maritalStatus', 'neverMarried')}
+                />
+                <span>Never Married</span>
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={filters.maritalStatus.divorced}
+                  onChange={() => handleCheckboxChange('maritalStatus', 'divorced')}
+                />
+                <span>Divorced</span>
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={filters.maritalStatus.widowed}
+                  onChange={() => handleCheckboxChange('maritalStatus', 'widowed')}
+                />
+                <span>Widowed</span>
+              </label>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Content - Match Cards */}
+        <main className="matches-content">
+          <h2 className="matches-title">New matches who match your preferences</h2>
+          
+          <div className="matches-grid">
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => {
+                const age = user.age || calculateAge(user.birthDate) || 'N/A';
+                const height = formatHeight(user.height);
+                const profileImage = user.profileImageUrls?.[0] || '/images/profile_badge.png';
+                
+                return (
+                  <div key={user.id} className="match-card">
+                    <div className="match-card-header">
+                      <div className="profile-image-container">
+                        <img src={profileImage} alt={user.name || 'User'} className="profile-image" />
+                        {user.vip && <span className="vip-badge">vip</span>}
+                      </div>
+                      <button className="favorite-btn">♡</button>
+                    </div>
+                    
+                    <div className="match-card-body">
+                      <div className="match-name-row">
+                        <h3 className="match-name">{user.name || 'Anonymous'}</h3>
+                        {user.verified && <span className="verified-badge">✓</span>}
+                      </div>
+                      <div className="online-status">Online now</div>
+                      
+                      <div className="match-details">
+                        <div className="detail-column">
+                          <div className="detail-item">
+                            {age} yrs, {height}
+                          </div>
+                          <div className="detail-item">
+                            {user.religion || 'N/A'},{user.caste || 'Caste'}
+                          </div>
+                          <div className="detail-item">
+                            {user.motherTongue || 'N/A'}
+                          </div>
+                        </div>
+                        <div className="detail-column">
+                          <div className="detail-item">
+                            {user.status === 'single' ? 'Never Married' : user.status || 'N/A'}
+                          </div>
+                          <div className="detail-item">
+                            {user.settledCountry || 'N/A'},{user.settledState || 'N/A'}
+                          </div>
+                          <div className="detail-item">
+                            {user.dayJob || 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="match-bio">
+                        {user.aboutMe ? (
+                          <>
+                            {user.aboutMe.substring(0, 100)}
+                            {user.aboutMe.length > 100 && <span className="more-link"> more</span>}
+                          </>
+                        ) : (
+                          'No bio available'
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="match-card-actions">
+                      <button className="action-btn reject-btn">✕</button>
+                      <button className="action-btn like-btn">❤</button>
+                      <button className="action-btn superlike-btn">⭐</button>
+                      <button className="action-btn message-btn">💬</button>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="no-matches">
+                <p>No matches found. Try adjusting your filters.</p>
+              </div>
+            )}
+          </div>
+        </main>
       </div>
-        {showLogoutModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: 'rgba(0,0,0,0.6)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'white',
-            padding: '30px',
-            borderRadius: '15px',
-            width: '90%',
-            maxWidth: '400px',
-            textAlign: 'center',
-            boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
-          }}>
-            <h3 style={{ marginBottom: '15px', color: '#333' }}>
-              Confirm Logout
-            </h3>
 
-            <p style={{ color: '#666', marginBottom: '25px' }}>
-              Are you sure you want to logout?
-            </p>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '15px' }}>
+      {/* Logout Modal */}
+      {showLogoutModal && (
+        <div className="modal-overlay" onClick={() => setShowLogoutModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to logout?</p>
+            <div className="modal-buttons">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  borderRadius: '30px',
-                  border: '1px solid #ccc',
-                  background: '#f1f1f1',
-                  cursor: 'pointer'
-                }}
+                className="btn-cancel"
               >
                 Cancel
               </button>
-
               <button
                 onClick={() => {
                   setShowLogoutModal(false);
                   handleLogout();
                 }}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  borderRadius: '30px',
-                  border: 'none',
-                  background: '#667eea',
-                  color: 'white',
-                  cursor: 'pointer'
-                }}
+                className="btn-confirm"
               >
                 Yes, Sure
               </button>
@@ -400,8 +527,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-
     </div>
-    
   );
 }

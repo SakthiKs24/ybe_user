@@ -1,0 +1,370 @@
+/* Upgrade.css */
+
+.upgrade-container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #FFFFFF 0.72%, #f58bbf 100%);
+}
+
+.upgrade-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #FFFFFF 0.72%, #f58bbf 100%);
+}
+
+.loading-logo {
+  width: 120px;
+  height: auto;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+/* Header - Reuse Dashboard header styles */
+.upgrade-header {
+  background: white;
+  padding: 15px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.header-logo {
+  height: 40px;
+  object-fit: contain;
+}
+
+.header-nav {
+  display: flex;
+  gap: 30px;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #666;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 5px 0;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s;
+}
+
+.nav-link:hover {
+  color: #FF2B45;
+}
+
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  max-width: 400px;
+  margin: 0 40px;
+}
+
+.search-box {
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 15px;
+  font-size: 18px;
+  color: #999;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 15px 10px 45px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  font-size: 14px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #FF2B45;
+  box-shadow: 0 0 0 3px rgba(255, 43, 69, 0.1);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.upgrade-btn {
+  background: linear-gradient(180deg, #FF003F 0%, #FF5300 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(255, 0, 63, 0.3);
+}
+
+.upgrade-btn:hover {
+  background: linear-gradient(180deg, #E0003A 0%, #E04A00 100%);
+  box-shadow: 0 4px 12px rgba(255, 0, 63, 0.4);
+  transform: translateY(-1px);
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn:hover {
+  background: #f0f0f0;
+}
+
+.notification-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.profile-icon-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Upgrade Content */
+.upgrade-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.upgrade-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: #333;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.offer-banner {
+  background: #FFE8F5;
+  color: #FF2B45;
+  padding: 15px 30px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 40px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Plans Grid */
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.plan-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.plan-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Plan Header */
+.plan-header {
+  padding: 10px;
+  border-radius: 15px 15px 0 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 10px;
+}
+
+.header-plus {
+  background: #FFD0D8;
+}
+
+.header-gold {
+  background: #EDF1F4;
+}
+
+.header-platinum {
+  background: #FFEAB1;
+}
+
+.plan-icon-large {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+}
+
+/* Plan Body */
+.plan-body {
+  padding: 25px;
+  flex: 1;
+}
+
+.feature-section {
+  margin-bottom: 25px;
+}
+
+.feature-title {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 5px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.title-plus {
+  background: #FFE8F5;
+  color: #333;
+}
+
+.title-gold {
+  background: #FFF8E1;
+  color: #333;
+}
+
+.title-platinum {
+  background: #F5F5F5;
+  color: #333;
+}
+
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: #333;
+}
+
+.feature-item .checkmark {
+  color: #4CAF50;
+  font-weight: 700;
+  font-size: 16px;
+  min-width: 20px;
+}
+
+.feature-item .lock {
+  font-size: 14px;
+  min-width: 20px;
+}
+
+.feature-item .disabled {
+  color: #999;
+}
+
+.feature-subtitle {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  margin-left: 30px;
+  font-style: italic;
+}
+
+/* Plan Button */
+.plan-button {
+  width: 100%;
+  padding: 15px;
+  background: #FF2B45;
+  color: white;
+  border: none;
+  border-radius: 0 0 15px 15px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-top: auto;
+}
+
+.plan-button:hover {
+  background: #E0243D;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .plans-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .upgrade-header {
+    padding: 15px 20px;
+    flex-wrap: wrap;
+  }
+
+  .header-nav {
+    display: none;
+  }
+
+  .header-center {
+    order: 3;
+    width: 100%;
+    margin: 10px 0 0 0;
+  }
+
+  .plans-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .upgrade-title {
+    font-size: 28px;
+  }
+}
+
