@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import ChatTile from './ChatTile';
 import ChatDetail from './ChatDetail';
@@ -200,6 +200,19 @@ export default function ChatList() {
 
   const handleLogout = async () => {
     try {
+      // Set onlineStatus to false before logging out
+      if (userDetails && userDetails.userId) {
+        try {
+          const userDocRef = doc(db, 'users', userDetails.userId);
+          await updateDoc(userDocRef, {
+            onlineStatus: false
+          });
+        } catch (error) {
+          console.error('Error updating onlineStatus:', error);
+          // Continue with logout even if status update fails
+        }
+      }
+
       await signOut(auth);
       toast.success('Logged out successfully!', {
         position: "top-right",

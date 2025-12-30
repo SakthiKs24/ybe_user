@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import '../css/Upgrade.css';
 
@@ -326,6 +326,27 @@ export default function Upgrade() {
 
   const handleLogout = async () => {
     try {
+      // Set onlineStatus to false before logging out
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          const usersRef = collection(db, 'users');
+          const q = query(usersRef, where('email', '==', user.email));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const userDoc = querySnapshot.docs[0];
+            const userDocRef = doc(db, 'users', userDoc.id);
+            await updateDoc(userDocRef, {
+              onlineStatus: false
+            });
+          }
+        } catch (error) {
+          console.error('Error updating onlineStatus:', error);
+          // Continue with logout even if status update fails
+        }
+      }
+
       await signOut(auth);
       toast.success('Logged out successfully!', {
         position: "top-right",

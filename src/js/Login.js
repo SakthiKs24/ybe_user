@@ -164,6 +164,11 @@ setLoadingEmail(true);
         // Update user location
         await updateUserLocation(user.uid);
 
+        // Set onlineStatus to true
+        await updateDoc(userDocRef, {
+          onlineStatus: true
+        });
+
         toast.success('Login successful! Redirecting to dashboard...', {
           position: "top-right",
           autoClose: 2000,
@@ -241,6 +246,11 @@ setLoadingEmail(true);
       if (userDoc.exists()) {
         // Update user location
         await updateUserLocation(user.uid);
+
+        // Set onlineStatus to true
+        await updateDoc(userDocRef, {
+          onlineStatus: true
+        });
 
         toast.success("Login successful!", {
           position: "top-right",
@@ -375,6 +385,12 @@ setLoadingEmail(true);
         // Update user location
         await updateUserLocation(user.uid);
 
+        // Set onlineStatus to true
+        const userDocRef = doc(db, "users", user.uid);
+        await updateDoc(userDocRef, {
+          onlineStatus: true
+        });
+
         toast.success("Login successful!");
         onClose();
         navigate("/dashboard");
@@ -412,6 +428,11 @@ setLoadingEmail(true);
       if (userDoc.exists()) {
         // Update user location
         await updateUserLocation(user.uid);
+
+        // Set onlineStatus to true
+        await updateDoc(userDocRef, {
+          onlineStatus: true
+        });
 
         toast.success("Login successful!", { autoClose: 2000 });
         setTimeout(() => {

@@ -349,39 +349,44 @@
 }
 
 .matches-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .match-card {
   background: white;
   border: 1px solid #e0e0e0;
-  border-radius: 15px;
+  border-radius: 12px;
   padding: 20px;
   position: relative;
   transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .match-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(255, 43, 69, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border-color: #FF2B45;
 }
 
-.match-card-header {
+.match-card-content {
   display: flex;
-  justify-content: space-between;
+  gap: 20px;
   align-items: flex-start;
-  margin-bottom: 15px;
+}
+
+.match-card-left {
+  flex-shrink: 0;
 }
 
 .profile-image-container {
   position: relative;
   width: 120px;
   height: 120px;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
+  border: 2px solid #4A90E2;
 }
 
 .profile-image {
@@ -394,44 +399,45 @@
   position: absolute;
   top: 5px;
   right: 5px;
-  background: linear-gradient(135deg, #FFD700, #FFA500);
+  background: #FFD700;
   color: white;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 4px 6px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  z-index: 1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.vip-icon {
   font-size: 10px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 10px;
+}
+
+.vip-text {
+  font-size: 9px;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.favorite-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: #ccc;
-  cursor: pointer;
-  padding: 5px;
-  transition: color 0.3s, transform 0.3s;
-}
-
-.favorite-btn:hover {
-  color: #FF2B45;
-  transform: scale(1.1);
-}
-
-.match-card-body {
-  margin-bottom: 15px;
+.match-card-middle {
+  flex: 1;
+  min-width: 0;
 }
 
 .match-name-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .match-name {
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 600;
   color: #333;
   margin: 0;
 }
@@ -439,61 +445,78 @@
 .verified-badge {
   color: #4CAF50;
   font-size: 18px;
-  font-weight: 700;
+  font-weight: bold;
 }
 
-.online-status {
+.online-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   color: #FF2B45;
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 15px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-left: auto;
+}
+
+.online-icon {
+  font-size: 14px;
+}
+
+.online-text {
+  font-size: 13px;
+}
+
+.favorite-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  margin-left: auto;
+  transition: color 0.3s;
+}
+
+.favorite-btn:hover {
+  color: #FF2B45;
 }
 
 .match-details {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 15px;
-  font-size: 13px;
-  color: #666;
+  display: flex;
+  gap: 30px;
+  margin-bottom: 12px;
 }
 
 .detail-column {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
 .detail-item {
+  font-size: 14px;
+  color: #666;
   line-height: 1.4;
 }
 
 .match-bio {
-  font-size: 13px;
+  font-size: 14px;
   color: #666;
   line-height: 1.5;
-  margin-bottom: 15px;
+  margin-top: 8px;
 }
 
 .more-link {
   color: #FF2B45;
   cursor: pointer;
-  font-weight: 600;
-  text-decoration: underline;
-}
-
-.more-link:hover {
-  color: #E0243D;
+  font-weight: 500;
 }
 
 .match-card-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  position: absolute;
-  right: 15px;
-  top: 50%;
-  transform: translateY(-50%);
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .action-btn {
@@ -501,36 +524,38 @@
   height: 40px;
   border-radius: 50%;
   border: none;
-  font-size: 18px;
   cursor: pointer;
+  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.3s;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .action-btn:hover {
   transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .reject-btn {
   background: #E3F2FD;
-  color: #2196F3;
+  color: #1976D2;
 }
 
 .like-btn {
-  background: #FFEBEE;
-  color: #F44336;
+  background: #FF2B45;
+  color: white;
 }
 
 .superlike-btn {
-  background: #F3E5F5;
-  color: #9C27B0;
+  background: #4A90E2;
+  color: white;
 }
 
 .message-btn {
-  background: #E8F5E9;
-  color: #4CAF50;
+  background: #4CAF50;
+  color: white;
 }
 
 .no-matches {

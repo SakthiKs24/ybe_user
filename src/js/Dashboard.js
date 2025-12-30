@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, query, where, documentId } from 'firebase/firestore';
+import { collection, getDocs, query, where, documentId, doc, updateDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import '../css/Dashboard.css';
 
@@ -211,6 +211,26 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     try {
+      // Set onlineStatus to false before logging out
+      if (userData && userData.uid) {
+        try {
+          const usersRef = collection(db, 'users');
+          const q = query(usersRef, where('email', '==', auth.currentUser?.email));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const userDoc = querySnapshot.docs[0];
+            const userDocRef = doc(db, 'users', userDoc.id);
+            await updateDoc(userDocRef, {
+              onlineStatus: false
+            });
+          }
+        } catch (error) {
+          console.error('Error updating onlineStatus:', error);
+          // Continue with logout even if status update fails
+        }
+      }
+
       await signOut(auth);
       toast.success('Logged out successfully!', {
         position: "top-right",
@@ -426,65 +446,88 @@ export default function Dashboard() {
                 const height = formatHeight(user.height);
                 const profileImage = user.profileImageUrls?.[0] || '/images/profile_badge.png';
                 
+                const isOnline = user.onlineStatus === true;
+                const isVerified = user.verified || false;
+                const isVip = user.subscriptions?.planName !== 'Free' || false;
+                const maritalStatus = user.status === 'single' ? 'Never Married' : user.status || 'N/A';
+                const location = user.settledCountry && user.currentPosition?.city 
+                  ? `${user.currentPosition.city},${user.settledCountry}` 
+                  : user.settledCountry || 'N/A';
+                
                 return (
                   <div key={user.id} className="match-card">
-                    <div className="match-card-header">
-                      <div className="profile-image-container">
-                        <img src={profileImage} alt={user.name || 'User'} className="profile-image" />
-                        {user.vip && <span className="vip-badge">vip</span>}
-                      </div>
-                      <button className="favorite-btn">♡</button>
-                    </div>
-                    
-                    <div className="match-card-body">
-                      <div className="match-name-row">
-                        <h3 className="match-name">{user.name || 'Anonymous'}</h3>
-                        {user.verified && <span className="verified-badge">✓</span>}
-                      </div>
-                      <div className="online-status">Online now</div>
-                      
-                      <div className="match-details">
-                        <div className="detail-column">
-                          <div className="detail-item">
-                            {age} yrs, {height}
-                          </div>
-                          <div className="detail-item">
-                            {user.religion || 'N/A'},{user.caste || 'Caste'}
-                          </div>
-                          <div className="detail-item">
-                            {user.motherTongue || 'N/A'}
-                          </div>
-                        </div>
-                        <div className="detail-column">
-                          <div className="detail-item">
-                            {user.status === 'single' ? 'Never Married' : user.status || 'N/A'}
-                          </div>
-                          <div className="detail-item">
-                            {user.settledCountry || 'N/A'},{user.settledState || 'N/A'}
-                          </div>
-                          <div className="detail-item">
-                            {user.dayJob || 'N/A'}
-                          </div>
+                    <div className="match-card-content">
+                      {/* Profile Image on Left */}
+                      <div className="match-card-left">
+                        <div className="profile-image-container">
+                          <img src={profileImage} alt={user.name || 'User'} className="profile-image" />
+                          {isVip && (
+                            <div className="vip-badge">
+                              <span className="vip-icon">😊</span>
+                              <span className="vip-text">vip</span>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      
-                      <div className="match-bio">
-                        {user.aboutMe ? (
-                          <>
-                            {user.aboutMe.substring(0, 100)}
-                            {user.aboutMe.length > 100 && <span className="more-link"> more</span>}
-                          </>
-                        ) : (
-                          'No bio available'
-                        )}
+
+                      {/* Content in Middle */}
+                      <div className="match-card-middle">
+                        <div className="match-name-row">
+                          <h3 className="match-name">{user.name || 'Anonymous'}</h3>
+                          {isVerified && <span className="verified-badge">✓</span>}
+                          {isOnline && (
+                            <div className="online-status-indicator">
+                              <span className="online-icon">💬</span>
+                              <span className="online-text">Online now</span>
+                            </div>
+                          )}
+                          <button className="favorite-btn">♡</button>
+                        </div>
+                        
+                        <div className="match-details">
+                          <div className="detail-column">
+                            <div className="detail-item">
+                              {age} yrs, {height}
+                            </div>
+                            <div className="detail-item">
+                              {user.religion || 'N/A'},{user.community || 'Caste'}
+                            </div>
+                            <div className="detail-item">
+                              {user.motherTongue || 'N/A'}
+                            </div>
+                          </div>
+                          <div className="detail-column">
+                            <div className="detail-item">
+                              {maritalStatus}
+                            </div>
+                            <div className="detail-item">
+                              {location}
+                            </div>
+                            <div className="detail-item">
+                              {user.dayJob || 'N/A'}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="match-bio">
+                          {user.aboutMe ? (
+                            <>
+                              {user.aboutMe.substring(0, 80)}
+                              {user.aboutMe.length > 80 && <span className="more-link"> more</span>}
+                            </>
+                          ) : (
+                            'No bio available'
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="match-card-actions">
-                      <button className="action-btn reject-btn">✕</button>
-                      <button className="action-btn like-btn">❤</button>
-                      <button className="action-btn superlike-btn">⭐</button>
-                      <button className="action-btn message-btn">💬</button>
+
+                      {/* Action Buttons on Right */}
+                      <div className="match-card-actions">
+                        <button className="action-btn reject-btn" title="Reject">✕</button>
+                        <button className="action-btn like-btn" title="Like">❤</button>
+                        <button className="action-btn superlike-btn" title="Super Like">⭐</button>
+                        <button className="action-btn message-btn" title="Message">💬</button>
+                      </div>
                     </div>
                   </div>
                 );
