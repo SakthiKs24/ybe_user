@@ -45,7 +45,7 @@
   }
 
   .progress-title {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins';
     font-size: 32px;
     font-weight: 600;
     color: #000;
@@ -53,7 +53,7 @@
   }
 
   .progress-subtitle {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins';
     font-size: 16px;
     font-weight: 500;
     color: #666;
@@ -116,8 +116,9 @@
   
   /* Title */
   .title {
-    font-size: 36px;
-    font-weight: 700;
+    font-size: 32px;
+    font-weight: 600;
+    font-family: 'Poppins';
     color: #000;
     margin-bottom: 10px;
     text-align: center;
@@ -125,6 +126,8 @@
   
   .subtitle {
     font-size: 16px;
+    font-weight: 500;
+    font-family: 'Poppins';
     color: #666;
     text-align: center;
     margin-bottom: 35px;
@@ -222,7 +225,7 @@
     font-size: 12px;
     color: #FF3141;
     font-weight: 500;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins';
   }
   
   .progress-step.active .progress-label,
@@ -242,9 +245,10 @@
   .section-title {
     font-size: 20px;
     font-weight: 600;
-    color: #FF027D;
+    color: #FF264A;
     margin-bottom: 20px;
     text-align: center;
+    font-family: 'Poppins';
   }
   
   .form-group {
@@ -257,6 +261,7 @@
     font-weight: 600;
     color: #000;
     margin-bottom: 10px;
+    font-family: 'Poppins';
   }
   
   .form-input,
@@ -266,9 +271,9 @@
     padding: 16px 20px;
     border: 1px solid #ddd;
     border-radius: 12px;
-    font-size: 16px;
+    font-size: 14px;
     transition: border-color 0.3s;
-    font-family: inherit;
+    font-family: 'Poppins';
   }
   
   .form-input:focus,
@@ -311,6 +316,8 @@
     text-align: center;
     cursor: pointer;
     transition: all 0.3s;
+    font-family: 'Poppins';
+    
   }
   
   .radio-option input:checked + label,
@@ -337,6 +344,7 @@
     cursor: pointer;
     transition: all 0.3s;
     border: none;
+    font-family: 'Poppins';
   }
   
   .btn-primary {

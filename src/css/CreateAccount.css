@@ -66,11 +66,12 @@
   
   /* Title */
   .ca-title {
-    font-size: 36px;
-    font-weight: 700;
+    font-size: 32px;
+    font-weight: 600;
     color: #000;
     margin-bottom: 10px;
     text-align: center;
+    font-family: 'Poppins';
   }
   
   .ca-subtitle {
@@ -78,6 +79,8 @@
     color: #666;
     text-align: center;
     margin-bottom: 35px;
+    font-weight: 500;
+    font-family: 'Poppins';
   }
   
   /* Form */
@@ -132,6 +135,7 @@
     margin-bottom: 20px;
     transition: all 0.3s;
     box-shadow: 0 5px 20px rgba(255, 2, 125, 0.3);
+    font-family: 'Poppins';
   }
   
   .signup-submit-btn:hover {
@@ -142,12 +146,14 @@
   /* Sign In Link */
   .signin-link {
     text-align: center;
-    font-size: 15px;
-    color: #666;
+    font-size: 16px;
+    color: #FF155E;
+    font-weight: 600;
+    font-family: 'Poppins';
   }
   
   .signin-link a {
-    color: #FF027D;
+    color: #FF155E;
     text-decoration: none;
     font-weight: 600;
   }

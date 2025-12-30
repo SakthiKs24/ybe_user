@@ -29,8 +29,9 @@
     text-decoration: none;
     color: #000;
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 500;
     transition: color 0.3s;
+    font-family: 'poppins';
   }
   
   .nav a:hover {
@@ -48,10 +49,11 @@
     color: white;
     border-radius: 50px;
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.3s;
     box-shadow: 0 4px 15px rgba(255, 22, 84, 0.2);
+    font-family: 'poppins';
   }
   
   .signup-btn:hover {
