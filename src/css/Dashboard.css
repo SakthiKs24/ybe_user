@@ -677,4 +677,69 @@
     grid-template-columns: 1fr;
   }
 }
+/* Profile Dropdown Styles - Add this to your existing Dashboard.css */
 
+.profile-dropdown-wrapper {
+  position: relative;
+}
+
+.profile-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 1000;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.2s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 14px;
+  color: #333;
+}
+
+.dropdown-item:hover {
+  background: #f8f9fa;
+}
+
+.dropdown-item.logout-item {
+  color: #ff6b6b;
+}
+
+.dropdown-item.logout-item:hover {
+  background: #fff5f5;
+}
+
+.dropdown-icon {
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #e9ecef;
+  margin: 4px 0;
+}

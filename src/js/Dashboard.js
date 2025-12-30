@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
@@ -13,6 +13,8 @@ export default function Dashboard() {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -27,6 +29,18 @@ export default function Dashboard() {
       widowed: false
     }
   });
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Fetch current user data
   useEffect(() => {
@@ -158,8 +172,17 @@ export default function Dashboard() {
 
     // Filter by age
     filtered = filtered.filter(user => {
-      if (!user.age) return false;
-      const age = parseInt(user.age) || 0;
+      let age;
+      if (user.age) {
+        age = parseInt(user.age);
+      } else if (user.dateOfBirth) {
+        age = calculateAge(user.dateOfBirth);
+      } else if (user.birthDate) {
+        age = calculateAge(user.birthDate);
+      } else {
+        return false; 
+      }
+      
       return age >= filters.age[0] && age <= filters.age[1];
     });
 
@@ -290,9 +313,34 @@ export default function Dashboard() {
         </div>
         <div className="header-right">
           <button className="upgrade-btn" onClick={() => navigate('/upgrade')}>Upgrade now</button>
-          <button className="icon-btn" onClick={() => setShowLogoutModal(true)}>
-            <img src="/images/profile.png" alt="Profile" className="profile-icon-img" />
-          </button>
+          <div className="profile-dropdown-wrapper" ref={dropdownRef}>
+            <button 
+              className="icon-btn" 
+              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+            >
+              <img src="/images/profile.png" alt="Profile" className="profile-icon-img" />
+            </button>
+            
+            {showProfileDropdown && (
+              <div className="profile-dropdown-menu">
+                <div className="dropdown-item" onClick={() => {
+                  setShowProfileDropdown(false);
+                  navigate('/profile');
+                }}>
+                  <span className="dropdown-icon">👤</span>
+                  <span>Profile</span>
+                </div>
+                <div className="dropdown-divider"></div>
+                <div className="dropdown-item logout-item" onClick={() => {
+                  setShowProfileDropdown(false);
+                  setShowLogoutModal(true);
+                }}>
+                  <span className="dropdown-icon">🚪</span>
+                  <span>Logout</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -442,8 +490,8 @@ export default function Dashboard() {
           <div className="matches-grid">
             {filteredUsers.length > 0 ? (
               filteredUsers.map((user) => {
-                const age = user.age || calculateAge(user.birthDate) || 'N/A';
-                const height = formatHeight(user.height);
+                const age = user.age || calculateAge(user.dateOfBirth) || 'N/A';
+                const height = user.height || '';
                 const profileImage = user.profileImageUrls?.[0] || '/images/profile_badge.png';
                 
                 const isOnline = user.onlineStatus === true;
@@ -455,7 +503,9 @@ export default function Dashboard() {
                   : user.settledCountry || 'N/A';
                 
                 return (
-                  <div key={user.id} className="match-card">
+                  <div key={user.id} className="match-card" onClick={() => navigate(`/profile/${user.userId || user.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
                     <div className="match-card-content">
                       {/* Profile Image on Left */}
                       <div className="match-card-left">
@@ -523,10 +573,18 @@ export default function Dashboard() {
 
                       {/* Action Buttons on Right */}
                       <div className="match-card-actions">
-                        <button className="action-btn reject-btn" title="Reject">✕</button>
-                        <button className="action-btn like-btn" title="Like">❤</button>
-                        <button className="action-btn superlike-btn" title="Super Like">⭐</button>
-                        <button className="action-btn message-btn" title="Message">💬</button>
+                        <button className="action-btn reject-btn" title="Reject">
+                          <img src="/images/Reject.png" alt="Reject" className="action-icon" />
+                        </button>
+                        <button className="action-btn " title="Like">
+                          <img src="/images/Like.png" alt="Like" className="action-icon" />
+                        </button>
+                        <button className="action-btn super" title="Super Like">
+                          <img src="/images/Star.png" alt="Super Like" className="action-icon" />
+                        </button>
+                        <button className="action-btn" title="Message">
+                          <img src="/images/Chat.png" alt="Message" className="action-icon" />
+                        </button>
                       </div>
                     </div>
                   </div>

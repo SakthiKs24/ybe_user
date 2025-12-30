@@ -7,6 +7,8 @@ import ProfileSetup from './js/ProfileSetup';
 import Upgrade from './js/Upgrade';
 import ChatList from './js/ChatList';
 import ChatDetail from './js/ChatDetail';
+import ProfileDetails from './js/ProfileDetails';
+import Profile from './js/Profile';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -24,6 +26,8 @@ function App() {
         <Route path="/profile-setup" element={<ProfileSetup />} />
         <Route path="/upgrade" element={<Upgrade />} />
         <Route path="/chat/:chatId?" element={<ChatList />} />
+        <Route path="/profile/:userId" element={<ProfileDetails />} />
+        <Route path="/profile" element={<Profile />} />
 
       </Routes>
     </Router>
