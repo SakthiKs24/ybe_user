@@ -123,22 +123,28 @@ export default function ProfileDetails() {
         </div>
         <div className="header-right">
           <button className="upgrade-btn" onClick={() => navigate('/upgrade')}>Upgrade now</button>
-          <button className="icon-btn">
-            <img src="/images/bell.png" alt="Notifications" className="notification-icon" />
-          </button>
+          
           <button className="icon-btn">
             <img src="/images/profile.png" alt="Profile" className="profile-icon-img" />
           </button>
         </div>
       </header>
 
-      <div className="profile-content">
+      <div className="">
         {/* Back Button */}
-        <button className="back-button" onClick={() => navigate('/dashboard')}>
-          <span className="back-arrow">←</span> ProfileDetails
+        <button className="back-button" >
+        <span className="back-arrow" >
+          <img
+            src="/images/back_arrow.png"
+            alt="Back"
+            className="back-arrow-icon" onClick={() => navigate('/dashboard')}
+          />
+        </span>
+        ProfileDetails
+
         </button>
 
-        <div className="profile-main">
+        <div className="profile1-main">
           {/* Left Side - Image Gallery */}
           <div className="profile-left">
             <div className="image-gallery">
@@ -189,9 +195,9 @@ export default function ProfileDetails() {
             <section className="info-section">
               <h2 className="section-title">Basic Info</h2>
               <div className="info-grid">
-                <InfoRow label="Age/Height" value={`${age} Yrs /${height} (168 cm)`} icon="✕" />
+                <InfoRow label="Age/Height" value={`${age} Yrs /${height}`} icon="✕" />
                 <InfoRow label="Date of Birth" value={formatDate(userData.dateOfBirth)} />
-                <InfoRow label="Gender" value={userData.userGender === 'female' ? 'Female' : userData.userGender === 'male' ? 'Male' : 'Not Specified'} icon="✕" />
+                <InfoRow label="Gender" value={userData.userGender === 'Female' ? 'Female' : userData.userGender === 'male' ? 'Male' : 'Not Specified'} icon="✕" />
                 <InfoRow label="Marital Status" value={userData.status === 'single' ? 'Never Married' : userData.status || 'Not Specified'} icon="❤" />
                 <InfoRow label="Have Children" value={userData.hasChildren || 'No information Available'} icon="⭐" />
                 <InfoRow label="Religion" value={userData.religion || 'Not Specified'} icon="✓" />
@@ -199,7 +205,7 @@ export default function ProfileDetails() {
                 <InfoRow label="Sub Caste" value={userData.subCaste || 'Not Specified'} />
                 <InfoRow label="Gothra" value={userData.gothra || 'Not Specified'} />
                 <InfoRow label="Mother Tongue" value={userData.motherTongue || 'Not Specified'} />
-                <InfoRow label="Features" value={userData.features || 'Not Specified'} />
+                <InfoRow label="Features" value={userData.bodyBuild || 'Not Specified'} />
                 <InfoRow label="Complexion" value={userData.complexion || 'Not Specified'} />
                 <InfoRow label="Special Cases" value={userData.specialCases || 'None'} />
               </div>
@@ -211,9 +217,8 @@ export default function ProfileDetails() {
               <div className="info-grid">
                 <InfoRow label="Birth Time" value={userData.birthTime || 'Not Specified'} />
                 <InfoRow label="Country of Birth" value={userData.countryOfBirth || 'Not Specified'} />
-                <InfoRow label="Nakshatra" value={userData.nakshatra || "Don't Know"} />
-                <InfoRow label="xxxx xxxx" value="xxxx xxxx" />
-                <InfoRow label="xxxxxx" value="xx xxxx xxxxx" />
+                <InfoRow label="Star" value={userData.selectedPersonalityTraitsMap.starSign || "Don't Know"} />
+             
               </div>
             </section>
 
@@ -221,8 +226,12 @@ export default function ProfileDetails() {
             <section className="info-section">
               <h2 className="section-title">Location</h2>
               <div className="info-grid">
-                <InfoRow label="Citizen" value={userData.settledCountry || 'Not Specified'} />
-                <InfoRow label="Citizenship" value="xxx xxx xxxx" />
+                <InfoRow label="Address" value={userData?.currentPosition?.address || 'Not Specified'} />
+                <InfoRow label="City"  value={userData?.currentPosition?.city || 'Not Specified'} />
+                <InfoRow label="Settled Country" value={userData.settledCountry || 'Not Specified'} />
+                <InfoRow label="Origin Country" value={userData.originCountry || 'Not Specified'} />
+                <InfoRow label="GrowUp Country" value={userData.growUpCountry || 'Not Specified'} />
+
               </div>
             </section>
 
@@ -230,8 +239,8 @@ export default function ProfileDetails() {
             <section className="info-section">
               <h2 className="section-title">Education and Profession</h2>
               <div className="info-grid">
-                <InfoRow label="xxxxxx" value={userData.education || 'xxxxxxx'} />
-                <InfoRow label="xxxxxxxxx" value={userData.dayJob || 'xxxxx xxxxxx'} />
+                <InfoRow label="Degree" value={userData.degree || 'Not Specified'} />
+                <InfoRow label="Day Job" value={userData.dayJob || 'Not Specified'} />
               </div>
             </section>
           </div>

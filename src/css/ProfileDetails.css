@@ -117,27 +117,35 @@
   
   .back-button {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    /* align-items: center; */
+    gap: 15px;
     background: none;
     border: none;
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 600;
-    cursor: pointer;
     padding: 10px 0;
     margin-bottom: 20px;
-    color: #333;
+    /* color: #333; */
+    margin-left: 60px;
+    font-family: 'Poppins';
+    margin-top: 25px;
   }
   
-  .back-arrow {
-    font-size: 24px;
+  .back-arrow-icon {
+    width: 14px;
+    height: 22px;
+    cursor: pointer;
+
   }
+
   
-  .profile-main {
+  .profile1-main {
     display: grid;
     grid-template-columns: 1fr 1.5fr;
     gap: 30px;
     margin-top: 20px;
+    margin-left: 60px;
+    margin-right: 60px;
   }
   
   /* Left Side - Image Gallery */
@@ -382,7 +390,7 @@
   
   /* Responsive */
   @media (max-width: 1024px) {
-    .profile-main {
+    .profile1-main {
       grid-template-columns: 1fr;
     }
   

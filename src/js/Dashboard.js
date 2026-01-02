@@ -12,23 +12,95 @@ export default function Dashboard() {
   const [allUsers, setAllUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filterLoading, setFilterLoading] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [uniqueLocations, setUniqueLocations] = useState([]);
   const dropdownRef = useRef(null);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [usersPerPage] = useState(10);
   
   // Filter states
   const [filters, setFilters] = useState({
-    location: 'Newyork, USA',
+    location: 'All',
     interestedIn: 'Women',
     sortBy: 'High Match',
-    distance: [0, 15],
-    age: [20, 38],
+    age: [20, 60],
     maritalStatus: {
       neverMarried: false,
       divorced: false,
       widowed: false
     }
   });
+
+  // Calculate pagination
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+  // Pagination handlers
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pageNumbers.push(i);
+        }
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        pageNumbers.push(currentPage - 1);
+        pageNumbers.push(currentPage);
+        pageNumbers.push(currentPage + 1);
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      }
+    }
+    
+    return pageNumbers;
+  };
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, filteredUsers.length]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -77,6 +149,8 @@ export default function Dashboard() {
     const fetchUsers = async () => {
       if (!userData?.uid) return;
       
+      setFilterLoading(true);
+      
       try {
         const usersRef = collection(db, 'users');
         let userQuery;
@@ -88,13 +162,13 @@ export default function Dashboard() {
           userQuery = query(
             usersRef,
             where('profileDiscovery', '==', true),
-            where('userGender', '==', 'male')
+            where('userGender', '==', 'Male')
           );
         } else if (genderPreference === 'Women') {
           userQuery = query(
             usersRef,
             where('profileDiscovery', '==', true),
-            where('userGender', '==', 'female')
+            where('userGender', '==', 'Female')
           );
         } else {
           // Both - only filter by profileDiscovery
@@ -108,15 +182,32 @@ export default function Dashboard() {
         
         // Map snapshot to users, exclude current user
         const users = [];
+        const locationsSet = new Set();
+        
         querySnapshot.forEach((doc) => {
           if (doc.id !== userData.uid) {
+            const userData = doc.data();
             users.push({
               id: doc.id,
               userId: doc.id,
-              ...doc.data()
+              ...userData
             });
+            
+            // Extract unique locations
+            if (userData.settledCountry) {
+              locationsSet.add(userData.settledCountry);
+            }
+            // Also check for other location fields
+            if (userData.currentPosition?.city) {
+              const locationStr = `${userData.currentPosition.city}, ${userData.settledCountry || ''}`.trim();
+              locationsSet.add(locationStr);
+            }
           }
         });
+        
+        // Set unique locations for dropdown
+        const locationsArray = Array.from(locationsSet).filter(loc => loc && loc.trim() !== '').sort();
+        setUniqueLocations(['All', ...locationsArray]);
         
         // Collect all user IDs to check blocks
         const userIds = users.map((user) => user.userId || user.id);
@@ -158,6 +249,8 @@ export default function Dashboard() {
       } catch (error) {
         console.error('Error fetching users:', error);
         toast.error('Failed to load users');
+      } finally {
+        setFilterLoading(false);
       }
     };
 
@@ -166,53 +259,76 @@ export default function Dashboard() {
 
   // Apply filters
   useEffect(() => {
-    let filtered = [...allUsers];
+    if (allUsers.length === 0) return;
+    
+    setFilterLoading(true);
+    setFilteredUsers([]); // Clear old data immediately
+    
+    // Use setTimeout to ensure UI updates with loading state
+    const filterTimeout = setTimeout(() => {
+      let filtered = [...allUsers];
 
-    // Note: Gender filter is already applied in fetchUsers based on filters.interestedIn
-
-    // Filter by age
-    filtered = filtered.filter(user => {
-      let age;
-      if (user.age) {
-        age = parseInt(user.age);
-      } else if (user.dateOfBirth) {
-        age = calculateAge(user.dateOfBirth);
-      } else if (user.birthDate) {
-        age = calculateAge(user.birthDate);
-      } else {
-        return false; 
+      // Filter by location
+      if (filters.location && filters.location !== 'All') {
+        filtered = filtered.filter(user => {
+          const userLocation = user.settledCountry || '';
+          const userCity = user.currentPosition?.city || '';
+          const fullLocation = userCity ? `${userCity}, ${userLocation}` : userLocation;
+          
+          return userLocation.includes(filters.location) || 
+                 fullLocation.includes(filters.location) ||
+                 filters.location.includes(userLocation);
+        });
       }
-      
-      return age >= filters.age[0] && age <= filters.age[1];
-    });
 
-    // Filter by marital status
-    if (filters.maritalStatus.neverMarried || filters.maritalStatus.divorced || filters.maritalStatus.widowed) {
+      // Filter by age
       filtered = filtered.filter(user => {
-        const status = user.status?.toLowerCase() || '';
-        return (
-          (filters.maritalStatus.neverMarried && (status === 'single' || status === 'never married')) ||
-          (filters.maritalStatus.divorced && status === 'divorced') ||
-          (filters.maritalStatus.widowed && status === 'widowed')
-        );
+        let age;
+        if (user.age) {
+          age = parseInt(user.age);
+        } else if (user.dateOfBirth) {
+          age = calculateAge(user.dateOfBirth);
+        } else if (user.birthDate) {
+          age = calculateAge(user.birthDate);
+        } else {
+          return false; 
+        }
+        
+        return age >= filters.age[0] && age <= filters.age[1];
       });
-    }
 
-    // Sort by
-    if (filters.sortBy === 'High Match') {
-      // Sort by match score (you can implement match algorithm later)
-      filtered.sort((a, b) => {
-        // Placeholder: sort by name for now
-        return (a.name || '').localeCompare(b.name || '');
-      });
-    } else if (filters.sortBy === 'Online') {
-      // Sort by online status (you can add online status field later)
-      filtered.sort((a, b) => {
-        return (b.online || false) - (a.online || false);
-      });
-    }
+      // Filter by marital status
+      if (filters.maritalStatus.neverMarried || filters.maritalStatus.divorced || filters.maritalStatus.widowed) {
+        filtered = filtered.filter(user => {
+          const status = user.status?.toLowerCase() || '';
+          return (
+            (filters.maritalStatus.neverMarried && (status === 'single' || status === 'never married')) ||
+            (filters.maritalStatus.divorced && status === 'divorced') ||
+            (filters.maritalStatus.widowed && status === 'widowed')
+          );
+        });
+      }
 
-    setFilteredUsers(filtered);
+      // Sort by
+      if (filters.sortBy === 'High Match') {
+        filtered.sort((a, b) => {
+          return (a.name || '').localeCompare(b.name || '');
+        });
+      } else if (filters.sortBy === 'Online') {
+        filtered.sort((a, b) => {
+          return (b.onlineStatus ? 1 : 0) - (a.onlineStatus ? 1 : 0);
+        });
+      } else if (filters.sortBy === 'offline') {
+        filtered.sort((a, b) => {
+          return (a.onlineStatus ? 1 : 0) - (b.onlineStatus ? 1 : 0);
+        });
+      }
+
+      setFilteredUsers(filtered);
+      setFilterLoading(false);
+    }, 100);
+
+    return () => clearTimeout(filterTimeout);
   }, [filters, allUsers]);
 
   const handleFilterChange = (filterType, value) => {
@@ -234,7 +350,6 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     try {
-      // Set onlineStatus to false before logging out
       if (userData && userData.uid) {
         try {
           const usersRef = collection(db, 'users');
@@ -250,7 +365,6 @@ export default function Dashboard() {
           }
         } catch (error) {
           console.error('Error updating onlineStatus:', error);
-          // Continue with logout even if status update fails
         }
       }
 
@@ -356,10 +470,11 @@ export default function Dashboard() {
               value={filters.location}
               onChange={(e) => handleFilterChange('location', e.target.value)}
             >
-              <option>Newyork, USA</option>
-              <option>Bengaluru, Karnataka</option>
-              <option>Mumbai, Maharashtra</option>
-              <option>Delhi, India</option>
+              {uniqueLocations.map((location, index) => (
+                <option key={index} value={location}>
+                  {location}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -400,56 +515,59 @@ export default function Dashboard() {
           </div>
 
           <div className="filter-section">
-            <label className="filter-label">Distance</label>
-            <div className="slider-container">
-              <div className="slider-labels">
-                <span>0 km</span>
-                <span>5 km</span>
-                <span>10 km</span>
-                <span>15 km</span>
-                <span>20 km</span>
-                <span>25 km</span>
+            <label className="filter-label">Age</label>
+            
+            <div className="age-range-display">
+              <span className="age-value">{filters.age[0]}</span>
+              <span className="age-separator">-</span>
+              <span className="age-value">{filters.age[1]}</span>
+            </div>
+            <div className="slider-labels">
+              <span>20</span>
+              <span>30</span>
+              <span>40</span>
+              <span>50</span>
+              <span>60</span>
+            </div>
+            <div className="dual-range-slider">
+              <div className="slider-track">
+                <div 
+                  className="slider-range" 
+                  style={{
+                    left: `${((filters.age[0] - 20) / 40) * 100}%`,
+                    width: `${((filters.age[1] - filters.age[0]) / 40) * 100}%`
+                  }}
+                ></div>
               </div>
+              
               <input
                 type="range"
-                min="0"
-                max="25"
-                value={filters.distance[1]}
-                onChange={(e) => handleFilterChange('distance', [0, parseInt(e.target.value)])}
-                className="slider"
+                min="20"
+                max="60"
+                value={filters.age[0]}
+                onChange={(e) => {
+                  const newMin = parseInt(e.target.value);
+                  if (newMin < filters.age[1]) {
+                    handleFilterChange('age', [newMin, filters.age[1]]);
+                  }
+                }}
+                className="slider-thumb slider-thumb-min"
+              />
+              <input
+                type="range"
+                min="20"
+                max="60"
+                value={filters.age[1]}
+                onChange={(e) => {
+                  const newMax = parseInt(e.target.value);
+                  if (newMax > filters.age[0]) {
+                    handleFilterChange('age', [filters.age[0], newMax]);
+                  }
+                }}
+                className="slider-thumb slider-thumb-max"
               />
             </div>
-          </div>
-
-          <div className="filter-section">
-            <label className="filter-label">Age</label>
-            <div className="slider-container">
-              <div className="slider-labels">
-                <span>20</span>
-                <span>30</span>
-                <span>40</span>
-                <span>50</span>
-                <span>60</span>
-              </div>
-              <div className="range-inputs">
-                <input
-                  type="range"
-                  min="20"
-                  max="60"
-                  value={filters.age[0]}
-                  onChange={(e) => handleFilterChange('age', [parseInt(e.target.value), filters.age[1]])}
-                  className="slider"
-                />
-                <input
-                  type="range"
-                  min="20"
-                  max="60"
-                  value={filters.age[1]}
-                  onChange={(e) => handleFilterChange('age', [filters.age[0], parseInt(e.target.value)])}
-                  className="slider"
-                />
-              </div>
-            </div>
+            
           </div>
 
           <div className="filter-section">
@@ -485,124 +603,176 @@ export default function Dashboard() {
 
         {/* Main Content - Match Cards */}
         <main className="matches-content">
-          <h2 className="matches-title">New matches who match your preferences</h2>
-          
-          <div className="matches-grid">
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => {
-                const age = user.age || calculateAge(user.dateOfBirth) || 'N/A';
-                const height = user.height || '';
-                const profileImage = user.profileImageUrls?.[0] || '/images/profile_badge.png';
-                
-                const isOnline = user.onlineStatus === true;
-                const isVerified = user.verified || false;
-                const isVip = user.subscriptions?.planName !== 'Free' || false;
-                const maritalStatus = user.status === 'single' ? 'Never Married' : user.status || 'N/A';
-                const location = user.settledCountry && user.currentPosition?.city 
-                  ? `${user.currentPosition.city},${user.settledCountry}` 
-                  : user.settledCountry || 'N/A';
-                
-                return (
-                  <div key={user.id} className="match-card" onClick={() => navigate(`/profile/${user.userId || user.id}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                    <div className="match-card-content">
-                      {/* Profile Image on Left */}
-                      <div className="match-card-left">
-                        <div className="profile-image-container">
-                          <img src={profileImage} alt={user.name || 'User'} className="profile-image" />
-                          {isVip && (
-                            <div className="vip-badge">
-                              <span className="vip-icon">😊</span>
-                              <span className="vip-text">vip</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Content in Middle */}
-                      <div className="match-card-middle">
-                        <div className="match-name-row">
-                          <h3 className="match-name">{user.name || 'Anonymous'}</h3>
-                          {isVerified && <span className="verified-badge">✓</span>}
-                          {isOnline && (
-                            <div className="online-status-indicator">
-                              <span className="online-icon">💬</span>
-                              <span className="online-text">Online now</span>
-                            </div>
-                          )}
-                          <button className="favorite-btn">♡</button>
-                        </div>
-                        
-                        <div className="match-details">
-                          <div className="detail-column">
-                            <div className="detail-item">
-                              {age} yrs, {height}
-                            </div>
-                            <div className="detail-item">
-                              {user.religion || 'N/A'},{user.community || 'Caste'}
-                            </div>
-                            <div className="detail-item">
-                              {user.motherTongue || 'N/A'}
-                            </div>
-                          </div>
-                          <div className="detail-column">
-                            <div className="detail-item">
-                              {maritalStatus}
-                            </div>
-                            <div className="detail-item">
-                              {location}
-                            </div>
-                            <div className="detail-item">
-                              {user.dayJob || 'N/A'}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="match-bio">
-                          {user.aboutMe ? (
-                            <>
-                              {user.aboutMe.substring(0, 80)}
-                              {user.aboutMe.length > 80 && <span className="more-link"> more</span>}
-                            </>
-                          ) : (
-                            'No bio available'
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Action Buttons on Right */}
-                      <div className="match-card-actions">
-                        <button className="action-btn reject-btn" title="Reject">
-                          <img src="/images/Reject.png" alt="Reject" className="action-icon" />
-                        </button>
-                        <button className="action-btn " title="Like">
-                          <img src="/images/Like.png" alt="Like" className="action-icon" />
-                        </button>
-                        <button className="action-btn super" title="Super Like">
-                          <img src="/images/Star.png" alt="Super Like" className="action-icon" />
-                        </button>
-                        <button className="action-btn" title="Message">
-                          <img src="/images/Chat.png" alt="Message" className="action-icon" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="no-matches">
-                <p>No matches found. Try adjusting your filters.</p>
+          {filterLoading ? (
+            <div className="filter-loading-overlay">
+              <img src="/images/logo.png" alt="Loading..." className="filter-loading-logo" />
+            </div>
+          ) : (
+            <>
+              <div className="matches-header">
+                <h2 className="matches-title">
+                  New matches who match your preferences ({filteredUsers.length})
+                </h2>
+                <div className="pagination-info">
+                  Showing {filteredUsers.length > 0 ? indexOfFirstUser + 1 : 0}-{Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length}
+                </div>
               </div>
-            )}
-          </div>
+              
+              <div className="matches-grid">
+                {currentUsers.length > 0 ? (
+                  currentUsers.map((user) => {
+                    const age = user.age || calculateAge(user.dateOfBirth) || 'N/A';
+                    const height = user.height || '';
+                    const profileImage = user.profileImageUrls?.[0] || '/images/profile_badge.png';
+                    
+                    const isOnline = user.onlineStatus === true;
+                    const isVerified = user.verified || false;
+                    const isVip = user.subscriptions?.planName !== 'Free' || false;
+                    const maritalStatus = user.status === 'single' ? 'Never Married' : user.status || 'N/A';
+                    const location = user.settledCountry && user.currentPosition?.city 
+                      ? `${user.currentPosition.city},${user.settledCountry}` 
+                      : user.settledCountry || 'N/A';
+                    
+                    return (
+                      <div key={user.id} className="match-card" onClick={() => navigate(`/profile/${user.userId || user.id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                        <div className="match-card-content">
+                          {/* Profile Image on Left */}
+                          <div className="match-card-left">
+                            <div className="profile-image-container">
+                              <img src={profileImage} alt={user.name || 'User'} className="profile-image" />
+                              {isVip && (
+                                <div className="vip-badge">
+                                  <span className="vip-icon">😊</span>
+                                  <span className="vip-text">vip</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Content in Middle */}
+                          <div className="match-card-middle">
+                            <div className="match-name-row">
+                              <h3 className="match-name">{user.name || 'Anonymous'}</h3>
+                              {isVerified && <span className="verified-badge">✓</span>}
+                              {isOnline && (
+                                <div className="online-status-indicator">
+                                  <span className="online-icon">💬</span>
+                                  <span className="online-text">Online now</span>
+                                </div>
+                              )}
+                              <button className="favorite-btn">♡</button>
+                            </div>
+                            
+                            <div className="match-details">
+                              <div className="detail-column">
+                                <div className="detail-item">
+                                  {age} yrs, {height}
+                                </div>
+                                <div className="detail-item">
+                                  {user.religion || 'N/A'},{user.community || 'Caste'}
+                                </div>
+                                <div className="detail-item">
+                                  {user.motherTongue || 'N/A'}
+                                </div>
+                              </div>
+                              <div className="detail-column">
+                                <div className="detail-item">
+                                  {maritalStatus}
+                                </div>
+                                <div className="detail-item">
+                                  {location}
+                                </div>
+                                <div className="detail-item">
+                                  {user.dayJob || 'N/A'}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="match-bio">
+                              {user.aboutMe ? (
+                                <>
+                                  {user.aboutMe.substring(0, 80)}
+                                  {user.aboutMe.length > 80 && <span className="more-link"> more</span>}
+                                </>
+                              ) : (
+                                'No bio available'
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Action Buttons on Right */}
+                          <div className="match-card-actions">
+                            <button className="action-btn reject-btn" title="Reject">
+                              <img src="/images/Reject.png" alt="Reject" className="action-icon" />
+                            </button>
+                            <button className="action-btn " title="Like">
+                              <img src="/images/Like.png" alt="Like" className="action-icon" />
+                            </button>
+                            <button className="action-btn super" title="Super Like">
+                              <img src="/images/Star.png" alt="Super Like" className="action-icon" />
+                            </button>
+                            <button className="action-btn" title="Message">
+                              <img src="/images/Chat.png" alt="Message" className="action-icon" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="no-matches">
+                    <p>No matches found. Try adjusting your filters.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Pagination Controls */}
+              {filteredUsers.length > usersPerPage && (
+                <div className="pagination-container">
+                  <button 
+                    className="pagination-btn"
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1}
+                  >
+                    ← Previous
+                  </button>
+                  
+                  <div className="pagination-numbers">
+                    {getPageNumbers().map((pageNum, index) => (
+                      pageNum === '...' ? (
+                        <span key={`ellipsis-${index}`} className="pagination-ellipsis">...</span>
+                      ) : (
+                        <button
+                          key={pageNum}
+                          className={`pagination-number ${currentPage === pageNum ? 'active' : ''}`}
+                          onClick={() => handlePageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </button>
+                      )
+                    ))}
+                  </div>
+                  
+                  <button 
+                    className="pagination-btn"
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </main>
       </div>
 
       {/* Logout Modal */}
       {showLogoutModal && (
         <div className="modal-overlay" onClick={() => setShowLogoutModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}> 
             <h3>Confirm Logout</h3>
             <p>Are you sure you want to logout?</p>
             <div className="modal-buttons">
