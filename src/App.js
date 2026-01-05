@@ -8,8 +8,9 @@ import Upgrade from './js/Upgrade';
 import ChatList from './js/ChatList';
 import ChatDetail from './js/ChatDetail';
 import ProfileDetails from './js/ProfileDetails';
+import FavoriteCategory from './js/FavoriteCategory';
 import Profile from './js/Profile';
-
+import Favorites from './js/Favorites';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -28,6 +29,8 @@ function App() {
         <Route path="/chat/:chatId?" element={<ChatList />} />
         <Route path="/profile/:userId" element={<ProfileDetails />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/favorites" element={<Favorites />} />
+        <Route path="/favorites/:category" element={<FavoriteCategory />} />
 
       </Routes>
     </Router>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, query, where, documentId, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, documentId, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import '../css/Dashboard.css';
 
@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [uniqueLocations, setUniqueLocations] = useState([]);
+  const [favorites, setFavorites] = useState(new Set());
   const dropdownRef = useRef(null);
   
   // Pagination states
@@ -143,6 +144,29 @@ export default function Dashboard() {
 
     return () => unsubscribe();
   }, [navigate]);
+
+  // Fetch favorites
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      if (!userData?.uid) return;
+      
+      try {
+        const favoritesRef = collection(db, 'favorites');
+        const q = query(favoritesRef, where('likedBy', '==', userData.userId));
+        const querySnapshot = await getDocs(q);
+        const favSet = new Set();
+        querySnapshot.forEach((doc) => {
+          favSet.add(doc.data().likedUser);
+        });
+        
+        setFavorites(favSet);
+      } catch (error) {
+        console.error('Error fetching favorites:', error);
+      }
+    };
+
+    fetchFavorites();
+  }, [userData?.uid]);
 
   // Fetch all users excluding current user and blocked users
   useEffect(() => {
@@ -348,6 +372,54 @@ export default function Dashboard() {
     }));
   };
 
+  // Handle favorite toggle
+  const handleFavoriteToggle = async (e, userId) => {
+    e.stopPropagation(); // Prevent card click
+    
+    if (!userData?.uid) return;
+    
+    try {
+      const isFavorite = favorites.has(userId);
+      
+      if (isFavorite) {
+        // Remove from favorites
+        const favoritesRef = collection(db, 'favorites');
+        const q = query(
+          favoritesRef, 
+          where('likedBy', '==', userData.uid),
+          where('likedUser', '==', userId)
+        );
+        const querySnapshot = await getDocs(q);
+        
+        querySnapshot.forEach(async (docSnapshot) => {
+          await deleteDoc(doc(db, 'favorites', docSnapshot.id));
+        });
+        
+        setFavorites(prev => {
+          const newFavorites = new Set(prev);
+          newFavorites.delete(userId);
+          return newFavorites;
+        });
+        
+        toast.success('Removed from favorites');
+      } else {
+        // Add to favorites
+        await addDoc(collection(db, 'favorites'), {
+          likedBy: userData.userId,
+          likedUser: userId,
+        });
+        console.log(userData.userId);
+        console.log(userId);
+
+        setFavorites(prev => new Set(prev).add(userId));
+        toast.success('Added to favorites');
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Failed to update favorites');
+    }
+  };
+
   const handleLogout = async () => {
     try {
       if (userData && userData.uid) {
@@ -398,6 +470,11 @@ export default function Dashboard() {
     if (!height) return '';
     const [ft, inch] = height.split('.');
     return `${ft}'${inch}"`;
+  };
+
+  // Handle profile navigation
+  const handleProfileClick = (userId) => {
+    navigate(`/profile/${userId}`);
   };
 
   if (loading) {
@@ -633,13 +710,17 @@ export default function Dashboard() {
                       ? `${user.currentPosition.city},${user.settledCountry}` 
                       : user.settledCountry || 'N/A';
                     
+                    const isFavorited = favorites.has(user.userId || user.id);
+                    
                     return (
-                      <div key={user.id} className="match-card" onClick={() => navigate(`/profile/${user.userId || user.id}`)}
-                      style={{ cursor: 'pointer' }}
-                    >
+                      <div key={user.id} className="match-card">
                         <div className="match-card-content">
-                          {/* Profile Image on Left */}
-                          <div className="match-card-left">
+                          {/* Profile Image on Left - Clickable */}
+                          <div 
+                            className="match-card-left"
+                            onClick={() => handleProfileClick(user.userId || user.id)}
+                            style={{ cursor: 'pointer' }}
+                          >
                             <div className="profile-image-container">
                               <img src={profileImage} alt={user.name || 'User'} className="profile-image" />
                               {isVip && (
@@ -654,7 +735,13 @@ export default function Dashboard() {
                           {/* Content in Middle */}
                           <div className="match-card-middle">
                             <div className="match-name-row">
-                              <h3 className="match-name">{user.name || 'Anonymous'}</h3>
+                              <h3 
+                                className="match-name"
+                                onClick={() => handleProfileClick(user.userId || user.id)}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                {user.name || 'Anonymous'}
+                              </h3>
                               {isVerified && <span className="verified-badge">✓</span>}
                               {isOnline && (
                                 <div className="online-status-indicator">
@@ -662,7 +749,6 @@ export default function Dashboard() {
                                   <span className="online-text">Online now</span>
                                 </div>
                               )}
-                              <button className="favorite-btn">♡</button>
                             </div>
                             
                             <div className="match-details">
@@ -707,7 +793,15 @@ export default function Dashboard() {
                             <button className="action-btn reject-btn" title="Reject">
                               <img src="/images/Reject.png" alt="Reject" className="action-icon" />
                             </button>
-                            <button className="action-btn " title="Like">
+                            {/* Favorite Button */}
+                            <button 
+                              className={`favorite-btn ${isFavorited ? 'favorited' : ''}`}
+                              onClick={(e) => handleFavoriteToggle(e, user.userId || user.id)}
+                              title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                            >
+                              {isFavorited ? '❤️' : '♡'}
+                            </button>
+                            <button className="action-btn" title="Like">
                               <img src="/images/Like.png" alt="Like" className="action-icon" />
                             </button>
                             <button className="action-btn super" title="Super Like">
