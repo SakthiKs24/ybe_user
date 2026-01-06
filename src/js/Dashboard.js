@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, query, where, documentId, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, documentId, doc, updateDoc, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import '../css/Dashboard.css';
 
@@ -17,8 +17,12 @@ export default function Dashboard() {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [uniqueLocations, setUniqueLocations] = useState([]);
   const [favorites, setFavorites] = useState(new Set());
+  const [blockedUsers, setBlockedUsers] = useState(new Set());
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [userToBlock, setUserToBlock] = useState(null);
   const dropdownRef = useRef(null);
-  
+  const [activeTab, setActiveTab] = useState('new-matches');
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
@@ -166,6 +170,29 @@ export default function Dashboard() {
     };
 
     fetchFavorites();
+  }, [userData?.uid]);
+
+  // Fetch blocked users
+  useEffect(() => {
+    const fetchBlockedUsers = async () => {
+      if (!userData?.uid) return;
+      
+      try {
+        const blockRef = collection(db, 'block');
+        const blockQuery = query(blockRef, where(documentId(), '==', userData.uid));
+        const blockSnapshot = await getDocs(blockQuery);
+        
+        if (!blockSnapshot.empty) {
+          const blockData = blockSnapshot.docs[0].data();
+          const blockedBy = blockData.blockedBy || [];
+          setBlockedUsers(new Set(blockedBy));
+        }
+      } catch (error) {
+        console.error('Error fetching blocked users:', error);
+      }
+    };
+
+    fetchBlockedUsers();
   }, [userData?.uid]);
 
   // Fetch all users excluding current user and blocked users
@@ -386,7 +413,7 @@ export default function Dashboard() {
         const favoritesRef = collection(db, 'favorites');
         const q = query(
           favoritesRef, 
-          where('likedBy', '==', userData.uid),
+          where('likedBy', '==', userData.userId),
           where('likedUser', '==', userId)
         );
         const querySnapshot = await getDocs(q);
@@ -408,8 +435,6 @@ export default function Dashboard() {
           likedBy: userData.userId,
           likedUser: userId,
         });
-        console.log(userData.userId);
-        console.log(userId);
 
         setFavorites(prev => new Set(prev).add(userId));
         toast.success('Added to favorites');
@@ -417,6 +442,84 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error toggling favorite:', error);
       toast.error('Failed to update favorites');
+    }
+  };
+
+  // Handle block toggle
+  const handleBlockToggle = async (e, userId, userName) => {
+    e.stopPropagation(); // Prevent card click
+    
+    if (!userData?.uid) return;
+    
+    const isBlocked = blockedUsers.has(userId);
+    
+    if (isBlocked) {
+      // Directly unblock without confirmation
+      try {
+        const blockRef = collection(db, 'block');
+        const blockDocRef = doc(blockRef, userData.uid);
+        const blockQuery = query(blockRef, where(documentId(), '==', userData.uid));
+        const blockSnapshot = await getDocs(blockQuery);
+        
+        if (!blockSnapshot.empty) {
+          const currentBlockData = blockSnapshot.docs[0].data();
+          const updatedBlockedBy = (currentBlockData.blockedBy || []).filter(id => id !== userId);
+          
+          await updateDoc(blockDocRef, {
+            blockedBy: updatedBlockedBy
+          });
+        }
+        
+        setBlockedUsers(prev => {
+          const newBlocked = new Set(prev);
+          newBlocked.delete(userId);
+          return newBlocked;
+        });
+        
+        toast.success('User unblocked');
+      } catch (error) {
+        console.error('Error unblocking user:', error);
+        toast.error('Failed to unblock user');
+      }
+    } else {
+      // Show confirmation dialog before blocking
+      setUserToBlock({ userId, userName });
+      setShowBlockConfirm(true);
+    }
+  };
+
+  // Confirm block action
+  const confirmBlock = async () => {
+    if (!userData?.uid || !userToBlock) return;
+    
+    try {
+      const blockRef = collection(db, 'block');
+      const blockDocRef = doc(blockRef, userData.uid);
+      const blockQuery = query(blockRef, where(documentId(), '==', userData.uid));
+      const blockSnapshot = await getDocs(blockQuery);
+      
+      if (blockSnapshot.empty) {
+        // Create new block document using setDoc
+        await setDoc(blockDocRef, {
+          blockedBy: [userToBlock.userId]
+        });
+      } else {
+        // Update existing block document
+        const currentBlockData = blockSnapshot.docs[0].data();
+        const updatedBlockedBy = [...(currentBlockData.blockedBy || []), userToBlock.userId];
+        
+        await updateDoc(blockDocRef, {
+          blockedBy: updatedBlockedBy
+        });
+      }
+      
+      setBlockedUsers(prev => new Set(prev).add(userToBlock.userId));
+      toast.success('Blocked this user');
+      setShowBlockConfirm(false);
+      setUserToBlock(null);
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      toast.error('Failed to block user');
     }
   };
 
@@ -534,7 +637,26 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
-
+      <div className="favorites-tabs">
+        <button 
+          className={`tab-btn ${activeTab === 'new-matches' ? 'active' : ''}`}
+          onClick={() => setActiveTab('new-matches')}
+        >
+          New matches
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'my-matches' ? 'active' : ''}`}
+          onClick={() => setActiveTab('my-matches')}
+        >
+          My matches
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'favourites' ? 'active' : ''}`}
+          onClick={() => setActiveTab('favourites')}
+        >
+          Favourites
+        </button>
+      </div>
       <div className="dashboard-content">
         {/* Left Sidebar - Filters */}
         <aside className="filters-sidebar">
@@ -711,6 +833,7 @@ export default function Dashboard() {
                       : user.settledCountry || 'N/A';
                     
                     const isFavorited = favorites.has(user.userId || user.id);
+                    const isBlocked = blockedUsers.has(user.userId || user.id);
                     
                     return (
                       <div key={user.id} className="match-card">
@@ -743,33 +866,43 @@ export default function Dashboard() {
                                 {user.name || 'Anonymous'}
                               </h3>
                               {isVerified && <span className="verified-badge">✓</span>}
-                              {isOnline && (
-                                <div className="online-status-indicator">
-                                  <span className="online-icon">💬</span>
-                                  <span className="online-text">Online now</span>
-                                </div>
-                              )}
+                              <div className="online-status-indicator1">
+                                <img
+                                  src={isOnline ? "/images/online_now.png" : "/images/offline.png"}
+                                  alt={isOnline ? "Online" : "Offline"}
+                                  className="online-status-icon"
+                                />
+                                <span className={`online-text1 ${isOnline ? "online" : "offline"}`}>
+                                  {isOnline ? "Online now" : "Offline"}
+                                </span>
+                              </div>
+
                             </div>
                             
                             <div className="match-details">
-                              <div className="detail-column">
+                              <div className="detail-row">
                                 <div className="detail-item">
                                   {age} yrs, {height}
                                 </div>
-                                <div className="detail-item">
-                                  {user.religion || 'N/A'},{user.community || 'Caste'}
-                                </div>
-                                <div className="detail-item">
-                                  {user.motherTongue || 'N/A'}
-                                </div>
-                              </div>
-                              <div className="detail-column">
+                                <div className="detail-divider"></div>
                                 <div className="detail-item">
                                   {maritalStatus}
                                 </div>
+                              </div>
+                              <div className="detail-row">
+                                <div className="detail-item">
+                                  {user.religion || 'N/A'},{user.community || 'Caste'}
+                                </div>
+                                <div className="detail-divider"></div>
                                 <div className="detail-item">
                                   {location}
                                 </div>
+                              </div>
+                              <div className="detail-row">
+                                <div className="detail-item">
+                                  {user.motherTongue || 'N/A'}
+                                </div>
+                                <div className="detail-divider"></div>
                                 <div className="detail-item">
                                   {user.dayJob || 'N/A'}
                                 </div>
@@ -790,19 +923,28 @@ export default function Dashboard() {
 
                           {/* Action Buttons on Right */}
                           <div className="match-card-actions">
-                            <button className="action-btn reject-btn" title="Reject">
-                              <img src="/images/Reject.png" alt="Reject" className="action-icon" />
-                            </button>
-                            {/* Favorite Button */}
                             <button 
-                              className={`favorite-btn ${isFavorited ? 'favorited' : ''}`}
+                              className="action-btn reject-btn" 
+                              onClick={(e) => handleBlockToggle(e, user.userId || user.id, user.name)}
+                              title={isBlocked ? 'Unblock' : 'Block'}
+                            >
+                              <img 
+                                src="/images/Reject.png" 
+                                alt={isBlocked ? 'Unblock' : 'Block'} 
+                                className="action-icon" 
+                                style={{ opacity: isBlocked ? 0.5 : 1 }}
+                              />
+                            </button>
+                            <button 
+                              className="action-btn favorite-btn"
                               onClick={(e) => handleFavoriteToggle(e, user.userId || user.id)}
                               title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                             >
-                              {isFavorited ? '❤️' : '♡'}
-                            </button>
-                            <button className="action-btn" title="Like">
-                              <img src="/images/Like.png" alt="Like" className="action-icon" />
+                              <img 
+                                src={isFavorited ? '/images/Heart_like.png' : '/images/Heart_unlike.png'} 
+                                alt={isFavorited ? 'Favorited' : 'Favorite'} 
+                                className="action-icon" 
+                              />
                             </button>
                             <button className="action-btn super" title="Super Like">
                               <img src="/images/Star.png" alt="Super Like" className="action-icon" />
@@ -884,6 +1026,43 @@ export default function Dashboard() {
                 className="btn-confirm"
               >
                 Yes, Sure
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Block Confirmation Dialog */}
+      {showBlockConfirm && (
+        <div className="block-confirm-overlay" onClick={() => setShowBlockConfirm(false)}>
+          <div className="block-confirm-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="block-confirm-icon">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="#FF2B45"/>
+              </svg>
+            </div>
+            <div className="block-confirm-content">
+              <p className="block-confirm-title">Do you want to block</p>
+              <p className="block-confirm-name">{userToBlock?.userName || 'this user'}?</p>
+              <p className="block-confirm-description">
+                You won't be able to send or receive messages from this user. You can unblock them anytime.
+              </p>
+            </div>
+            <div className="block-confirm-actions">
+              <button 
+                className="block-confirm-cancel"
+                onClick={() => {
+                  setShowBlockConfirm(false);
+                  setUserToBlock(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="block-confirm-block"
+                onClick={confirmBlock}
+              >
+                Block
               </button>
             </div>
           </div>

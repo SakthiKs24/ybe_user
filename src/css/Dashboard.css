@@ -448,24 +448,26 @@
   font-weight: bold;
 }
 
-.online-status-indicator {
+.online-status-indicator1 {
   display: flex;
   align-items: center;
-  gap: 4px;
-  color: #FF2B45;
-  font-size: 14px;
-  font-weight: 500;
-  margin-left: auto;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 12px;
 }
 
 .online-icon {
   font-size: 14px;
 }
 
-.online-text {
+.online-text1 {
   font-size: 13px;
+  color: #666;
 }
-
+.online-status-icon{
+  width: 20px;
+  height: 20px;
+}
 .favorite-btn {
   background: none;
   border: none;
@@ -483,8 +485,32 @@
 
 .match-details {
   display: flex;
-  gap: 30px;
+  flex-direction: column;
+  gap: 8px;
   margin-bottom: 12px;
+  border-top: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 12px 0;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.detail-item {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.detail-divider {
+  width: 1px;
+  height: 16px;
+  background: #e0e0e0;
+  flex-shrink: 0;
 }
 
 .detail-column {
