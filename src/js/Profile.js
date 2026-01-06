@@ -6,7 +6,6 @@ import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/fire
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'react-toastify';
 import '../css/Profile.css';
-import { COUNTRIES_DATA } from '../js/countriesData';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -38,7 +37,36 @@ export default function Profile() {
     growUpCountry: '',
     bodyBuild: '',
     createdFor: '',
-    lookingFor: ''
+    lookingFor: '',
+    selectedLikesInvolvesMap: {
+      books: [],
+      childrenView: [],
+      foods: [],
+      hobbies: [],
+      interests: [],
+      movies: [],
+      music: [],
+      relaxWay: [],
+      sleepingHabit: [],
+      sports: [],
+      tvShows: [],
+      vacations: []
+    },
+    selectedPersonalityTraitsMap: {
+      personalityType: '',
+      starSign: '',
+      drink: '',
+      smoke: '',
+      exercise: '',
+      weatherType: [],
+      poison: [],
+      tripsType: [],
+      pets: [],
+      weekendNight: [],
+      weekendActivities: [],
+      eveningRoutine: [],
+      passions: []
+    }
   });
 
   // Height options
@@ -71,6 +99,38 @@ export default function Profile() {
     "Tokyo", "Toronto", "Trivandrum", "Vancouver", "Zurich"
   ];
 
+  // Personality Traits Options
+  const personalityTraitsMap = {
+    personalityType: ["Introvert", "Extrovert", "Ambivert"],
+    starSign: ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"],
+    drink: ["Not at all", "On special occasions", "Once in a week", "Every day"],
+    smoke: ["Fancy", "Occasionally", "Not interested"],
+    exercise: ["Daily", "Often", "Rarely", "No"],
+    weatherType: ["Sunny and warm", "Cloudy", "Cool for a cozy vibe", "Rainy", "Snowy and cold", "Breezy", "Hot or tropical"],
+    poison: ["Tea", "Coffee", "Beer", "Vodka", "Gin", "Whiskey", "Rum", "Bandy", "Teetotaller"],
+    tripsType: ["A solo trip", "a family trip", "friend's trip"],
+    pets: ["Dog", "Cat", "Fish", "Bird", "Rabbit", "Hamster", "Guinea Pig", "Lizard", "Snake", "Turtle", "Ferret", "Hedgehog", "Doesn't like pets"],
+    weekendNight: ["Party night", "A candle light dinner", "Movie night", "Night out", "A cosy night at home"],
+    weekendActivities: ["Watching TV", "Movies", "Restaurants", "Hike", "Exercising", "Time with friends", "Time with family", "Shopping", "Browsing online", "Weekend sleep"],
+    eveningRoutine: ["Cook at home", "Dine out", "Movie", "Reading"],
+    passions: ["Painting", "Drawing", "Writing", "Photography", "Playing instruments", "Composing", "Singing", "Acting", "Performing Arts", "Crafting", "Graphic Design", "Illustration", "Fashion Design", "Filmmaking", "Directing", "Dancing", "Choreography", "Reading", "Learning new languages", "Studying history", "Philosophy", "Science", "Innovation", "Technology", "Coding", "Psychology", "Political activism", "Entrepreneurship", "Business development", "Running", "Yoga", "Pilates", "Weightlifting", "Body building", "Sports", "Swimming", "Water sports", "Cycling", "Mountain biking", "Rock climbing", "Hiking", "Surfing", "Skateboarding", "Martial arts", "Zumba", "Charity work", "Animal rescue and care", "Teaching", "Self-improvement and growth", "Mindfulness or meditation", "Investing", "Public speaking", "Leadership development", "Networking", "Meeting people", "Spirituality", "Religion", "Business", "Marketing", "Branding", "Real estate investment", "Stock trading", "Investments", "Social media", "Digital marketing", "Camping", "Fishing", "Hunting", "Gardening", "Farming", "Bird watching", "Beach-combing", "Kayaking", "Canoeing", "Paddle boarding", "Stargazing", "Astronomy", "Gaming board games", "Cyber-security", "Ethical hacking", "Podcasting", "Content creation", "Graphic design", "Animation", "AI and machine learning", "Parenting", "Family", "Romantic relationships", "Pet care", "Mentoring", "Coaching", "Fashion", "Styling", "Home décor", "Interior design", "Cooking", "Baking", "Public service"]
+  };
+
+  // Lifestyle Categories (from ProfileSetup)
+  const lifestyleCategories = {
+    movies: ["Action", "Adventure", "Romantic", "Comedies", "Thrillers", "Mysteries", "Documentaries", "Fantasy", "Science fiction", "Horror", "supernatural"],
+    music: ["Pop", "mainstream hits", "Rock", "Classical", "Instrumental", "Hip-hop", "Rap", "R&B", "Jazz", "Blues", "EDM"],
+    foods: ["Italian", "Mexican", "Asian", "Indian", "Mediterranean", "American"],
+    books: ["Fiction", "Fantasy", "Adventure", "Romance", "Non-fiction", "Self-help", "Biographies", "Mysteries", "Crime novels", "Science fiction", "Futuristic stories", "Poetry", "Short stories", "I don't usually read books"],
+    vacations: ["Beach vacations", "Hiking", "Outdoor adventures", "Exploring big cities and their culture", "Exploring remote villages", "Historic buildings", "Museum", "Camping", "Theme parks", "Cruising on a ship", "Staying at home for a staycation"],
+    tvShows: ["Sitcoms", "Comedy shows", "Reality shows", "Competitions", "Crime dramas", "Mysteries", "Sci-fi", "fantasy series", "News", "Current affairs", "Nature", "Wildlife documentaries"],
+    hobbies: ["Cooking", "Baking", "Painting", "Drawing", "Crafting", "Playing video games, Board games", "Gardening", "Planting", "Musical instrument", "Writing stories", "Journaling"],
+    sports: ["Football", "Basketball", "Tennis", "Baseball", "American Football", "Cricket", "Rugby", "Hockey", "Golf", "Swimming", "Athletics ,Karate", "Judo", "Boxing", "Volleyball", "Cycling", "Skateboarding", "Snowboarding", "Wrestling", "Table Tennis", "Badminton", "Archery", "Gymnastics", "Sailing", "Windsurfing", "Rock Climbing", "Mountaineering"],
+    relaxWay: ["Reading a book", "Reading a magazine", "Watching movies", "watching TV", "Long walk", "Exercising", "Meditating, Yoga", "Napping or sleeping", "Talking to friends or family"],
+    sleepingHabit: ["Early bed & Early wake up", "Late bed & Late Wake up", "Night owl", "It depends"],
+    childrenView: ["Very much interested", "Not more than one", "No interest at all"],
+    interests: ["Learning", "Investing", "Reading", "Meditation", "Mindfulness practices", "Painting", "Drawing", "Sketching", "Writing poetry", "Writing stories", "Journaling", "Photography", "Acting", "Theater", "Space exploration", "Astronomy", "Artificial intelligence and robotics", "Environmental science and sustainability", "Medical research", "Hiking", "Camping", "Nature exploration", "Yoga", "Pilates", "Wellness exercises", "Sports", "Rock climbing", "Surfing", "Food", "Movies", "TV shows", "Gaming", "Music", "Live concerts", "Collecting items", "Volunteering", "Community service"]
+  };
   // Fetch current user data
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -111,7 +171,36 @@ export default function Profile() {
               growUpCountry: data.growUpCountry || '',
               bodyBuild: data.bodyBuild || '',
               createdFor: data.createdFor || '',
-              lookingFor: data.lookingFor || ''
+              lookingFor: data.lookingFor || '',
+              selectedLikesInvolvesMap: {
+                books: data.selectedLikesInvolvesMap?.books || [],
+                childrenView: data.selectedLikesInvolvesMap?.childrenView || [],
+                foods: data.selectedLikesInvolvesMap?.foods || [],
+                hobbies: data.selectedLikesInvolvesMap?.hobbies || [],
+                interests: data.selectedLikesInvolvesMap?.interests || [],
+                movies: data.selectedLikesInvolvesMap?.movies || [],
+                music: data.selectedLikesInvolvesMap?.music || [],
+                relaxWay: data.selectedLikesInvolvesMap?.relaxWay || [],
+                sleepingHabit: data.selectedLikesInvolvesMap?.sleepingHabit || [],
+                sports: data.selectedLikesInvolvesMap?.sports || [],
+                tvShows: data.selectedLikesInvolvesMap?.tvShows || [],
+                vacations: data.selectedLikesInvolvesMap?.vacations || []
+              },
+              selectedPersonalityTraitsMap: {
+                personalityType: data.selectedPersonalityTraitsMap?.personalityType || '',
+                starSign: data.selectedPersonalityTraitsMap?.starSign || '',
+                drink: data.selectedPersonalityTraitsMap?.drink || '',
+                smoke: data.selectedPersonalityTraitsMap?.smoke || '',
+                exercise: data.selectedPersonalityTraitsMap?.exercise || '',
+                weatherType: data.selectedPersonalityTraitsMap?.weatherType || [],
+                poison: data.selectedPersonalityTraitsMap?.poison || [],
+                tripsType: data.selectedPersonalityTraitsMap?.tripsType || [],
+                pets: data.selectedPersonalityTraitsMap?.pets || [],
+                weekendNight: data.selectedPersonalityTraitsMap?.weekendNight || [],
+                weekendActivities: data.selectedPersonalityTraitsMap?.weekendActivities || [],
+                eveningRoutine: data.selectedPersonalityTraitsMap?.eveningRoutine || [],
+                passions: data.selectedPersonalityTraitsMap?.passions || []
+              }
             });
           }
         } catch (error) {
@@ -130,6 +219,75 @@ export default function Profile() {
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handlePersonalityTraitChange = (field, value) => {
+    // Check if it's single-select or multi-select
+    const singleSelectFields = ['personalityType', 'starSign', 'drink', 'smoke', 'exercise'];
+    
+    if (singleSelectFields.includes(field)) {
+      // Single select
+      setFormData(prev => ({
+        ...prev,
+        selectedPersonalityTraitsMap: {
+          ...prev.selectedPersonalityTraitsMap,
+          [field]: prev.selectedPersonalityTraitsMap[field] === value ? '' : value
+        }
+      }));
+    } else {
+      // Multi select
+      setFormData(prev => {
+        const currentSelections = prev.selectedPersonalityTraitsMap[field] || [];
+        const isSelected = currentSelections.includes(value);
+        
+        return {
+          ...prev,
+          selectedPersonalityTraitsMap: {
+            ...prev.selectedPersonalityTraitsMap,
+            [field]: isSelected
+              ? currentSelections.filter(item => item !== value)
+              : [...currentSelections, value]
+          }
+        };
+      });
+    }
+  };
+
+  const handleLikesInvolvesToggle = (category, option) => {
+    // Single-select categories
+    const singleSelectCategories = ['relaxWay', 'sleepingHabit', 'childrenView'];
+    
+    if (singleSelectCategories.includes(category)) {
+      // Single select
+      setFormData(prev => {
+        const currentSelection = prev.selectedLikesInvolvesMap[category] || [];
+        const isSelected = currentSelection.includes(option);
+        
+        return {
+          ...prev,
+          selectedLikesInvolvesMap: {
+            ...prev.selectedLikesInvolvesMap,
+            [category]: isSelected ? [] : [option]
+          }
+        };
+      });
+    } else {
+      // Multi select
+      setFormData(prev => {
+        const currentSelections = prev.selectedLikesInvolvesMap[category] || [];
+        const isSelected = currentSelections.includes(option);
+        
+        return {
+          ...prev,
+          selectedLikesInvolvesMap: {
+            ...prev.selectedLikesInvolvesMap,
+            [category]: isSelected
+              ? currentSelections.filter(item => item !== option)
+              : [...currentSelections, option]
+          }
+        };
+      });
+    }
   };
 
   const handleSaveChanges = async () => {
@@ -165,6 +323,10 @@ export default function Profile() {
         updateData.genderPreference = formData.genderPreference;
       } else if (activeSection === 'lifestyle') {
         updateData.bodyBuild = formData.bodyBuild;
+      } else if (activeSection === 'personalityTraits') {
+        updateData.selectedPersonalityTraitsMap = formData.selectedPersonalityTraitsMap;
+      } else if (activeSection === 'likesInvolves') {
+        updateData.selectedLikesInvolvesMap = formData.selectedLikesInvolvesMap;
       }
 
       updateData.updatedAt = new Date();
@@ -282,6 +444,8 @@ export default function Profile() {
     { key: 'location', label: 'Location Details', completed: !!(userData?.settledCountry) },
     { key: 'education', label: 'Education & Career', completed: !!(userData?.degree && userData?.dayJob) },
     { key: 'lifestyle', label: 'Lifestyle', completed: !!(userData?.bodyBuild) },
+    { key: 'personalityTraits', label: 'Personality Traits', completed: !!(userData?.selectedPersonalityTraitsMap?.personalityType) },
+    { key: 'likesInvolves', label: 'Likes & Involves', completed: !!(userData?.selectedLikesInvolvesMap?.movies?.length > 0) },
   ];
 
   const renderSectionContent = () => {
@@ -326,7 +490,7 @@ export default function Profile() {
                 value={editMode ? formData.phoneNumber : userData?.phoneNumber || ''}
                 onChange={(e) => handleChange('phoneNumber', e.target.value)}
                 className="form-input"
-                disabled={!editMode}
+                disabled
               />
             </div>
 
@@ -542,6 +706,8 @@ export default function Profile() {
                 <option value="PhD">PhD</option>
                 <option value="Masters">Masters</option>
                 <option value="Bachelors">Bachelors</option>
+                <option value="Associates">Associates</option>
+                <option value="Trade School">Trade School</option>
                 <option value="High School">High School</option>
               </select>
             </div>
@@ -558,8 +724,24 @@ export default function Profile() {
                 <option value="Doctor">Doctor</option>
                 <option value="Engineer">Engineer</option>
                 <option value="Teacher">Teacher</option>
+                <option value="Actor">Actor</option>
+                <option value="Accountant">Accountant</option>
+                <option value="Archaeologist">Archaeologist</option>
+                <option value="Architect">Architect</option>
+                <option value="Artist">Artist</option>
+                <option value="Aviation Professional">Aviation Professional</option>
+                <option value="Beautician">Beautician</option>
+                <option value="Chef">Chef</option>
+                <option value="Nurse">Nurse</option>
+                <option value="IT Manager">IT Manager</option>
+                <option value="Bank Job">Bank Job</option>
+                <option value="Marketing Manager">Marketing Manager</option>
+                <option value="Fashion Designer">Fashion Designer</option>
                 <option value="Business owner">Business owner</option>
-                <option value="IT Professional">IT Professional</option>
+                <option value="Advocate">Advocate</option>
+                <option value="Biomedical Engineer">Biomedical Engineer</option>
+                <option value="Biologist">Biologist</option>
+                <option value="Professor">Professor</option>
               </select>
             </div>
 
@@ -633,8 +815,11 @@ export default function Profile() {
                 <option value="">Select Grow Up Country</option>
                 <option value="USA">USA</option>
                 <option value="Canada">Canada</option>
+                <option value="Australia">Australia</option>
                 <option value="India">India</option>
-                <option value="UK">UK</option>
+                <option value="France">France</option>
+                <option value="Bulgaria">Bulgaria</option>
+                <option value="Prefer Not to say">Prefer Not to say</option>
               </select>
             </div>
 
@@ -817,6 +1002,183 @@ export default function Profile() {
             )}
           </div>
         );
+
+
+// 1. In the personalityTraits section, update the rendering to handle multi-select properly:
+
+case 'personalityTraits':
+  return (
+    <div className="section-content">
+      <div className="section-header">
+        <h2>Personality Traits & Passions</h2>
+        {!editMode && (
+          <button className="edit-btn" onClick={() => setEditMode(true)}>
+            ✏️ Edit
+          </button>
+        )}
+      </div>
+
+      <div className="lifestyle-container1">
+        {Object.entries(personalityTraitsMap).map(([key, options]) => {
+          // Single-select fields use radio buttons
+          const singleSelectFields = ['personalityType', 'starSign', 'drink', 'smoke', 'exercise'];
+          const isSingleSelect = singleSelectFields.includes(key);
+          
+          const currentValue = editMode 
+            ? formData.selectedPersonalityTraitsMap[key]
+            : userData?.selectedPersonalityTraitsMap?.[key] || (isSingleSelect ? '' : []);
+          
+          return (
+            <div className="lifestyle-category" key={key}>
+              <label className="form-label">
+                {key === 'personalityType' ? 'Personality Type' :
+                 key === 'starSign' ? 'Star Sign' :
+                 key === 'drink' ? 'Do you drink?' :
+                 key === 'smoke' ? 'Do you smoke?' :
+                 key === 'exercise' ? 'Exercise' :
+                 key === 'weatherType' ? 'Weather Type' :
+                 key === 'poison' ? 'Poison' :
+                 key === 'tripsType' ? 'Trip Type' :
+                 key === 'pets' ? 'Pets' :
+                 key === 'weekendNight' ? 'Weekend Night' :
+                 key === 'weekendActivities' ? 'Weekend Activities' :
+                 key === 'eveningRoutine' ? 'Evening Routine' :
+                 key === 'passions' ? 'Passions' : key}
+              </label>
+              
+              {isSingleSelect ? (
+                <div className="radio-group">
+                  {options.map(option => (
+                    <div className="radio-option" key={option}>
+                      <input
+                        type="radio"
+                        name={key}
+                        id={`${key}-${option}`}
+                        checked={currentValue === option}
+                        onChange={() => editMode && handlePersonalityTraitChange(key, option)}
+                        disabled={!editMode}
+                      />
+                      <label htmlFor={`${key}-${option}`}>{option}</label>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="checkbox-group">
+                  {options.map(option => {
+                    const isSelected = Array.isArray(currentValue) && currentValue.includes(option);
+                    
+                    return (
+                      <div className="checkbox-option" key={option}>
+                        <input
+                          type="checkbox"
+                          id={`${key}-${option}`}
+                          checked={isSelected}
+                          onChange={() => editMode && handlePersonalityTraitChange(key, option)}
+                          disabled={!editMode}
+                        />
+                        <label htmlFor={`${key}-${option}`}>{option}</label>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {editMode && (
+        <div className="btn-group">
+          <button className="btn-cancel" onClick={() => setEditMode(false)}>
+            Cancel
+          </button>
+          <button
+            className="save-btn"
+            onClick={handleSaveChanges}
+            disabled={saveLoading}
+          >
+            {saveLoading ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+
+    case 'likesInvolves':
+  return (
+    <div className="section-content">
+      <div className="section-header">
+        <h2>Likes & Involves</h2>
+        {!editMode && (
+          <button className="edit-btn" onClick={() => setEditMode(true)}>
+            ✏️ Edit
+          </button>
+        )}
+      </div>
+
+      <div className="lifestyle-container1">
+        {Object.entries(lifestyleCategories).map(([key, options]) => {  // Changed from likesInvolvesMap
+          const currentSelections = editMode
+            ? formData.selectedLikesInvolvesMap[key] || []
+            : userData?.selectedLikesInvolvesMap?.[key] || [];
+          
+          return (
+            <div className="lifestyle-category" key={key}>
+              <label className="form-label">
+                {key === 'movies' ? 'Movies' :
+                 key === 'music' ? 'Music' :
+                 key === 'foods' ? 'Foods' :
+                 key === 'books' ? 'Books' :
+                 key === 'vacations' ? 'Vacations' :
+                 key === 'tvShows' ? 'TV Shows' :
+                 key === 'hobbies' ? 'Hobbies' :
+                 key === 'sports' ? 'Sports' :
+                 key === 'relaxWay' ? 'Relax Way' :
+                 key === 'sleepingHabit' ? 'Sleeping Habit' :
+                 key === 'childrenView' ? 'Children View' :
+                 key === 'interests' ? 'Interests' : key}
+              </label>
+              <div className="checkbox-group">
+                {options.map(option => {
+                  const isSelected = currentSelections.includes(option);
+                  
+                  return (
+                    <div className="checkbox-option" key={option}>
+                      <input
+                        type="checkbox"
+                        id={`${key}-${option}`}
+                        checked={isSelected}
+                        onChange={() => editMode && handleLikesInvolvesToggle(key, option)}
+                        disabled={!editMode}
+                      />
+                      <label htmlFor={`${key}-${option}`}>{option}</label>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {editMode && (
+        <div className="btn-group">
+          <button className="btn-cancel" onClick={() => setEditMode(false)}>
+            Cancel
+          </button>
+          <button
+            className="save-btn"
+            onClick={handleSaveChanges}
+            disabled={saveLoading}
+          >
+            {saveLoading ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+      
       
       default:
         return (
@@ -912,9 +1274,18 @@ export default function Profile() {
                     setEditMode(false);
                   }}
                 >
-                  <div className={`step-checkbox ${step.completed ? 'completed' : ''}`}>
-                    {step.completed && '✓'}
+                 <div className={`step-checkbox ${step.completed ? 'completed' : 'pending'}`}>
+                    <img
+                      src={
+                        step.completed
+                          ? '/images/step-tick.png'
+                          : '/images/step-untick.png'
+                      }
+                      alt={step.completed ? 'Completed' : 'Not Completed'}
+                      className="step-status-img"
+                    />
                   </div>
+
                   <span className="step-label">{step.label}</span>
                   <span className="step-arrow">›</span>
                 </div>

@@ -1,7 +1,7 @@
 /* Profile Container */
 .profile-container {
   min-height: 100vh;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Poppins';
 }
 
 /* Dashboard Header */
@@ -161,21 +161,27 @@
 }
 
 .welcome-text {
-  font-size: 12px;
+  font-size: 15px;
   opacity: 0.9;
   margin: 0;
+  font-family: 'Poppins';
+  font-weight: 600;
 }
 
 .profile-name {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 700;
   margin: 5px 0;
+  font-family: 'Poppins';
 }
 
 .profile-id {
-  font-size: 12px;
+  font-size: 15px;
   opacity: 0.8;
   margin: 0;
+  font-weight: 600;
+  font-family: 'Poppins';
+
 }
 
 /* Profile Completeness */
@@ -187,6 +193,8 @@
   font-size: 13px;
   margin-bottom: 8px;
   opacity: 0.9;
+  font-weight: 600;
+  font-family: 'Poppins';
 }
 
 .progress-bar {
@@ -208,6 +216,9 @@
   font-size: 11px;
   opacity: 0.9;
   margin: 0;
+  font-family: 'Poppins';
+  font-weight: 700;
+  color: #FF6F10;
 }
 
 /* Onboarding Section */
@@ -245,31 +256,26 @@
 }
 
 .onboarding-step.active {
-  background: linear-gradient(135deg, #FF027D 0%, #FF6B9D 100%);
+  background: linear-gradient(180deg, #FF1C51 0%, #FF6F10 100%);
   color: white;
 }
-
 .step-checkbox {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #ddd;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
+  border: 2px solid #d1d5db;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  flex-shrink: 0;
-}
-
-.onboarding-step.active .step-checkbox {
-  border-color: white;
+  background: #fff;
 }
 
 .step-checkbox.completed {
-  background: #4CAF50;
-  border-color: #4CAF50;
-  color: white;
+  border-color: #ec4899; /* pink theme */
+  background: #fff;
 }
+
+
 
 .step-label {
   flex: 1;
@@ -289,7 +295,7 @@
 /* Logout Button */
 .logout-btn {
   width: 100%;
-  background: #ff4757;
+  background: linear-gradient(180deg, #FF1C51 0%, #FF6F10 100%);
   color: white;
   border: none;
   padding: 12px;
@@ -300,7 +306,7 @@
 }
 
 .logout-btn:hover {
-  background: #ee5a6f;
+  background: linear-gradient(180deg, #FF1C51 0%, #FF6F10 100%);;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 71, 87, 0.3);
 }
@@ -344,6 +350,7 @@
   font-weight: 700;
   color: #333;
   margin: 0;
+  font-family: 'Poppins';
 }
 
 .subtitle {
@@ -354,7 +361,7 @@
 }
 
 .edit-btn {
-  /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+  background: linear-gradient(135deg, #FF1C51 0%, #FF6F10 100%);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -415,7 +422,7 @@
   border: 2px solid #e0e0e0;
   border-radius: 10px;
   font-size: 14px;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Poppins';
   resize: vertical;
   min-height: 120px;
   transition: all 0.3s;
@@ -440,7 +447,7 @@
 }
 
 .save-btn {
-  background: linear-gradient(135deg, #FF027D 0%, #FF6B9D 100%);
+  background: linear-gradient(180deg, #FF1C51 0%, #FF6F10 100%);
   color: white;
   border: none;
   padding: 12px 30px;
@@ -724,4 +731,8 @@
   .btn-group {
     flex-direction: column;
   }
+}
+.lifestyle-container1 {
+  overflow-y: auto;
+  padding-right: 10px;
 }
