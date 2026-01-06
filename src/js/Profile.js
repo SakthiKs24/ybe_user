@@ -416,28 +416,23 @@ export default function Profile() {
   };
 
   const calculateProfileCompleteness = () => {
-    if (!userData) return 0;
+    if (!userData) return { percentage: 0, completed: 0, total: 0 };
     
-    const fields = [
-      'name', 'dateOfBirth', 'userGender', 'religion', 'community',
-      'motherTongue', 'status', 'height', 'dayJob', 'aboutMe',
-      'settledCountry', 'profileImageUrls', 'degree', 'originCountry',
-      'genderPreference', 'bodyBuild', 'lookingFor'
-    ];
+    // Count completed onboarding steps
+    const completedSteps = onboardingSteps.filter(step => step.completed).length;
+    const totalSteps = onboardingSteps.length;
     
-    const completedFields = fields.filter(field => {
-      if (field === 'profileImageUrls') {
-        return userData[field] && userData[field].length >= 3;
-      }
-      return userData[field] && userData[field] !== '';
-    });
-    
-    return Math.round((completedFields.length / fields.length) * 100);
+    return {
+      percentage: (completedSteps / totalSteps) * 100,
+      completed: completedSteps,
+      total: totalSteps
+    };
   };
+  
 
   const onboardingSteps = [
     { key: 'profileInformation', label: 'Profile Information', completed: !!(userData?.name && userData?.dateOfBirth) },
-    { key: 'profilePhoto', label: 'Profile Photos', completed: !!(userData?.profileImageUrls && userData.profileImageUrls.length >= 3) },
+    { key: 'profilePhoto', label: 'Profile Photos', completed: !!(userData?.profileImageUrls && userData.profileImageUrls.filter(url => url).length >= 3) },
     { key: 'personalDetails', label: 'Personal Details', completed: !!(userData?.height && userData?.religion && userData?.community) },
     { key: 'aboutMe', label: 'About Me', completed: !!(userData?.aboutMe) },
     { key: 'preferences', label: 'Preferences', completed: !!(userData?.genderPreference && userData?.lookingFor) },
@@ -532,40 +527,44 @@ export default function Profile() {
           </div>
         );
       
-      case 'profilePhoto':
-        return (
-          <div className="section-content">
-            <h2>Profile Photos</h2>
-            <p className="subtitle">Upload at least 3 photos to complete your profile</p>
-            
-            <div className="photo-upload-section">
-              <div className="current-photos">
-                {[0, 1, 2, 3, 4, 5].map((index) => (
-                  <div key={index} className="photo-item">
-                    {userData?.profileImageUrls?.[index] ? (
-                      <img src={userData.profileImageUrls[index]} alt={`Profile ${index + 1}`} />
-                    ) : (
-                      <div className="photo-placeholder">+</div>
-                    )}
-                    <input
-                      type="file"
-                      id={`photo-${index}`}
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={(e) => handlePhotoUpload(e, index)}
-                    />
-                    <button
-                      className="upload-btn-small"
-                      onClick={() => document.getElementById(`photo-${index}`).click()}
-                    >
-                      {userData?.profileImageUrls?.[index] ? 'Change' : 'Upload'}
-                    </button>
-                  </div>
-                ))}
+        case 'profilePhoto':
+          return (
+            <div className="section-content">
+              <h2>Profile Photos</h2>
+              <p className="subtitle">Upload at least 3 photos to complete your profile</p>
+              
+              <div className="photo-upload-section">
+                <div className="current-photos">
+                  {[0, 1, 2, 3, 4, 5].map((index) => {
+                    const imageUrl = userData?.profileImageUrls?.[index];
+                    
+                    return (
+                      <div key={index} className="photo-item">
+                        {imageUrl ? (
+                          <img src={imageUrl} alt={`Profile ${index + 1}`} />
+                        ) : (
+                          <div className="photo-placeholder">+</div>
+                        )}
+                        <input
+                          type="file"
+                          id={`photo-${index}`}
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={(e) => handlePhotoUpload(e, index)}
+                        />
+                        <button
+                          className="upload-btn-small"
+                          onClick={() => document.getElementById(`photo-${index}`).click()}
+                        >
+                          {imageUrl ? 'Change' : 'Upload'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
-        );
+          );
       
       case 'personalDetails':
         return (
@@ -1198,7 +1197,7 @@ case 'personalityTraits':
     );
   }
 
-  const profileCompleteness = calculateProfileCompleteness();
+  const profileCompletenessData = calculateProfileCompleteness();
 
   return (
     <div className="profile-container">
@@ -1248,13 +1247,13 @@ case 'personalityTraits':
             <div className="profile-completeness">
               <p className="completeness-label">Profile Completeness</p>
               <div className="progress-bar">
-                <div 
-                  className="progress-fill" 
-                  style={{ width: `${profileCompleteness}%` }}
-                ></div>
-              </div>
+              <div 
+                className="progress-fill" 
+                style={{ width: `${profileCompletenessData.percentage}%` }}
+              ></div>
+            </div>
               <p className="completeness-message">
-                {profileCompleteness === 100 
+                {profileCompletenessData === 100 
                   ? 'Your profile is complete! 🎉' 
                   : 'Complete your profile to get a perfect match'}
               </p>

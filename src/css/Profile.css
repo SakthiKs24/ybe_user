@@ -107,9 +107,9 @@
 /* Profile Content */
 .profile-content {
   display: grid;
-  grid-template-columns: 350px 1fr;
+  grid-template-columns: 455px 1fr;
   gap: 30px;
-  padding: 30px 40px;
+  padding: 30px 20px;
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -149,8 +149,8 @@
 }
 
 .profile-avatar {
-  width: 60px;
-  height: 60px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid white;
@@ -158,6 +158,7 @@
 
 .profile-welcome {
   flex: 1;
+  padding-left: 11px;
 }
 
 .welcome-text {
@@ -183,42 +184,50 @@
   font-family: 'Poppins';
 
 }
+/* Update these CSS classes in your Profile.css */
 
-/* Profile Completeness */
 .profile-completeness {
   margin-top: 15px;
 }
 
 .completeness-label {
-  font-size: 13px;
-  margin-bottom: 8px;
-  opacity: 0.9;
-  font-weight: 600;
+  font-size: 18px;
+  margin-bottom: 15px;
+  font-weight: 700;
   font-family: 'Poppins';
+  color: #333;
 }
 
 .progress-bar {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 10px;
-  height: 8px;
+  background: #FFE5D9;
+  border-radius: 50px;
+  height: 10px;
   overflow: hidden;
-  margin-bottom: 8px;
+  margin-bottom: 15px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .progress-fill {
-  background: linear-gradient(135deg, #FF1C51 0%, #FF6F10 100%);
+  background: linear-gradient(90deg, #FF1C51 0%, #FF6F10 100%);
   height: 100%;
-  border-radius: 10px;
+  border-radius: 50px;
   transition: width 0.3s ease;
+  transform-origin: left;
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 .completeness-message {
-  font-size: 11px;
-  opacity: 0.9;
-  margin: 0;
-  font-family: 'Poppins';
+  font-size: 13px;
   font-weight: 700;
+  font-family: 'Poppins';
   color: #FF6F10;
+  margin: 0;
+  text-align: left;
 }
 
 /* Onboarding Section */
@@ -531,7 +540,7 @@
   bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, #FF027D 0%, #FF6B9D 100%);
+  background: linear-gradient(180deg, #FF1C51 0%, #FF6F10 100%);
   color: white;
   border: none;
   padding: 8px 20px;
