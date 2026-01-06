@@ -4,6 +4,8 @@ import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, getDocs, getDoc, query, where, documentId, doc, updateDoc, addDoc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+import Header from './Header';
+import SubHeader from './SubHeader';
 import '../css/Dashboard.css';
 
 export default function Dashboard() {
@@ -651,73 +653,17 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-container">
-      {/* Header */}
-      <header className="dashboard-header">
-        <div className="header-left">
-          <img src="/images/logo.png" alt="Ybe Logo" className="header-logo" />
-          <nav className="header-nav">
-            <a href="#" className="nav-link active">Matches</a>
-            <a href="/chat" className="nav-link" onClick={(e) => { e.preventDefault(); navigate('/chat'); }}>Messages</a>
-          </nav>
-        </div>
-        <div className="header-center">
-          <div className="search-box">
-            <span className="search-icon">🔍</span>
-            <input type="text" placeholder="Search" className="search-input" />
-          </div>
-        </div>
-        <div className="header-right">
-          <button className="upgrade-btn" onClick={() => navigate('/upgrade')}>Upgrade now</button>
-          <div className="profile-dropdown-wrapper" ref={dropdownRef}>
-            <button 
-              className="icon-btn" 
-              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-            >
-              <img src="/images/profile.png" alt="Profile" className="profile-icon-img" />
-            </button>
-            
-            {showProfileDropdown && (
-              <div className="profile-dropdown-menu">
-                <div className="dropdown-item" onClick={() => {
-                  setShowProfileDropdown(false);
-                  navigate('/profile');
-                }}>
-                  <span className="dropdown-icon">👤</span>
-                  <span>Profile</span>
-                </div>
-                <div className="dropdown-divider"></div>
-                <div className="dropdown-item logout-item" onClick={() => {
-                  setShowProfileDropdown(false);
-                  setShowLogoutModal(true);
-                }}>
-                  <span className="dropdown-icon">🚪</span>
-                  <span>Logout</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-      <div className="favorites-tabs">
-        <button 
-          className={`tab-btn ${activeTab === 'new-matches' ? 'active' : ''}`}
-          onClick={() => setActiveTab('new-matches')}
-        >
-          New matches
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'my-matches' ? 'active' : ''}`}
-          onClick={() => setActiveTab('my-matches')}
-        >
-          My matches
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'favourites' ? 'active' : ''}`}
-          onClick={() => setActiveTab('favourites')}
-        >
-          Favourites
-        </button>
-      </div>
+      <Header 
+        userData={userData}
+        showProfileDropdown={showProfileDropdown}
+        setShowProfileDropdown={setShowProfileDropdown}
+        dropdownRef={dropdownRef}
+        currentPage="dashboard"
+      />
+      <SubHeader 
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
       <div className="dashboard-content">
         {/* Left Sidebar - Filters */}
         <aside className="filters-sidebar">

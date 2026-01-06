@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import ChatTile from './ChatTile';
 import ChatDetail from './ChatDetail';
 import ChatService from './services/chatService';
+import Header from './Header';
 import '../css/ChatList.css';
 
 export default function ChatList() {
@@ -19,6 +20,8 @@ export default function ChatList() {
   const [userDetails, setUserDetails] = useState(null);
   const [selectedChatId, setSelectedChatId] = useState(chatId || null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const dropdownRef = useRef(null);
 
   // Update selectedChatId when URL changes
   useEffect(() => {
@@ -165,6 +168,18 @@ export default function ChatList() {
     return () => unsubscribe();
   }, [userDetails]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Filter chats by search query
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -239,22 +254,13 @@ export default function ChatList() {
 
   return (
     <div className="chat-list-container">
-      {/* Top Header */}
-      <div className="chat-main-header">
-        <div className="header-left">
-          <img src="/images/logo.png" alt="Ybe" className="header-logo" />
-          <nav className="header-nav">
-            <a href="/dashboard" className="nav-link">Matches</a>
-            <a href="/chat" className="nav-link active">Messages</a>
-          </nav>
-        </div>
-        <div className="header-right">
-          <button className="upgrade-btn" onClick={() => navigate('/upgrade')}>Upgrade now</button>
-          <button className="icon-btn" onClick={() => setShowLogoutModal(true)}>
-            <img src="/images/profile.png" alt="Profile" className="header-icon" />
-          </button>
-        </div>
-      </div>
+      <Header 
+        userData={userDetails}
+        showProfileDropdown={showProfileDropdown}
+        setShowProfileDropdown={setShowProfileDropdown}
+        dropdownRef={dropdownRef}
+        currentPage="chat"
+      />
 
       {/* Main Content - Split View */}
       <div className="chat-split-container">
@@ -352,32 +358,7 @@ export default function ChatList() {
         </div>
       </div>
 
-      {/* Logout Modal */}
-      {showLogoutModal && (
-        <div className="modal-overlay" onClick={() => setShowLogoutModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Confirm Logout</h3>
-            <p>Are you sure you want to logout?</p>
-            <div className="modal-buttons">
-              <button
-                onClick={() => setShowLogoutModal(false)}
-                className="btn-cancel"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setShowLogoutModal(false);
-                  handleLogout();
-                }}
-                className="btn-confirm"
-              >
-                Yes, Sure
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

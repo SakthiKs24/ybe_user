@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+import Header from './Header';
 import '../css/ProfileDetails.css';
 
 export default function ProfileDetails() {
@@ -11,6 +12,8 @@ export default function ProfileDetails() {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -41,6 +44,18 @@ export default function ProfileDetails() {
       fetchUserData();
     }
   }, [userId, navigate]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const calculateAge = (birthDate) => {
     if (!birthDate) return null;
@@ -106,29 +121,13 @@ export default function ProfileDetails() {
 
   return (
     <div className="profile-details-container">
-      {/* Header */}
-      <header className="profile-header">
-        <div className="header-left">
-          <img src="/images/logo.png" alt="Ybe Logo" className="header-logo" />
-          <nav className="header-nav">
-            <a href="/dashboard" className="nav-link" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>Matches</a>
-            <a href="/chat" className="nav-link" onClick={(e) => { e.preventDefault(); navigate('/chat'); }}>Messages</a>
-          </nav>
-        </div>
-        <div className="header-center">
-          <div className="search-box">
-            <span className="search-icon">🔍</span>
-            <input type="text" placeholder="Search" className="search-input" />
-          </div>
-        </div>
-        <div className="header-right">
-          <button className="upgrade-btn" onClick={() => navigate('/upgrade')}>Upgrade now</button>
-          
-          <button className="icon-btn">
-            <img src="/images/profile.png" alt="Profile" className="profile-icon-img" />
-          </button>
-        </div>
-      </header>
+      <Header 
+        userData={null}
+        showProfileDropdown={showProfileDropdown}
+        setShowProfileDropdown={setShowProfileDropdown}
+        dropdownRef={dropdownRef}
+        currentPage="profileDetails"
+      />
 
       <div className="">
         {/* Back Button */}

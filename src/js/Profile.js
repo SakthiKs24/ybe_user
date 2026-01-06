@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'react-toastify';
+import Header from './Header';
 import '../css/Profile.css';
 
 export default function Profile() {
@@ -13,8 +14,10 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('profileInformation');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const dropdownRef = useRef(null);
 
   // Form data state for editing
   const [formData, setFormData] = useState({
@@ -131,6 +134,18 @@ export default function Profile() {
     childrenView: ["Very much interested", "Not more than one", "No interest at all"],
     interests: ["Learning", "Investing", "Reading", "Meditation", "Mindfulness practices", "Painting", "Drawing", "Sketching", "Writing poetry", "Writing stories", "Journaling", "Photography", "Acting", "Theater", "Space exploration", "Astronomy", "Artificial intelligence and robotics", "Environmental science and sustainability", "Medical research", "Hiking", "Camping", "Nature exploration", "Yoga", "Pilates", "Wellness exercises", "Sports", "Rock climbing", "Surfing", "Food", "Movies", "TV shows", "Gaming", "Music", "Live concerts", "Collecting items", "Volunteering", "Community service"]
   };
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Fetch current user data
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -1201,28 +1216,13 @@ case 'personalityTraits':
 
   return (
     <div className="profile-container">
-      {/* Header */}
-      <header className="dashboard-header">
-        <div className="header-left">
-          <img src="/images/logo.png" alt="Ybe Logo" className="header-logo" />
-          <nav className="header-nav">
-            <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>Matches</a>
-            <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); navigate('/chat'); }}>Messages</a>
-          </nav>
-        </div>
-        <div className="header-center">
-          <div className="search-box">
-            <span className="search-icon">🔍</span>
-            <input type="text" placeholder="Search" className="search-input" />
-          </div>
-        </div>
-        <div className="header-right">
-          <button className="upgrade-btn" onClick={() => navigate('/upgrade')}>Upgrade now</button>
-          <button className="icon-btn" onClick={() => navigate('/profile')}>
-            <img src="/images/profile.png" alt="Profile" className="profile-icon-img" />
-          </button>
-        </div>
-      </header>
+      <Header 
+        userData={userData}
+        showProfileDropdown={showProfileDropdown}
+        setShowProfileDropdown={setShowProfileDropdown}
+        dropdownRef={dropdownRef}
+        currentPage="profile"
+      />
 
       <div className="profile-content">
         {/* Left Sidebar */}
@@ -1292,13 +1292,7 @@ case 'personalityTraits':
             </div>
           </div>
 
-          {/* Logout Button */}
-          <button 
-            className="logout-btn"
-            onClick={() => setShowLogoutModal(true)}
-          >
-            Logout
-          </button>
+
         </aside>
 
         {/* Main Content */}
