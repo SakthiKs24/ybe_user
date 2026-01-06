@@ -142,11 +142,11 @@ export default function Favorites() {
         });
 
         // Fetch shortlisted users
-        const shortlistedRef = collection(db, 'shortlisted');
-        const shortlistedQuery = query(shortlistedRef, where('shortlistedBy', '==', userData.userId));
-        const shortlistedSnapshot = await getDocs(shortlistedQuery);
+        const shortlistRef = collection(db, 'shortlist');
+        const shortlistQuery = query(shortlistRef, where('shortlistedBy', '==', userData.userId));
+        const shortlistSnapshot = await getDocs(shortlistQuery);
         const shortlistedIds = new Set();
-        shortlistedSnapshot.forEach((doc) => {
+        shortlistSnapshot.forEach((doc) => {
           shortlistedIds.add(doc.data().shortlistedUser);
         });
 

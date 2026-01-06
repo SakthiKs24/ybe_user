@@ -275,6 +275,17 @@ export default function FavoriteCategory() {
             );
             break;
             
+          case 'shortlisted':
+            const shortlistRef = collection(db, 'shortlist');
+            const shortlistQuery = query(shortlistRef, where('shortlistedBy', '==', userData.userId));
+            const shortlistSnapshot = await getDocs(shortlistQuery);
+            const shortlistedIds = new Set();
+            shortlistSnapshot.forEach((doc) => {
+              shortlistedIds.add(doc.data().shortlistedUser);
+            });
+            filtered = allFavoriteUsers.filter(user => shortlistedIds.has(user.userId));
+            break;
+            
           default:
             filtered = allFavoriteUsers;
         }
@@ -381,6 +392,11 @@ export default function FavoriteCategory() {
     navigate(`/profile/${userId}`);
   };
 
+  const handleChatClick = (e, userId) => {
+    e.stopPropagation();
+    navigate(`/chat/${userId}`);
+  };
+
   const getCategoryTitle = () => {
     const titles = {
       liked: 'Liked',
@@ -394,7 +410,8 @@ export default function FavoriteCategory() {
       sameReligion: 'Same Religion',
       sameNativeCountry: 'Same Native Country',
       sameMotherTongue: 'Same Mother Tongue',
-      sameStar: 'Same Star'
+      sameStar: 'Same Star',
+      shortlisted: 'Shortlisted'
     };
     return titles[category] || 'Favorites';
   };
@@ -579,7 +596,10 @@ export default function FavoriteCategory() {
                       <button className="action-btn super" title="Super Like">
                         <img src="/images/Star.png" alt="Super Like" className="action-icon" />
                       </button>
-                      <button className="action-btn" title="Message">
+                      <button 
+                        className="action-btn" 
+                        onClick={(e) => handleChatClick(e, user.userId || user.id)}
+                        title="Message">
                         <img src="/images/Chat.png" alt="Message" className="action-icon" />
                       </button>
                     </div>

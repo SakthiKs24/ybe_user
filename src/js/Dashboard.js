@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, query, where, documentId, doc, updateDoc, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, getDoc, query, where, documentId, doc, updateDoc, addDoc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import '../css/Dashboard.css';
 
@@ -442,6 +442,67 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error toggling favorite:', error);
       toast.error('Failed to update favorites');
+    }
+  };
+
+  // Helper function to generate a random string
+  const generateRandomId = () => {
+    return Math.random().toString(36).substring(2, 10).toUpperCase();
+  };
+
+
+
+  // Handle superlike
+  const handleSuperlike = async (e, userId) => {
+    e.stopPropagation(); // Prevent card click
+    
+    if (!userData?.uid) return;
+    
+    try {
+      // Check if a shortlist document already exists
+      const shortlistRef = collection(db, 'shortlist');
+      const q = query(
+        shortlistRef,
+        where('shortlistedBy', '==', userData.userId),
+        where('shortlistedUser', '==', userId)
+      );
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        // If document exists, remove it (unshortlist)
+        querySnapshot.forEach(async (docSnapshot) => {
+          await deleteDoc(doc(db, 'shortlist', docSnapshot.id));
+        });
+        
+        console.log('User unshortlisted:', {
+          shortlistedBy: userData.userId,
+          shortlistedUser: userId
+        });
+        
+        toast.success('Shortlist removed!');
+      } else {
+        // If document doesn't exist, create it (shortlist)
+        const customDocId = `${userData.userId}-${generateRandomId()}`;
+        
+        // Using setDoc with custom ID instead of addDoc
+        const docRef = doc(collection(db, 'shortlist'), customDocId);
+        await setDoc(docRef, {
+          shortlistedBy: userData.userId,
+          shortlistedUser: userId,
+        });
+        
+        console.log('Shortlist document created with ID:', customDocId);
+        
+        console.log('User shortlisted:', {
+          shortlistedBy: userData.userId,
+          shortlistedUser: userId
+        });
+        
+        toast.success('User shortlisted!');
+      }
+    } catch (error) {
+      console.error('Error handling shortliste:', error);
+      toast.error('Failed to update shortliste');
     }
   };
 
@@ -946,11 +1007,11 @@ export default function Dashboard() {
                                 className="action-icon" 
                               />
                             </button>
-                            <button className="action-btn super" title="Super Like">
+                            <button 
+                              className="action-btn super" 
+                              onClick={(e) => handleSuperlike(e, user.userId || user.id)}
+                              title="Super Like">
                               <img src="/images/Star.png" alt="Super Like" className="action-icon" />
-                            </button>
-                            <button className="action-btn" title="Message">
-                              <img src="/images/Chat.png" alt="Message" className="action-icon" />
                             </button>
                           </div>
                         </div>
