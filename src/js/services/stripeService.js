@@ -63,6 +63,29 @@ export const createCheckoutSession = async (planData, userId, userEmail, currenc
     
     console.log(`Creating checkout: ${amount} ${currencyCode.toUpperCase()} = ${amountInSmallestUnit} smallest units`);
 
+    // Plan validity map matching Flutter model
+    const planValidityMap = {
+      'Ybe Plus': 30,
+      'Ybe Premium': 90,
+      'Ybe Gold': 180,
+    };
+    
+    // Get validity days - use from planData or calculate from plan name
+    let validityDays = planData.validityDays;
+    if (!validityDays || validityDays === 0) {
+      // Calculate from plan name if validityDays is missing
+      const planName = planData.name || '';
+      if (planName.includes('Plus') || planName.toLowerCase().includes('plus')) {
+        validityDays = planValidityMap['Ybe Plus'];
+      } else if (planName.includes('Premium') || planName.toLowerCase().includes('premium')) {
+        validityDays = planValidityMap['Ybe Premium'];
+      } else if (planName.includes('Gold') || planName.toLowerCase().includes('gold')) {
+        validityDays = planValidityMap['Ybe Gold'];
+      } else {
+        validityDays = 30; // Default
+      }
+    }
+
     // Create checkout session using Stripe API directly
     const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
@@ -74,7 +97,7 @@ export const createCheckoutSession = async (planData, userId, userEmail, currenc
         'payment_method_types[0]': 'card',
         'line_items[0][price_data][currency]': currencyCode,
         'line_items[0][price_data][product_data][name]': planData.name,
-        'line_items[0][price_data][product_data][description]': `Subscription for ${planData.validityDays} days`,
+        'line_items[0][price_data][product_data][description]': `Subscription for ${validityDays} days`,
         'line_items[0][price_data][unit_amount]': amountInSmallestUnit.toString(),
         'line_items[0][quantity]': '1',
         'mode': 'payment',
@@ -84,7 +107,7 @@ export const createCheckoutSession = async (planData, userId, userEmail, currenc
         'metadata[userId]': userId,
         'metadata[planId]': planData.id || planData.name,
         'metadata[planName]': planData.name,
-        'metadata[validityDays]': planData.validityDays.toString(),
+        'metadata[validityDays]': validityDays.toString(),
       }),
     });
 
