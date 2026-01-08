@@ -121,128 +121,189 @@ export default function Upgrade() {
     return () => unsubscribe();
   }, []);
 
-  // Detect user country
+  // Detect user country from stored location (permission already granted during login)
   useEffect(() => {
-    const detectCountry = async () => {
+    const detectCountry = () => {
       try {
-        const response = await fetch('https://ipapi.co/json/');
-        const data = await response.json();
-        const countryCode = data.country_code || 'GB';
+        // First, try to get country from user's stored location (from login)
+        if (userData?.currentPosition?.countryCode) {
+          const countryCode = userData.currentPosition.countryCode.toUpperCase();
+          setUserCountry(countryCode);
+          
+          const currencyCode = currencyMap[countryCode] || 'GBP';
+          const currencySymbol = currencySymbolMap[countryCode] || '£';
+          setCurrency({ code: currencyCode, symbol: currencySymbol });
+          
+          console.log('Country detected from stored location:', { 
+            countryCode, 
+            currencyCode, 
+            currencySymbol 
+          });
+          return;
+        }
+
+        // Fallback: Use browser's locale to detect country
+        const locale = navigator.language || navigator.userLanguage || 'en-GB';
+        const region = locale.split('-')[1] || locale.split('_')[1] || 'GB';
+        
+        // Convert to uppercase for country code
+        const countryCode = region.toUpperCase();
         setUserCountry(countryCode);
         
         const currencyCode = currencyMap[countryCode] || 'GBP';
         const currencySymbol = currencySymbolMap[countryCode] || '£';
         setCurrency({ code: currencyCode, symbol: currencySymbol });
+        
+        console.log('Country detected from browser locale (fallback):', { 
+          locale, 
+          countryCode, 
+          currencyCode, 
+          currencySymbol 
+        });
       } catch (error) {
         console.error('Error detecting country:', error);
+        // Default to GB
+        setUserCountry('GB');
         setCurrency({ code: 'GBP', symbol: '£' });
       }
     };
 
-    detectCountry();
-  }, []);
-
-  // Get currency conversion rate from Firebase
-  const getLatestCurrencyConversionRate = async () => {
-    try {
-      const docRef = doc(db, 'currencyConversion', 'currency_conversion');
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const timestampString = data.timestamp;
-
-        if (timestampString) {
-          const parsedTimestamp = new Date(timestampString);
-          const now = new Date();
-          const difference = now - parsedTimestamp;
-          const hoursDiff = difference / (1000 * 60 * 60);
-
-          if (hoursDiff < 24) {
-            // Data is less than 24 hours old
-            return {
-              conversionRates: data.rawResponse || data.conversionRates || {},
-              timestamp: timestampString,
-              result: data.result || 'success'
-            };
-          }
-        }
-      }
-
-      // If data is older than 24 hours or doesn't exist, fetch latest
-      return await fetchLatestConversionRate();
-    } catch (error) {
-      console.error('Error getting currency conversion rate:', error);
-      return await fetchLatestConversionRate();
+    // Only detect country when userData is available
+    if (userData) {
+      detectCountry();
     }
-  };
+  }, [userData]);
 
-  // Fetch latest conversion rate from API and save to Firebase
-  const fetchLatestConversionRate = async () => {
+  // Fetch currency conversion rate from pair API (matching Flutter getCurrencyConversionMethodss)
+  const fetchCurrencyConversion = async (targetCurrency) => {
     try {
-      const response = await fetch('https://v6.exchangerate-api.com/v6/27aa2996e2f324ccee797a24/latest/GBP');
+      // Use the pair API endpoint: GBP/$currency
+      const url = `https://v6.exchangerate-api.com/v6/27aa2996e2f324ccee797a24/pair/GBP/${targetCurrency}`;
+      console.log('Fetching currency conversion from:', url);
+      const response = await fetch(url);
       
       if (response.ok) {
         const data = await response.json();
+        console.log('Currency conversion API response:', data);
         
-        // Parse the response similar to ExchangeConversionResponseModel
+        // Parse the response similar to CurrencyConversionResponseModel
         const result = data.result || '';
-        const conversionRates = data.conversion_rates || {};
-        
-        // Convert all values to numbers (they might be strings)
-        const parsedRates = {};
-        Object.keys(conversionRates).forEach(key => {
-          parsedRates[key] = typeof conversionRates[key] === 'number' 
-            ? conversionRates[key] 
-            : parseFloat(conversionRates[key]) || 1.0;
-        });
+        const conversionRate = data.conversion_rate || 1.0;
 
-        const now = new Date().toISOString();
+        if (result === 'success' && conversionRate) {
+          // Save to localStorage (matching Flutter Prefs)
+          const now = new Date().toISOString();
+          localStorage.setItem('lastCurrencyConversionCall', now);
+          localStorage.setItem('conversionRate', conversionRate.toString());
+          localStorage.setItem('lastCurrencyCode', targetCurrency); // Store which currency this rate is for
 
-        // Save to Firebase
-        await setDoc(doc(db, 'currencyConversion', 'currency_conversion'), {
-          timestamp: now,
-          rawResponse: parsedRates,
-          conversionRates: parsedRates,
-          result: result
-        });
-
-        return {
-          conversionRates: parsedRates,
-          timestamp: now,
-          result: result
-        };
+          console.log('Saved conversion rate to localStorage:', { rate: conversionRate, currency: targetCurrency });
+          return {
+            conversionRate: parseFloat(conversionRate),
+            result: result
+          };
+        }
+      } else {
+        console.error('Currency conversion API error:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('Error fetching latest conversion rate:', error);
+      console.error('Error fetching currency conversion:', error);
     }
 
     return {
-      conversionRates: {},
-      timestamp: new Date().toISOString(),
+      conversionRate: 1.0,
       result: 'error'
     };
   };
 
-  // Apply currency conversion to plans
-  const applyCurrencyConversion = async (planArray, targetCurrency) => {
+  // Apply currency conversion to plans (matching Flutter getCurrencyConversionMethodss)
+  const applyCurrencyConversion = async (planArray, targetCurrency, targetCountryCode) => {
     try {
-      const conversionData = await getLatestCurrencyConversionRate();
-      const conversionRates = conversionData.conversionRates || {};
+      console.log('Applying currency conversion:', { targetCurrency, targetCountryCode, planArray });
+      
+      // Get discount rate from user data (matching Flutter: userDetails.currentDiscountPercentage)
+      let discountRate = 1.0;
+      if (userData?.currentDiscountPercentage != null) {
+        discountRate = (100 - userData.currentDiscountPercentage) / 100;
+        console.log('Discount rate applied:', discountRate);
+      }
 
-      if (targetCurrency && targetCurrency !== 'GBP' && conversionRates[targetCurrency]) {
-        const conversionRate = conversionRates[targetCurrency];
-        const discountRate = 1.0; // You can add discount logic here if needed
+      // Check if currency conversion was called today (within 24 hours) - using localStorage
+      let isCurrencyConversionRateCalledToday = false;
+      const lastCurrencyConversionCall = localStorage.getItem('lastCurrencyConversionCall');
+      const lastCurrencyCode = localStorage.getItem('lastCurrencyCode');
+      
+      // Only use cache if it's for the same currency
+      if (lastCurrencyConversionCall && lastCurrencyConversionCall !== '' && lastCurrencyCode === targetCurrency) {
+        const now = new Date();
+        const lastCall = new Date(lastCurrencyConversionCall);
+        const hoursDiff = (now - lastCall) / (1000 * 60 * 60);
+        
+        if (hoursDiff < 24) {
+          isCurrencyConversionRateCalledToday = true;
+          console.log('Using cached conversion rate (within 24 hours)');
+        } else {
+          console.log('Cached rate expired (older than 24 hours)');
+        }
+      } else {
+        console.log('No valid cache found or currency mismatch:', { lastCurrencyCode, targetCurrency });
+      }
 
-        return planArray.map(plan => ({
-          ...plan,
-          cost: parseFloat((plan.cost * conversionRate * discountRate).toFixed(2))
-        }));
+      let conversionRate = 1.0;
+
+      if (isCurrencyConversionRateCalledToday) {
+        // Use cached conversion rate from localStorage
+        const cachedRate = localStorage.getItem('conversionRate');
+        conversionRate = cachedRate ? parseFloat(cachedRate) : 1.0;
+        if (conversionRate === 0.0) {
+          conversionRate = 1.0;
+        }
+        console.log('Using cached conversion rate:', conversionRate);
+
+        // Apply conversion with discount rate
+        const converted = planArray.map(plan => {
+          const rate = conversionRate;
+          const convertedCost = plan.cost * rate * discountRate;
+          console.log(`Converting ${plan.name}: ${plan.cost} GBP × ${rate} × ${discountRate} = ${convertedCost} ${targetCurrency}`);
+          return {
+            ...plan,
+            cost: parseFloat(convertedCost.toFixed(2))
+          };
+        });
+        return converted;
+      } else {
+        // Fetch new conversion rate from API
+        if (targetCurrency && targetCurrency !== 'GBP') {
+          console.log('Fetching new conversion rate for:', targetCurrency);
+          const conversionData = await fetchCurrencyConversion(targetCurrency);
+          
+          if (conversionData.result === 'success' && conversionData.conversionRate) {
+            conversionRate = conversionData.conversionRate || 1.0;
+            console.log('Fetched conversion rate:', conversionRate);
+
+            // Apply conversion with discount rate
+            const converted = planArray.map(plan => {
+              const rate = conversionRate;
+              const convertedCost = plan.cost * rate * discountRate;
+              console.log(`Converting ${plan.name}: ${plan.cost} GBP × ${rate} × ${discountRate} = ${convertedCost} ${targetCurrency}`);
+              return {
+                ...plan,
+                cost: parseFloat(convertedCost.toFixed(2))
+              };
+            });
+            return converted;
+          } else {
+            console.log('Failed to fetch conversion rate, using original plans');
+          }
+        } else {
+          console.log('Currency is GBP or not set, no conversion needed');
+        }
       }
     } catch (error) {
       console.error('Error applying currency conversion:', error);
     }
 
+    console.log('Returning original plans (no conversion applied)');
     return planArray;
   };
 
@@ -283,9 +344,14 @@ export default function Upgrade() {
           ];
         }
 
-        // Apply currency conversion
-        const convertedPlans = await applyCurrencyConversion(planArray, currency.code);
-        setPlans(convertedPlans);
+        // Apply currency conversion (matching Flutter getCurrencyConversionMethod)
+        if (currency.code && userData && userCountry) {
+          const convertedPlans = await applyCurrencyConversion(planArray, currency.code, userCountry);
+          setPlans(convertedPlans);
+        } else {
+          // Set plans without conversion if currency or user data not ready
+          setPlans(planArray);
+        }
       } catch (error) {
         console.error('Error fetching subscription plans:', error);
         // Default plans on error
@@ -299,10 +365,11 @@ export default function Upgrade() {
       }
     };
 
-    if (currency.code) {
+    // Fetch plans when both currency and user data are available
+    if (currency.code && userData) {
       fetchPlans();
     }
-  }, [currency.code]);
+  }, [currency.code, userData]);
 
   const getPlanType = (planName) => {
     const name = planName.toLowerCase();
