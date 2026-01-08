@@ -92,29 +92,29 @@ export default function Favorites() {
           favoriteUserIds.push(doc.data().likedUser);
         });
 
-        if (favoriteUserIds.length === 0) {
-          setLoading(false);
-          return;
-        }
+        // Don't return early - we still need to fetch other categories
 
         // Fetch user details for favorites
         const usersRef = collection(db, 'users');
         const allFavoriteUsers = [];
         
-        // Fetch in chunks of 30 (Firestore limit)
-        for (let i = 0; i < favoriteUserIds.length; i += 30) {
-          const chunk = favoriteUserIds.slice(i, Math.min(i + 30, favoriteUserIds.length));
-          const usersSnapshot = await getDocs(usersRef);
-          
-          usersSnapshot.forEach((doc) => {
-            if (chunk.includes(doc.id)) {
-              allFavoriteUsers.push({
-                id: doc.id,
-                userId: doc.id,
-                ...doc.data()
-              });
-            }
-          });
+        // Only fetch favorite users if there are any
+        if (favoriteUserIds.length > 0) {
+          // Fetch in chunks of 30 (Firestore limit)
+          for (let i = 0; i < favoriteUserIds.length; i += 30) {
+            const chunk = favoriteUserIds.slice(i, Math.min(i + 30, favoriteUserIds.length));
+            const usersSnapshot = await getDocs(usersRef);
+            
+            usersSnapshot.forEach((doc) => {
+              if (chunk.includes(doc.id)) {
+                allFavoriteUsers.push({
+                  id: doc.id,
+                  userId: doc.id,
+                  ...doc.data()
+                });
+              }
+            });
+          }
         }
 
         setFavorites(allFavoriteUsers);
@@ -251,6 +251,50 @@ export default function Favorites() {
           });
         }
 
+        // Fetch users with same profession
+        if (userData?.dayJob) {
+          const usersRef = collection(db, 'users');
+          const usersSnapshot = await getDocs(usersRef);
+          
+          usersSnapshot.forEach((doc) => {
+            // Skip the authenticated user
+            if (doc.id === userData.userId) return;
+            
+            const user = {
+              id: doc.id,
+              userId: doc.id,
+              ...doc.data()
+            };
+            
+            // Check if user has same dayJob as auth user
+            if (user.dayJob && user.dayJob === userData.dayJob) {
+              categorized.sameProfession.push(user);
+            }
+          });
+        }
+
+        // Fetch users with same country
+        if (userData?.settledCountry) {
+          const usersRef = collection(db, 'users');
+          const usersSnapshot = await getDocs(usersRef);
+          
+          usersSnapshot.forEach((doc) => {
+            // Skip the authenticated user
+            if (doc.id === userData.userId) return;
+            
+            const user = {
+              id: doc.id,
+              userId: doc.id,
+              ...doc.data()
+            };
+            
+            // Check if user has same settledCountry as auth user
+            if (user.settledCountry && user.settledCountry === userData.settledCountry) {
+              categorized.sameCountry.push(user);
+            }
+          });
+        }
+
         // Fetch shortlisted users
         const shortlistRef = collection(db, 'shortlist');
         const shortlistQuery = query(shortlistRef, where('shortlistedBy', '==', userData.userId));
@@ -260,113 +304,105 @@ export default function Favorites() {
           shortlistedIds.add(doc.data().shortlistedUser);
         });
 
-        allFavoriteUsers.forEach((user) => {
-          // Shortlisted
-          if (shortlistedIds.has(user.userId)) {
-            categorized.shortlisted.push(user);
-          }
-
-          // Same Passions - only add if not already in the list
-          // Check for matching passions in both top-level and selectedPersonalityTraitsMap
-          let hasMatchingPassion = false;
-          
-          // Check top-level passions
-          if (user.passions && Array.isArray(user.passions)) {
-            hasMatchingPassion = user.passions.some(passion => allAuthPassions.has(passion));
-          }
-          
-          // Check selectedPersonalityTraitsMap.passions if no match found yet
-          if (!hasMatchingPassion && user.selectedPersonalityTraitsMap?.passions && Array.isArray(user.selectedPersonalityTraitsMap.passions)) {
-            hasMatchingPassion = user.selectedPersonalityTraitsMap.passions.some(passion => allAuthPassions.has(passion));
-          }
-          
-          if (hasMatchingPassion) {
-            // Check if user is already in samePassions to avoid duplicates
-            const userAlreadyInSamePassions = categorized.samePassions.some(u => u.userId === user.userId);
-            if (!userAlreadyInSamePassions) {
-              categorized.samePassions.push(user);
+        // Only process favorite users if they exist
+        if (allFavoriteUsers.length > 0) {
+          allFavoriteUsers.forEach((user) => {
+            // Shortlisted
+            if (shortlistedIds.has(user.userId)) {
+              categorized.shortlisted.push(user);
             }
-          }
 
-          // Same Interests
-          // Combine user interests from both locations
-          const userAllInterests = new Set();
-          
-          // Add top-level interests
-          if (user.interests && Array.isArray(user.interests)) {
-            user.interests.forEach(i => userAllInterests.add(i));
-          }
-          
-          // Add selectedLikesInvolvesMap.interests
-          if (user.selectedLikesInvolvesMap?.interests && Array.isArray(user.selectedLikesInvolvesMap.interests)) {
-            user.selectedLikesInvolvesMap.interests.forEach(i => userAllInterests.add(i));
-          }
-          
-          // Combine auth user interests from both locations
-          const authAllInterests = new Set();
-          
-          // Add top-level interests
-          if (userData.interests && Array.isArray(userData.interests)) {
-            userData.interests.forEach(i => authAllInterests.add(i));
-          }
-          
-          // Add selectedLikesInvolvesMap.interests
-          if (userData.selectedLikesInvolvesMap?.interests && Array.isArray(userData.selectedLikesInvolvesMap.interests)) {
-            userData.selectedLikesInvolvesMap.interests.forEach(i => authAllInterests.add(i));
-          }
-          
-          // Check if there are any common interests
-          if (authAllInterests.size > 0 && userAllInterests.size > 0) {
-            const hasCommonInterest = [...userAllInterests].some(interest => authAllInterests.has(interest));
-            if (hasCommonInterest) {
-              categorized.sameInterests.push(user);
+            // Same Passions - only add if not already in the list
+            // Check for matching passions in both top-level and selectedPersonalityTraitsMap
+            let hasMatchingPassion = false;
+            
+            // Check top-level passions
+            if (user.passions && Array.isArray(user.passions)) {
+              hasMatchingPassion = user.passions.some(passion => allAuthPassions.has(passion));
             }
-          }
+            
+            // Check selectedPersonalityTraitsMap.passions if no match found yet
+            if (!hasMatchingPassion && user.selectedPersonalityTraitsMap?.passions && Array.isArray(user.selectedPersonalityTraitsMap.passions)) {
+              hasMatchingPassion = user.selectedPersonalityTraitsMap.passions.some(passion => allAuthPassions.has(passion));
+            }
+            
+            if (hasMatchingPassion) {
+              // Check if user is already in samePassions to avoid duplicates
+              const userAlreadyInSamePassions = categorized.samePassions.some(u => u.userId === user.userId);
+              if (!userAlreadyInSamePassions) {
+                categorized.samePassions.push(user);
+              }
+            }
 
-          // Same Profession
-          if (user.dayJob && userData.dayJob && user.dayJob === userData.dayJob) {
-            categorized.sameProfession.push(user);
-          }
+            // Same Interests
+            // Combine user interests from both locations
+            const userAllInterests = new Set();
+            
+            // Add top-level interests
+            if (user.interests && Array.isArray(user.interests)) {
+              user.interests.forEach(i => userAllInterests.add(i));
+            }
+            
+            // Add selectedLikesInvolvesMap.interests
+            if (user.selectedLikesInvolvesMap?.interests && Array.isArray(user.selectedLikesInvolvesMap.interests)) {
+              user.selectedLikesInvolvesMap.interests.forEach(i => userAllInterests.add(i));
+            }
+            
+            // Combine auth user interests from both locations
+            const authAllInterests = new Set();
+            
+            // Add top-level interests
+            if (userData.interests && Array.isArray(userData.interests)) {
+              userData.interests.forEach(i => authAllInterests.add(i));
+            }
+            
+            // Add selectedLikesInvolvesMap.interests
+            if (userData.selectedLikesInvolvesMap?.interests && Array.isArray(userData.selectedLikesInvolvesMap.interests)) {
+              userData.selectedLikesInvolvesMap.interests.forEach(i => authAllInterests.add(i));
+            }
+            
+            // Check if there are any common interests
+            if (authAllInterests.size > 0 && userAllInterests.size > 0) {
+              const hasCommonInterest = [...userAllInterests].some(interest => authAllInterests.has(interest));
+              if (hasCommonInterest) {
+                categorized.sameInterests.push(user);
+              }
+            }
 
-          // Same City
-          if (user.currentPosition?.city && userData.currentPosition?.city && 
-              user.currentPosition.city === userData.currentPosition.city) {
-            categorized.sameCity.push(user);
-          }
+            // Same City
+            if (user.currentPosition?.city && userData.currentPosition?.city && 
+                user.currentPosition.city === userData.currentPosition.city) {
+              categorized.sameCity.push(user);
+            }
 
-          // Same Country
-          if (user.settledCountry && userData.settledCountry && 
-              user.settledCountry === userData.settledCountry) {
-            categorized.sameCountry.push(user);
-          }
+            // Same Education
+            if (user.education && userData.education && user.education === userData.education) {
+              categorized.sameEducation.push(user);
+            }
 
-          // Same Education
-          if (user.education && userData.education && user.education === userData.education) {
-            categorized.sameEducation.push(user);
-          }
+            // Same Religion
+            if (user.religion && userData.religion && user.religion === userData.religion) {
+              categorized.sameReligion.push(user);
+            }
 
-          // Same Religion
-          if (user.religion && userData.religion && user.religion === userData.religion) {
-            categorized.sameReligion.push(user);
-          }
+            // Same Native Country
+            if (user.nativeCountry && userData.nativeCountry && 
+                user.nativeCountry === userData.nativeCountry) {
+              categorized.sameNativeCountry.push(user);
+            }
 
-          // Same Native Country
-          if (user.nativeCountry && userData.nativeCountry && 
-              user.nativeCountry === userData.nativeCountry) {
-            categorized.sameNativeCountry.push(user);
-          }
+            // Same Mother Tongue
+            if (user.motherTongue && userData.motherTongue && 
+                user.motherTongue === userData.motherTongue) {
+              categorized.sameMotherTongue.push(user);
+            }
 
-          // Same Mother Tongue
-          if (user.motherTongue && userData.motherTongue && 
-              user.motherTongue === userData.motherTongue) {
-            categorized.sameMotherTongue.push(user);
-          }
-
-          // Same Star
-          if (user.star && userData.star && user.star === userData.star) {
-            categorized.sameStar.push(user);
-          }
-        });
+            // Same Star
+            if (user.star && userData.star && user.star === userData.star) {
+              categorized.sameStar.push(user);
+            }
+          });
+        }
 
         setCategorizedUsers(categorized);
       } catch (error) {
@@ -379,6 +415,7 @@ export default function Favorites() {
     };
 
     fetchFavoritesAndCategorize();
+    
   }, [userData?.uid]);
 
   const handleLogout = async () => {

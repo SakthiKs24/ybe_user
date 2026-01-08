@@ -215,7 +215,30 @@ export default function FavoriteCategory() {
               });
             }
           }
-        } else if (category === 'shortlisted') {
+        } 
+        else if (category === 'sameCountry') {
+          // For sameCountry, fetch all users that have the same settledCountry as the current user
+          if (userData?.settledCountry) {
+            const usersRef = collection(db, 'users');
+            const usersSnapshot = await getDocs(usersRef);
+            
+            usersSnapshot.forEach((doc) => {
+              // Skip the authenticated user
+              if (doc.id === userData.userId) return;
+              
+              const user = {
+                id: doc.id,
+                userId: doc.id,
+                ...doc.data()
+              };
+              
+              // Check if user has same settledCountry as auth user
+              if (user.settledCountry && user.settledCountry === userData.settledCountry) {
+                allUsers.push(user);
+              }
+            });
+          }
+        }else if (category === 'shortlisted') {
           const shortlistRef = collection(db, 'shortlist');
           const shortlistQuery = query(shortlistRef, where('shortlistedBy', '==', userData.userId));
           const shortlistSnapshot = await getDocs(shortlistQuery);
