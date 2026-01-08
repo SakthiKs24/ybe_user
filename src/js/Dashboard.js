@@ -887,31 +887,28 @@ export default function Dashboard() {
                             </div>
                             
                             <div className="match-details">
-                              <div className="detail-row">
-                                <div className="detail-item">
-                                  {age} yrs, {height}
+                              <div className="detail-columns">
+                                <div className="detail-column-left">
+                                  <div className="detail-item">
+                                    {age} yrs, {height}
+                                  </div>
+                                  <div className="detail-item">
+                                    {user.religion || 'N/A'},{user.community || 'Caste'}
+                                  </div>
+                                  <div className="detail-item">
+                                    {user.motherTongue || 'N/A'}
+                                  </div>
                                 </div>
-                                <div className="detail-divider"></div>
-                                <div className="detail-item">
-                                  {maritalStatus}
-                                </div>
-                              </div>
-                              <div className="detail-row">
-                                <div className="detail-item">
-                                  {user.religion || 'N/A'},{user.community || 'Caste'}
-                                </div>
-                                <div className="detail-divider"></div>
-                                <div className="detail-item">
-                                  {location}
-                                </div>
-                              </div>
-                              <div className="detail-row">
-                                <div className="detail-item">
-                                  {user.motherTongue || 'N/A'}
-                                </div>
-                                <div className="detail-divider"></div>
-                                <div className="detail-item">
-                                  {user.dayJob || 'N/A'}
+                                <div className="detail-column-right">
+                                  <div className="detail-item">
+                                    {maritalStatus}
+                                  </div>
+                                  <div className="detail-item">
+                                    {location}
+                                  </div>
+                                  <div className="detail-item">
+                                    {user.dayJob || 'N/A'}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -954,10 +951,19 @@ export default function Dashboard() {
                               />
                             </button>
                             <button 
-                              className="action-btn super" 
+                              className="action-btn superlike-btn" 
                               onClick={(e) => handleSuperlike(e, user.userId || user.id)}
-                              title="Super Like">
-                              <img src="/images/Star.png" alt="Super Like" className="action-icon" />
+                              title="Shortlist">
+                              <img src="/images/Star.png" alt="Shortlist" className="action-icon" />
+                            </button>
+                            <button 
+                              className="action-btn message-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/chat/${user.userId || user.id}`);
+                              }}
+                              title="Message">
+                              <img src="/images/Chat.png" alt="Message" className="action-icon" />
                             </button>
                           </div>
                         </div>

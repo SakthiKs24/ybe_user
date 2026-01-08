@@ -199,7 +199,8 @@ export default function FavoriteCategory() {
             })
             .map(doc => doc.id);
         }
-        else if (category === 'sameDegree' && userData.degree) {
+        else if ((category === 'sameDegree' || category === 'sameEducation') && userData.degree) {
+          // sameEducation maps to sameDegree (uses degree field)
           const degreeSnapshot = await getDocs(
             query(collection(db, 'users'), where('degree', '==', userData.degree))
           );
@@ -211,7 +212,8 @@ export default function FavoriteCategory() {
             })
             .map(doc => doc.id);
         }
-        else if (category === 'sameOriginCountry' && userData.originCountry) {
+        else if ((category === 'sameOriginCountry' || category === 'sameNativeCountry') && userData.originCountry) {
+          // sameNativeCountry maps to sameOriginCountry (uses originCountry field)
           const originCountrySnapshot = await getDocs(
             query(collection(db, 'users'), where('originCountry', '==', userData.originCountry))
           );
@@ -223,7 +225,8 @@ export default function FavoriteCategory() {
             })
             .map(doc => doc.id);
         }
-        else if (category === 'sameSettledCountry' && userData.settledCountry) {
+        else if ((category === 'sameSettledCountry' || category === 'sameCountry') && userData.settledCountry) {
+          // sameCountry maps to sameSettledCountry (uses settledCountry field)
           const settledCountrySnapshot = await getDocs(
             query(collection(db, 'users'), where('settledCountry', '==', userData.settledCountry))
           );
@@ -240,6 +243,30 @@ export default function FavoriteCategory() {
             query(collection(db, 'users'), where('currentPosition.city', '==', userData.currentPosition.city))
           );
           categoryUserIds = locationSnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+        }
+        else if (category === 'sameMotherTongue' && userData.motherTongue) {
+          const motherTongueSnapshot = await getDocs(
+            query(collection(db, 'users'), where('motherTongue', '==', userData.motherTongue))
+          );
+          categoryUserIds = motherTongueSnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+        }
+        else if (category === 'sameStar' && userData.selectedPersonalityTraitsMap?.starSign) {
+          const starSignSnapshot = await getDocs(
+            query(collection(db, 'users'), where('selectedPersonalityTraitsMap.starSign', '==', userData.selectedPersonalityTraitsMap.starSign))
+          );
+          categoryUserIds = starSignSnapshot.docs
             .filter(doc => {
               const data = doc.data();
               const blockedUsers = data.blockedUsers || [];
@@ -513,35 +540,41 @@ export default function FavoriteCategory() {
                           {user.name || 'Anonymous'}
                         </h3>
                         {isVerified && <span className="verified-badge">✓</span>}
-                        {isOnline && (
-                          <div className="online-status-indicator">
-                            <span className="online-icon">💬</span>
-                            <span className="online-text">Online now</span>
-                          </div>
-                        )}
+                        <div className="online-status-indicator1">
+                          <img
+                            src={isOnline ? "/images/online_now.png" : "/images/offline.png"}
+                            alt={isOnline ? "Online" : "Offline"}
+                            className="online-status-icon"
+                          />
+                          <span className={`online-text1 ${isOnline ? "online" : "offline"}`}>
+                            {isOnline ? "Online now" : "Offline"}
+                          </span>
+                        </div>
                       </div>
                       
                       <div className="match-details">
-                        <div className="detail-column">
-                          <div className="detail-item">
-                            {age} yrs, {height}
+                        <div className="detail-columns">
+                          <div className="detail-column-left">
+                            <div className="detail-item">
+                              {age} yrs, {height}
+                            </div>
+                            <div className="detail-item">
+                              {user.religion || 'N/A'},{user.community || 'Caste'}
+                            </div>
+                            <div className="detail-item">
+                              {user.motherTongue || 'N/A'}
+                            </div>
                           </div>
-                          <div className="detail-item">
-                            {user.religion || 'N/A'},{user.community || 'Caste'}
-                          </div>
-                          <div className="detail-item">
-                            {user.motherTongue || 'N/A'}
-                          </div>
-                        </div>
-                        <div className="detail-column">
-                          <div className="detail-item">
-                            {maritalStatus}
-                          </div>
-                          <div className="detail-item">
-                            {location}
-                          </div>
-                          <div className="detail-item">
-                            {user.dayJob || 'N/A'}
+                          <div className="detail-column-right">
+                            <div className="detail-item">
+                              {maritalStatus}
+                            </div>
+                            <div className="detail-item">
+                              {location}
+                            </div>
+                            <div className="detail-item">
+                              {user.dayJob || 'N/A'}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -563,20 +596,21 @@ export default function FavoriteCategory() {
                         <img src="/images/Reject.png" alt="Reject" className="action-icon" />
                       </button>
                       <button 
-                        className={`favorite-btn ${isFavorited ? 'favorited' : ''}`}
+                        className="action-btn favorite-btn"
                         onClick={(e) => handleFavoriteToggle(e, user.userId || user.id)}
                         title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                       >
-                        {isFavorited ? '❤️' : '♡'}
+                        <img 
+                          src={isFavorited ? "/images/Heart_like.png" : "/images/Heart_unlike.png"} 
+                          alt={isFavorited ? 'Liked' : 'Like'} 
+                          className="action-icon" 
+                        />
                       </button>
-                      <button className="action-btn" title="Like">
-                        <img src="/images/Like.png" alt="Like" className="action-icon" />
-                      </button>
-                      <button className="action-btn super" title="Super Like">
-                        <img src="/images/Star.png" alt="Super Like" className="action-icon" />
+                      <button className="action-btn superlike-btn" title="Shortlist">
+                        <img src="/images/Star.png" alt="Shortlist" className="action-icon" />
                       </button>
                       <button 
-                        className="action-btn" 
+                        className="action-btn message-btn" 
                         onClick={(e) => handleChatClick(e, user.userId || user.id)}
                         title="Message">
                         <img src="/images/Chat.png" alt="Message" className="action-icon" />

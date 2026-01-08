@@ -51,47 +51,38 @@ const Header = ({ userData, showProfileDropdown = false, setShowProfileDropdown 
             <a href="/chat" className={`nav-link ${currentPage === 'chat' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); navigate('/chat'); }}>Messages</a>
           </nav>
         </div>
-        <div className="header-center">
-          <div className="search-box">
-            <span className="search-icon">🔍</span>
-            <input type="text" placeholder="Search" className="search-input" />
-          </div>
-        </div>
         <div className="header-right">
           <button className="upgrade-btn" onClick={() => navigate('/upgrade')}>Upgrade now</button>
           {userData ? (
-            <div className="profile-dropdown-wrapper" ref={dropdownRef}>
+            <>
               <button 
-                className="icon-btn" 
-                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                className="icon-btn profile-icon-btn" 
+                onClick={() => navigate('/profile')}
+                title="Profile"
               >
+                <img 
+                  src={userData.profileImageUrls?.[0] || "/images/profile.png"} 
+                  alt="Profile" 
+                  className="profile-icon-img" 
+                />
+              </button>
+              <button 
+                className="icon-btn logout-icon-btn" 
+                onClick={() => setShowLogoutModal(true)}
+                title="Logout"
+              >
+                <img src="/images/logout.jpeg" alt="Logout" className="logout-icon-img" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="icon-btn profile-icon-btn" onClick={() => navigate('/profile')}>
                 <img src="/images/profile.png" alt="Profile" className="profile-icon-img" />
               </button>
-              
-              {showProfileDropdown && (
-                <div className="profile-dropdown-menu">
-                  <div className="dropdown-item" onClick={() => {
-                    setShowProfileDropdown(false);
-                    navigate('/profile');
-                  }}>
-                    <span className="dropdown-icon">👤</span>
-                    <span>Profile</span>
-                  </div>
-                  <div className="dropdown-divider"></div>
-                  <div className="dropdown-item logout-item" onClick={() => {
-                    setShowProfileDropdown(false);
-                    setShowLogoutModal(true);
-                  }}>
-                    <span className="dropdown-icon">🚪</span>
-                    <span>Logout</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <button className="icon-btn" onClick={() => navigate('/profile')}>
-              <img src="/images/profile.png" alt="Profile" className="profile-icon-img" />
-            </button>
+              <button className="icon-btn logout-icon-btn" onClick={() => setShowLogoutModal(true)}>
+                <img src="/images/logout.jpeg" alt="Logout" className="logout-icon-img" />
+              </button>
+            </>
           )}
         </div>
       </header>

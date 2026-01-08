@@ -308,41 +308,59 @@
     justify-content: center;
     font-size: 12px;
     font-weight: bold;
+    flex-shrink: 0;
   }
   
-  .online-status-indicator {
+  .online-status-indicator1 {
     display: flex;
     align-items: center;
     gap: 5px;
-    background-color: #e8f5e9;
     padding: 4px 12px;
     border-radius: 12px;
   }
   
-  .online-icon {
-    font-size: 14px;
+  .online-status-icon {
+    width: 20px;
+    height: 20px;
   }
   
-  .online-text {
+  .online-text1 {
+    font-size: 13px;
+    color: #666;
+  }
+  
+  .online-text1.online {
     color: #4CAF50;
-    font-size: 12px;
-    font-weight: 500;
+  }
+  
+  .online-text1.offline {
+    color: #999;
   }
   
   .match-details {
-    display: flex;
-    gap: 30px;
+    margin-bottom: 12px;
+    border-top: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 12px 0;
   }
   
-  .detail-column {
+  .detail-columns {
+    display: flex;
+    gap: 40px;
+  }
+  
+  .detail-column-left,
+  .detail-column-right {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    flex: 1;
   }
   
   .detail-item {
     color: #666;
     font-size: 14px;
+    line-height: 1.4;
   }
   
   .match-bio {
@@ -368,53 +386,60 @@
   }
   
   .action-btn {
-    background-color: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 50%;
-    width: 45px;
-    height: 45px;
+    width: 50px;
+    height: 50px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s;
+    transition: transform 0.2s;
+    padding: 0;
   }
   
   .action-btn:hover {
     transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
   
   .action-icon {
-    width: 18px;
-    height: 18px;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
   }
   
-  .reject-btn:hover {
-    border-color: #ff6b6b;
-  }
-  
-  .super:hover {
-    border-color: #ffd700;
-    background-color: #fffef0;
+  .reject-btn {
+    background: transparent;
   }
   
   .favorite-btn {
-    background-color: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 50%;
-    width: 45px;
-    height: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    font-size: 24px;
+    background: transparent;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 0;
   }
   
   .favorite-btn:hover {
     transform: scale(1.1);
+  }
+  
+  .superlike-btn {
+    background: transparent;
+    border: none;
+  }
+  
+  .superlike-btn:hover {
+    background: transparent;
+  }
+  
+  .message-btn {
+    background: transparent;
+    border: none;
+  }
+  
+  .message-btn:hover {
+    background: transparent;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
   

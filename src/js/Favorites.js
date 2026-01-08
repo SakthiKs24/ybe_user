@@ -35,6 +35,8 @@ export default function Favorites() {
   const [sameOriginCountryPartnerId, setSameOriginCountryPartnerId] = useState([]);
   const [sameSettledCountryPartnerId, setSameSettledCountryPartnerId] = useState([]);
   const [sameLocationPartnerId, setSameLocationPartnerId] = useState([]);
+  const [sameMotherTonguePartnerId, setSameMotherTonguePartnerId] = useState([]);
+  const [sameStarPartnerId, setSameStarPartnerId] = useState([]);
   
   const [dataFetched, setDataFetched] = useState(false);
   const dropdownRef = useRef(null);
@@ -190,6 +192,36 @@ export default function Favorites() {
           setSameLocationPartnerId(locationIds);
         }
 
+        // Fetch same mother tongue partners
+        if (userData.motherTongue) {
+          const motherTongueSnapshot = await getDocs(
+            query(collection(db, 'users'), where('motherTongue', '==', userData.motherTongue))
+          );
+          const motherTongueIds = motherTongueSnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+          setSameMotherTonguePartnerId(motherTongueIds);
+        }
+
+        // Fetch same star sign partners
+        if (userData.selectedPersonalityTraitsMap?.starSign) {
+          const starSignSnapshot = await getDocs(
+            query(collection(db, 'users'), where('selectedPersonalityTraitsMap.starSign', '==', userData.selectedPersonalityTraitsMap.starSign))
+          );
+          const starSignIds = starSignSnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+          setSameStarPartnerId(starSignIds);
+        }
+
         setDataFetched(true);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -334,42 +366,43 @@ export default function Favorites() {
       );
     };
 
-    setCategorizedUsers({
-      liked: getCategoryUsers(likedPartnerId),
-      beingLiked: getCategoryUsers(beingLikedPartnerId),
-      samePassions: allUsers.filter(user => {
-        if (!userData?.selectedPersonalityTraitsMap?.passions?.length) return false;
-        const userPassions = user.selectedPersonalityTraitsMap?.passions || [];
-        return userPassions.some(passion => 
-          userData.selectedPersonalityTraitsMap.passions.includes(passion)
-        ) && discoverableUsersId.includes(user.userId) && user.profileDiscovery;
-      }),
-      sameInterests: allUsers.filter(user => {
-        if (!userData?.selectedLikesInvolvesMap?.interests?.length) return false;
-        const userInterests = user.selectedLikesInvolvesMap?.interests || [];
-        return userInterests.some(interest => 
-          userData.selectedLikesInvolvesMap.interests.includes(interest)
-        ) && discoverableUsersId.includes(user.userId) && user.profileDiscovery;
-      }),
-      sameProfession: getCategoryUsers(sameProfessionPartnerId),
-      sameReligion: getCategoryUsers(sameReligionPartnerId),
-      sameDegree: getCategoryUsers(sameDegreePartnerId),
-      sameOriginCountry: getCategoryUsers(sameOriginCountryPartnerId),
-      sameSettledCountry: getCategoryUsers(sameSettledCountryPartnerId),
-      sameLocation: getCategoryUsers(sameLocationPartnerId),
-      sameCity: [], // Not in Flutter but keeping for compatibility
-      sameCountry: [], // Not in Flutter but keeping for compatibility
-      sameEducation: [], // Not in Flutter but keeping for compatibility
-      sameNativeCountry: [], // Not in Flutter but keeping for compatibility
-      sameMotherTongue: [], // Not in Flutter but keeping for compatibility
-      sameStar: [], // Not in Flutter but keeping for compatibility
-      shortlisted: getCategoryUsers(shortListedPartnerId)
-    });
+        setCategorizedUsers({
+          liked: getCategoryUsers(likedPartnerId),
+          beingLiked: getCategoryUsers(beingLikedPartnerId),
+          samePassions: allUsers.filter(user => {
+            if (!userData?.selectedPersonalityTraitsMap?.passions?.length) return false;
+            const userPassions = user.selectedPersonalityTraitsMap?.passions || [];
+            return userPassions.some(passion => 
+              userData.selectedPersonalityTraitsMap.passions.includes(passion)
+            ) && discoverableUsersId.includes(user.userId) && user.profileDiscovery;
+          }),
+          sameInterests: allUsers.filter(user => {
+            if (!userData?.selectedLikesInvolvesMap?.interests?.length) return false;
+            const userInterests = user.selectedLikesInvolvesMap?.interests || [];
+            return userInterests.some(interest => 
+              userData.selectedLikesInvolvesMap.interests.includes(interest)
+            ) && discoverableUsersId.includes(user.userId) && user.profileDiscovery;
+          }),
+          sameProfession: getCategoryUsers(sameProfessionPartnerId),
+          sameReligion: getCategoryUsers(sameReligionPartnerId),
+          sameDegree: getCategoryUsers(sameDegreePartnerId),
+          sameOriginCountry: getCategoryUsers(sameOriginCountryPartnerId),
+          sameSettledCountry: getCategoryUsers(sameSettledCountryPartnerId),
+          sameLocation: getCategoryUsers(sameLocationPartnerId),
+          sameCity: [], // Not in Flutter but keeping for compatibility
+          sameCountry: getCategoryUsers(sameSettledCountryPartnerId), // Maps to sameSettledCountry (uses settledCountry field)
+          sameEducation: getCategoryUsers(sameDegreePartnerId), // Maps to sameDegree (uses degree field)
+          sameNativeCountry: getCategoryUsers(sameOriginCountryPartnerId), // Maps to sameOriginCountry (uses originCountry field)
+          sameMotherTongue: getCategoryUsers(sameMotherTonguePartnerId), // Uses motherTongue field
+          sameStar: getCategoryUsers(sameStarPartnerId), // Uses selectedPersonalityTraitsMap.starSign field
+          shortlisted: getCategoryUsers(shortListedPartnerId)
+        });
 
     setCountsLoading(false);
   }, [allUsers, discoverableUsersId, likedPartnerId, beingLikedPartnerId, shortListedPartnerId, 
       sameProfessionPartnerId, sameReligionPartnerId, sameDegreePartnerId, 
-      sameOriginCountryPartnerId, sameSettledCountryPartnerId, sameLocationPartnerId, userData]);
+      sameOriginCountryPartnerId, sameSettledCountryPartnerId, sameLocationPartnerId, 
+      sameMotherTonguePartnerId, sameStarPartnerId, userData]);
 
   const handleCategoryClick = (category) => {
     navigate(`/favorites/${category}`);
