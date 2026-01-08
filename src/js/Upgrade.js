@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+import { createCheckoutSession } from './services/stripeService';
 import '../css/Upgrade.css';
 
 export default function Upgrade() {
@@ -13,6 +14,8 @@ export default function Upgrade() {
   const [currency, setCurrency] = useState({ code: 'GBP', symbol: '£' });
   const [userCountry, setUserCountry] = useState('GB');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [userData, setUserData] = useState(null);
 
   // Currency mapping
   const currencyMap = {
@@ -84,6 +87,33 @@ export default function Upgrade() {
     'AE': 'د.إ', 'GB': '£', 'US': '$', 'UY': '$U', 'UZ': "so'm", 'VU': 'VT',
     'VE': 'Bs.', 'VN': '₫', 'YE': '﷼', 'ZM': 'ZK', 'ZW': '$'
   };
+
+  // Fetch current user data
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        try {
+          const usersRef = collection(db, 'users');
+          const q = query(usersRef, where('email', '==', user.email));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const userDoc = querySnapshot.docs[0];
+            setUserData({
+              uid: user.uid,
+              email: user.email,
+              userId: userDoc.data().userId || userDoc.id,
+              ...userDoc.data()
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Detect user country
   useEffect(() => {
@@ -324,29 +354,38 @@ export default function Upgrade() {
     return null;
   };
 
+  const handlePayment = async (plan) => {
+    if (!userData) {
+      toast.error('Please login to continue');
+      navigate('/');
+      return;
+    }
+
+    setPaymentLoading(true);
+    try {
+      console.log('Payment initiated:', {
+        plan: plan.name,
+        amount: plan.cost,
+        currency: currency.code,
+        symbol: currency.symbol
+      });
+      
+      await createCheckoutSession(
+        plan,
+        userData.userId || userData.uid,
+        userData.email,
+        currency.code
+      );
+      // Note: setPaymentLoading(false) is not needed here as user will be redirected
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast.error(error.message || 'Failed to initiate payment. Please try again.');
+      setPaymentLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
-      // Set onlineStatus to false before logging out
-      const user = auth.currentUser;
-      if (user) {
-        try {
-          const usersRef = collection(db, 'users');
-          const q = query(usersRef, where('email', '==', user.email));
-          const querySnapshot = await getDocs(q);
-          
-          if (!querySnapshot.empty) {
-            const userDoc = querySnapshot.docs[0];
-            const userDocRef = doc(db, 'users', userDoc.id);
-            await updateDoc(userDocRef, {
-              onlineStatus: false
-            });
-          }
-        } catch (error) {
-          console.error('Error updating onlineStatus:', error);
-          // Continue with logout even if status update fails
-        }
-      }
-
       await signOut(auth);
       toast.success('Logged out successfully!', {
         position: "top-right",
@@ -440,8 +479,12 @@ export default function Upgrade() {
                   </div>
                 </div>
 
-                <button className="plan-button">
-                  Starting at {currency.symbol}{plan.cost}
+                <button 
+                  className="plan-button"
+                  onClick={() => handlePayment(plan)}
+                  disabled={paymentLoading}
+                >
+                  {paymentLoading ? 'Processing...' : `Starting at ${currency.symbol}${plan.cost}`}
                 </button>
               </div>
             );

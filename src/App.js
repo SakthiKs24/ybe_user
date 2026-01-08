@@ -11,6 +11,8 @@ import ProfileDetails from './js/ProfileDetails';
 import FavoriteCategory from './js/FavoriteCategory';
 import Profile from './js/Profile';
 import Favorites from './js/Favorites';
+import PaymentSuccess from './js/PaymentSuccess';
+import PaymentCancel from './js/PaymentCancel';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -31,6 +33,8 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/favorites" element={<Favorites />} />
         <Route path="/favorites/:category" element={<FavoriteCategory />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-cancel" element={<PaymentCancel />} />
 
       </Routes>
     </Router>
