@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, query, where, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, updateDoc, addDoc, deleteDoc, documentId } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import Header from './Header';
 import SubHeader from './SubHeader';
@@ -153,38 +153,203 @@ export default function FavoriteCategory() {
       if (!userData?.uid || !category) return;
       
       try {
-        // Fetch favorites
-        const favoritesRef = collection(db, 'favorites');
-        const q = query(favoritesRef, where('likedBy', '==', userData.userId));
-        const favSnapshot = await getDocs(q);
+        let allUsers = [];
         
-        const favoriteUserIds = [];
-        favSnapshot.forEach((doc) => {
-          favoriteUserIds.push(doc.data().likedUser);
-        });
-
-        if (favoriteUserIds.length === 0) {
-          setLoading(false);
-          return;
-        }
-
-        // Fetch user details for favorites
-        const usersRef = collection(db, 'users');
-        const allFavoriteUsers = [];
-        
-        for (let i = 0; i < favoriteUserIds.length; i += 30) {
-          const chunk = favoriteUserIds.slice(i, Math.min(i + 30, favoriteUserIds.length));
-          const usersSnapshot = await getDocs(usersRef);
+        // For most categories, fetch users from favorites
+        if (category !== 'beingLiked' && category !== 'shortlisted') {
+          const favoritesRef = collection(db, 'favorites');
+          const q = query(favoritesRef, where('likedBy', '==', userData.userId));
+          const favSnapshot = await getDocs(q);
           
-          usersSnapshot.forEach((doc) => {
-            if (chunk.includes(doc.id)) {
-              allFavoriteUsers.push({
+          const favoriteUserIds = [];
+          favSnapshot.forEach((doc) => {
+            favoriteUserIds.push(doc.data().likedUser);
+          });
+
+          if (favoriteUserIds.length > 0) {
+            // Fetch user details for favorites
+            const usersRef = collection(db, 'users');
+            
+            for (let i = 0; i < favoriteUserIds.length; i += 30) {
+              const chunk = favoriteUserIds.slice(i, Math.min(i + 30, favoriteUserIds.length));
+              const usersQuery = query(usersRef, where(documentId(), 'in', chunk));
+              const usersSnapshot = await getDocs(usersQuery);
+              
+              usersSnapshot.forEach((doc) => {
+                allUsers.push({
+                  id: doc.id,
+                  userId: doc.id,
+                  ...doc.data()
+                });
+              });
+            }
+          }
+        }
+        
+        // For beingLiked and shortlisted, fetch users who liked/shortlisted the current user
+        if (category === 'beingLiked') {
+          const favoritesRef = collection(db, 'favorites');
+          const likedByQuery = query(favoritesRef, where('likedUser', '==', userData.userId));
+          const likedBySnapshot = await getDocs(likedByQuery);
+          
+          const likedByUserIds = [];
+          likedBySnapshot.forEach((doc) => {
+            likedByUserIds.push(doc.data().likedBy);
+          });
+          
+          if (likedByUserIds.length > 0) {
+            // Fetch user details for users who liked the current user
+            const usersRef = collection(db, 'users');
+            
+            for (let i = 0; i < likedByUserIds.length; i += 30) {
+              const chunk = likedByUserIds.slice(i, Math.min(i + 30, likedByUserIds.length));
+              const usersQuery = query(usersRef, where(documentId(), 'in', chunk));
+              const usersSnapshot = await getDocs(usersQuery);
+              
+              usersSnapshot.forEach((doc) => {
+                allUsers.push({
+                  id: doc.id,
+                  userId: doc.id,
+                  ...doc.data()
+                });
+              });
+            }
+          }
+        } else if (category === 'shortlisted') {
+          const shortlistRef = collection(db, 'shortlist');
+          const shortlistQuery = query(shortlistRef, where('shortlistedBy', '==', userData.userId));
+          const shortlistSnapshot = await getDocs(shortlistQuery);
+          
+          const shortlistedUserIds = [];
+          shortlistSnapshot.forEach((doc) => {
+            shortlistedUserIds.push(doc.data().shortlistedUser);
+          });
+          
+          if (shortlistedUserIds.length > 0) {
+            // Fetch user details for shortlisted users
+            const usersRef = collection(db, 'users');
+            
+            for (let i = 0; i < shortlistedUserIds.length; i += 30) {
+              const chunk = shortlistedUserIds.slice(i, Math.min(i + 30, shortlistedUserIds.length));
+              const usersQuery = query(usersRef, where(documentId(), 'in', chunk));
+              const usersSnapshot = await getDocs(usersQuery);
+              
+              usersSnapshot.forEach((doc) => {
+                allUsers.push({
+                  id: doc.id,
+                  userId: doc.id,
+                  ...doc.data()
+                });
+              });
+            }
+          }
+        } else if (category === 'samePassions') {
+          // For samePassions, fetch all users that share passions with the current user
+          // Check both top-level passions and selectedPersonalityTraitsMap.passions
+          const allAuthPassions = new Set();
+          
+          // Add top-level passions
+          if (userData?.passions && Array.isArray(userData.passions)) {
+            userData.passions.forEach(p => allAuthPassions.add(p));
+          }
+          
+          // Add selectedPersonalityTraitsMap.passions
+          if (userData?.selectedPersonalityTraitsMap?.passions && Array.isArray(userData.selectedPersonalityTraitsMap.passions)) {
+            userData.selectedPersonalityTraitsMap.passions.forEach(p => allAuthPassions.add(p));
+          }
+          
+          if (allAuthPassions.size > 0) {
+            const usersRef = collection(db, 'users');
+            const usersSnapshot = await getDocs(usersRef);
+            
+            usersSnapshot.forEach((doc) => {
+              const user = {
                 id: doc.id,
                 userId: doc.id,
                 ...doc.data()
-              });
-            }
-          });
+              };
+              
+              // Check for matches in both locations
+              let hasMatchingPassion = false;
+              
+              // Check top-level passions
+              if (user.passions && Array.isArray(user.passions)) {
+                hasMatchingPassion = user.passions.some(passion => allAuthPassions.has(passion));
+              }
+              
+              // Check selectedPersonalityTraitsMap.passions if no match found yet
+              if (!hasMatchingPassion && user.selectedPersonalityTraitsMap?.passions && Array.isArray(user.selectedPersonalityTraitsMap.passions)) {
+                hasMatchingPassion = user.selectedPersonalityTraitsMap.passions.some(passion => allAuthPassions.has(passion));
+              }
+              
+              if (hasMatchingPassion) {
+                allUsers.push(user);
+              }
+            });
+          }
+        } else if (category === 'sameInterests') {
+          // For sameInterests, fetch all users that share interests with the current user
+          // Check both top-level interests and selectedLikesInvolvesMap.interests
+          const allAuthInterests = new Set();
+          
+          // Add top-level interests
+          if (userData?.interests && Array.isArray(userData.interests)) {
+            userData.interests.forEach(i => allAuthInterests.add(i));
+          }
+          
+          // Add selectedLikesInvolvesMap.interests
+          if (userData?.selectedLikesInvolvesMap?.interests && Array.isArray(userData.selectedLikesInvolvesMap.interests)) {
+            userData.selectedLikesInvolvesMap.interests.forEach(i => allAuthInterests.add(i));
+          }
+          
+          if (allAuthInterests.size > 0) {
+            const usersRef = collection(db, 'users');
+            const usersSnapshot = await getDocs(usersRef);
+            
+            usersSnapshot.forEach((doc) => {
+              const user = {
+                id: doc.id,
+                userId: doc.id,
+                ...doc.data()
+              };
+              
+              // Check for matches in both locations
+              let hasMatchingInterest = false;
+              
+              // Check top-level interests
+              if (user.interests && Array.isArray(user.interests)) {
+                hasMatchingInterest = user.interests.some(interest => allAuthInterests.has(interest));
+              }
+              
+              // Check selectedLikesInvolvesMap.interests if no match found yet
+              if (!hasMatchingInterest && user.selectedLikesInvolvesMap?.interests && Array.isArray(user.selectedLikesInvolvesMap.interests)) {
+                hasMatchingInterest = user.selectedLikesInvolvesMap.interests.some(interest => allAuthInterests.has(interest));
+              }
+              
+              if (hasMatchingInterest) {
+                allUsers.push(user);
+              }
+            });
+          }
+        } else if (category === 'sameProfession') {
+          // For sameProfession, fetch all users that have the same dayJob as the current user
+          if (userData?.dayJob) {
+            const usersRef = collection(db, 'users');
+            const usersSnapshot = await getDocs(usersRef);
+            
+            usersSnapshot.forEach((doc) => {
+              const user = {
+                id: doc.id,
+                userId: doc.id,
+                ...doc.data()
+              };
+              
+              // Check if user has same dayJob as auth user
+              if (user.dayJob && user.dayJob === userData.dayJob) {
+                allUsers.push(user);
+              }
+            });
+          }
         }
 
         // Filter based on category
@@ -192,104 +357,77 @@ export default function FavoriteCategory() {
         
         switch(category) {
           case 'liked':
-            filtered = allFavoriteUsers;
+            filtered = allUsers;
             break;
             
           case 'beingLiked':
-            const likedByQuery = query(favoritesRef, where('likedUser', '==', userData.userId));
-            const likedBySnapshot = await getDocs(likedByQuery);
-            const likedByIds = new Set();
-            likedBySnapshot.forEach((doc) => {
-              likedByIds.add(doc.data().likedBy);
-            });
-            filtered = allFavoriteUsers.filter(user => likedByIds.has(user.userId));
+            filtered = allUsers;
             break;
             
           case 'samePassions':
-            filtered = allFavoriteUsers.filter(user => {
-              if (user.passions && userData.passions) {
-                const commonPassions = user.passions.filter(p => userData.passions.includes(p));
-                return commonPassions.length > 0;
-              }
-              return false;
-            });
+            filtered = allUsers;
             break;
             
           case 'sameInterests':
-            filtered = allFavoriteUsers.filter(user => {
-              if (user.interests && userData.interests) {
-                const commonInterests = user.interests.filter(i => userData.interests.includes(i));
-                return commonInterests.length > 0;
-              }
-              return false;
-            });
+            filtered = allUsers;
             break;
             
           case 'sameProfession':
-            filtered = allFavoriteUsers.filter(user => 
-              user.dayJob && userData.dayJob && user.dayJob === userData.dayJob
-            );
+            filtered = allUsers;
             break;
             
           case 'sameCity':
-            filtered = allFavoriteUsers.filter(user => 
+            filtered = allUsers.filter(user => 
               user.currentPosition?.city && userData.currentPosition?.city && 
               user.currentPosition.city === userData.currentPosition.city
             );
             break;
             
           case 'sameCountry':
-            filtered = allFavoriteUsers.filter(user => 
+            filtered = allUsers.filter(user => 
               user.settledCountry && userData.settledCountry && 
               user.settledCountry === userData.settledCountry
             );
             break;
             
           case 'sameEducation':
-            filtered = allFavoriteUsers.filter(user => 
+            filtered = allUsers.filter(user => 
               user.education && userData.education && user.education === userData.education
             );
             break;
             
           case 'sameReligion':
-            filtered = allFavoriteUsers.filter(user => 
+            filtered = allUsers.filter(user => 
               user.religion && userData.religion && user.religion === userData.religion
             );
             break;
             
           case 'sameNativeCountry':
-            filtered = allFavoriteUsers.filter(user => 
+            filtered = allUsers.filter(user => 
               user.nativeCountry && userData.nativeCountry && 
               user.nativeCountry === userData.nativeCountry
             );
             break;
             
           case 'sameMotherTongue':
-            filtered = allFavoriteUsers.filter(user => 
+            filtered = allUsers.filter(user => 
               user.motherTongue && userData.motherTongue && 
               user.motherTongue === userData.motherTongue
             );
             break;
             
           case 'sameStar':
-            filtered = allFavoriteUsers.filter(user => 
+            filtered = allUsers.filter(user => 
               user.star && userData.star && user.star === userData.star
             );
             break;
             
           case 'shortlisted':
-            const shortlistRef = collection(db, 'shortlist');
-            const shortlistQuery = query(shortlistRef, where('shortlistedBy', '==', userData.userId));
-            const shortlistSnapshot = await getDocs(shortlistQuery);
-            const shortlistedIds = new Set();
-            shortlistSnapshot.forEach((doc) => {
-              shortlistedIds.add(doc.data().shortlistedUser);
-            });
-            filtered = allFavoriteUsers.filter(user => shortlistedIds.has(user.userId));
+            filtered = allUsers;
             break;
             
           default:
-            filtered = allFavoriteUsers;
+            filtered = allUsers;
         }
 
         setCategoryUsers(filtered);

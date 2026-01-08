@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, updateDoc, documentId } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import Header from './Header';
 import SubHeader from './SubHeader';
@@ -16,6 +16,7 @@ export default function Favorites() {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState('favourites');
   const [favorites, setFavorites] = useState([]);
+  const [countsLoading, setCountsLoading] = useState(true);
   const [categorizedUsers, setCategorizedUsers] = useState({
     liked: [],
     beingLiked: [],
@@ -135,13 +136,120 @@ export default function Favorites() {
           shortlisted: []
         };
 
-        // Check who liked current user back
+        // Fetch all users who liked the current user
         const likedByQuery = query(favoritesRef, where('likedUser', '==', userData.userId));
         const likedBySnapshot = await getDocs(likedByQuery);
-        const likedByIds = new Set();
+        const likedByUserIds = [];
         likedBySnapshot.forEach((doc) => {
-          likedByIds.add(doc.data().likedBy);
+          likedByUserIds.push(doc.data().likedBy);
         });
+
+        // Fetch user details for users who liked the current user
+        if (likedByUserIds.length > 0) {
+          const usersRef = collection(db, 'users');
+          
+          for (let i = 0; i < likedByUserIds.length; i += 30) {
+            const chunk = likedByUserIds.slice(i, Math.min(i + 30, likedByUserIds.length));
+            const usersQuery = query(usersRef, where(documentId(), 'in', chunk));
+            const usersSnapshot = await getDocs(usersQuery);
+            
+            usersSnapshot.forEach((doc) => {
+              categorized.beingLiked.push({
+                id: doc.id,
+                userId: doc.id,
+                ...doc.data()
+              });
+            });
+          }
+        }
+
+        // Fetch users with same passions
+        // Check both top-level passions and selectedPersonalityTraitsMap.passions
+        const allAuthPassions = new Set();
+        
+        // Add top-level passions
+        if (userData?.passions && Array.isArray(userData.passions)) {
+          userData.passions.forEach(p => allAuthPassions.add(p));
+        }
+        
+        // Add selectedPersonalityTraitsMap.passions
+        if (userData?.selectedPersonalityTraitsMap?.passions && Array.isArray(userData.selectedPersonalityTraitsMap.passions)) {
+          userData.selectedPersonalityTraitsMap.passions.forEach(p => allAuthPassions.add(p));
+        }
+        
+        if (allAuthPassions.size > 0) {
+          const usersRef = collection(db, 'users');
+          const usersSnapshot = await getDocs(usersRef);
+          
+          usersSnapshot.forEach((doc) => {
+            const user = {
+              id: doc.id,
+              userId: doc.id,
+              ...doc.data()
+            };
+            
+            // Check for matches in both locations
+            let hasMatchingPassion = false;
+            
+            // Check top-level passions
+            if (user.passions && Array.isArray(user.passions)) {
+              hasMatchingPassion = user.passions.some(passion => allAuthPassions.has(passion));
+            }
+            
+            // Check selectedPersonalityTraitsMap.passions if no match found yet
+            if (!hasMatchingPassion && user.selectedPersonalityTraitsMap?.passions && Array.isArray(user.selectedPersonalityTraitsMap.passions)) {
+              hasMatchingPassion = user.selectedPersonalityTraitsMap.passions.some(passion => allAuthPassions.has(passion));
+            }
+            
+            if (hasMatchingPassion) {
+              categorized.samePassions.push(user);
+            }
+          });
+        }
+        
+        // Fetch users with same interests
+        // Check both top-level interests and selectedLikesInvolvesMap.interests
+        const allAuthInterests = new Set();
+        
+        // Add top-level interests
+        if (userData?.interests && Array.isArray(userData.interests)) {
+          userData.interests.forEach(i => allAuthInterests.add(i));
+        }
+        
+        // Add selectedLikesInvolvesMap.interests
+        if (userData?.selectedLikesInvolvesMap?.interests && Array.isArray(userData.selectedLikesInvolvesMap.interests)) {
+          userData.selectedLikesInvolvesMap.interests.forEach(i => allAuthInterests.add(i));
+        }
+        
+        if (allAuthInterests.size > 0) {
+          const usersRef = collection(db, 'users');
+          const usersSnapshot = await getDocs(usersRef);
+          
+          usersSnapshot.forEach((doc) => {
+            const user = {
+              id: doc.id,
+              userId: doc.id,
+              ...doc.data()
+            };
+            
+            // Check for matches in both locations
+            let hasMatchingInterest = false;
+            
+            // Check top-level interests
+            if (user.interests && Array.isArray(user.interests)) {
+              hasMatchingInterest = user.interests.some(interest => allAuthInterests.has(interest));
+            }
+            
+            // Check selectedLikesInvolvesMap.interests if no match found yet
+            if (!hasMatchingInterest && user.selectedLikesInvolvesMap?.interests && Array.isArray(user.selectedLikesInvolvesMap.interests)) {
+              hasMatchingInterest = user.selectedLikesInvolvesMap.interests.some(interest => allAuthInterests.has(interest));
+            }
+            
+            if (hasMatchingInterest) {
+              categorized.sameInterests.push(user);
+            }
+          });
+        }
 
         // Fetch shortlisted users
         const shortlistRef = collection(db, 'shortlist');
@@ -153,28 +261,64 @@ export default function Favorites() {
         });
 
         allFavoriteUsers.forEach((user) => {
-          // Being Liked
-          if (likedByIds.has(user.userId)) {
-            categorized.beingLiked.push(user);
-          }
-
           // Shortlisted
           if (shortlistedIds.has(user.userId)) {
             categorized.shortlisted.push(user);
           }
 
-          // Same Passions
-          if (user.passions && userData.passions) {
-            const commonPassions = user.passions.filter(p => userData.passions.includes(p));
-            if (commonPassions.length > 0) {
+          // Same Passions - only add if not already in the list
+          // Check for matching passions in both top-level and selectedPersonalityTraitsMap
+          let hasMatchingPassion = false;
+          
+          // Check top-level passions
+          if (user.passions && Array.isArray(user.passions)) {
+            hasMatchingPassion = user.passions.some(passion => allAuthPassions.has(passion));
+          }
+          
+          // Check selectedPersonalityTraitsMap.passions if no match found yet
+          if (!hasMatchingPassion && user.selectedPersonalityTraitsMap?.passions && Array.isArray(user.selectedPersonalityTraitsMap.passions)) {
+            hasMatchingPassion = user.selectedPersonalityTraitsMap.passions.some(passion => allAuthPassions.has(passion));
+          }
+          
+          if (hasMatchingPassion) {
+            // Check if user is already in samePassions to avoid duplicates
+            const userAlreadyInSamePassions = categorized.samePassions.some(u => u.userId === user.userId);
+            if (!userAlreadyInSamePassions) {
               categorized.samePassions.push(user);
             }
           }
 
           // Same Interests
-          if (user.interests && userData.interests) {
-            const commonInterests = user.interests.filter(i => userData.interests.includes(i));
-            if (commonInterests.length > 0) {
+          // Combine user interests from both locations
+          const userAllInterests = new Set();
+          
+          // Add top-level interests
+          if (user.interests && Array.isArray(user.interests)) {
+            user.interests.forEach(i => userAllInterests.add(i));
+          }
+          
+          // Add selectedLikesInvolvesMap.interests
+          if (user.selectedLikesInvolvesMap?.interests && Array.isArray(user.selectedLikesInvolvesMap.interests)) {
+            user.selectedLikesInvolvesMap.interests.forEach(i => userAllInterests.add(i));
+          }
+          
+          // Combine auth user interests from both locations
+          const authAllInterests = new Set();
+          
+          // Add top-level interests
+          if (userData.interests && Array.isArray(userData.interests)) {
+            userData.interests.forEach(i => authAllInterests.add(i));
+          }
+          
+          // Add selectedLikesInvolvesMap.interests
+          if (userData.selectedLikesInvolvesMap?.interests && Array.isArray(userData.selectedLikesInvolvesMap.interests)) {
+            userData.selectedLikesInvolvesMap.interests.forEach(i => authAllInterests.add(i));
+          }
+          
+          // Check if there are any common interests
+          if (authAllInterests.size > 0 && userAllInterests.size > 0) {
+            const hasCommonInterest = [...userAllInterests].some(interest => authAllInterests.has(interest));
+            if (hasCommonInterest) {
               categorized.sameInterests.push(user);
             }
           }
@@ -229,6 +373,7 @@ export default function Favorites() {
         console.error('Error fetching favorites:', error);
         toast.error('Failed to load favorites');
       } finally {
+        setCountsLoading(false);
         setLoading(false);
       }
     };
@@ -270,6 +415,11 @@ export default function Favorites() {
   const handleCategoryClick = (category) => {
     navigate(`/favorites/${category}`);
   };
+
+  // Handle specific category view
+  const params = new URLSearchParams(window.location.search);
+  const categoryParam = params.get('category');
+  const specificCategory = categoryParam || null;
 
   if (loading) {
     return (
@@ -329,7 +479,13 @@ export default function Favorites() {
                 <span className="category-label">{category.label}</span>
                 <div className="category-count">
                   <span className="count-icon">❤️</span>
-                  <span className="count-number">{category.count}</span>
+                  <span className="count-number">
+                    {countsLoading ? (
+                      <span className="count-loader">•••</span>
+                    ) : (
+                      category.count
+                    )}
+                  </span>
                 </div>
               </div>
             </div>
