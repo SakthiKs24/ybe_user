@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, query, where, doc, updateDoc, addDoc, deleteDoc, documentId } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, updateDoc, addDoc, deleteDoc, documentId, onSnapshot } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import Header from './Header';
 import SubHeader from './SubHeader';
@@ -147,323 +147,180 @@ export default function FavoriteCategory() {
     fetchFavorites();
   }, [userData?.uid]);
 
-  // Fetch category users
+  // Fetch category users (matching Flutter logic - using same filtering as Favorites.js)
   useEffect(() => {
     const fetchCategoryUsers = async () => {
       if (!userData?.uid || !category) return;
       
       try {
-        let allUsers = [];
+        setLoading(true);
+        let categoryUserIds = [];
         
-        // For most categories, fetch users from favorites
-        if (category !== 'beingLiked' && category !== 'shortlisted') {
-          const favoritesRef = collection(db, 'favorites');
-          const q = query(favoritesRef, where('likedBy', '==', userData.userId));
-          const favSnapshot = await getDocs(q);
-          
-          const favoriteUserIds = [];
-          favSnapshot.forEach((doc) => {
-            favoriteUserIds.push(doc.data().likedUser);
-          });
-
-          if (favoriteUserIds.length > 0) {
-            // Fetch user details for favorites
-            const usersRef = collection(db, 'users');
-            
-            for (let i = 0; i < favoriteUserIds.length; i += 30) {
-              const chunk = favoriteUserIds.slice(i, Math.min(i + 30, favoriteUserIds.length));
-              const usersQuery = query(usersRef, where(documentId(), 'in', chunk));
-              const usersSnapshot = await getDocs(usersQuery);
-              
-              usersSnapshot.forEach((doc) => {
-                allUsers.push({
-                  id: doc.id,
-                  userId: doc.id,
-                  ...doc.data()
-                });
-              });
-            }
-          }
-        }
-        
-        // For beingLiked and shortlisted, fetch users who liked/shortlisted the current user
-        if (category === 'beingLiked') {
-          const favoritesRef = collection(db, 'favorites');
-          const likedByQuery = query(favoritesRef, where('likedUser', '==', userData.userId));
-          const likedBySnapshot = await getDocs(likedByQuery);
-          
-          const likedByUserIds = [];
-          likedBySnapshot.forEach((doc) => {
-            likedByUserIds.push(doc.data().likedBy);
-          });
-          
-          if (likedByUserIds.length > 0) {
-            // Fetch user details for users who liked the current user
-            const usersRef = collection(db, 'users');
-            
-            for (let i = 0; i < likedByUserIds.length; i += 30) {
-              const chunk = likedByUserIds.slice(i, Math.min(i + 30, likedByUserIds.length));
-              const usersQuery = query(usersRef, where(documentId(), 'in', chunk));
-              const usersSnapshot = await getDocs(usersQuery);
-              
-              usersSnapshot.forEach((doc) => {
-                allUsers.push({
-                  id: doc.id,
-                  userId: doc.id,
-                  ...doc.data()
-                });
-              });
-            }
-          }
+        // Fetch category-specific user IDs (matching Flutter fetchData logic)
+        if (category === 'liked') {
+          const likedSnapshot = await getDocs(
+            query(collection(db, 'favorites'), where('likedBy', '==', userData.userId))
+          );
+          categoryUserIds = likedSnapshot.docs.map(doc => doc.data().likedUser);
         } 
-        else if (category === 'sameCountry') {
-          // For sameCountry, fetch all users that have the same settledCountry as the current user
-          if (userData?.settledCountry) {
-            const usersRef = collection(db, 'users');
-            const usersSnapshot = await getDocs(usersRef);
-            
-            usersSnapshot.forEach((doc) => {
-              // Skip the authenticated user
-              if (doc.id === userData.userId) return;
-              
-              const user = {
-                id: doc.id,
-                userId: doc.id,
-                ...doc.data()
-              };
-              
-              // Check if user has same settledCountry as auth user
-              if (user.settledCountry && user.settledCountry === userData.settledCountry) {
-                allUsers.push(user);
-              }
-            });
-          }
-        }else if (category === 'shortlisted') {
-          const shortlistRef = collection(db, 'shortlist');
-          const shortlistQuery = query(shortlistRef, where('shortlistedBy', '==', userData.userId));
-          const shortlistSnapshot = await getDocs(shortlistQuery);
-          
-          const shortlistedUserIds = [];
-          shortlistSnapshot.forEach((doc) => {
-            shortlistedUserIds.push(doc.data().shortlistedUser);
-          });
-          
-          if (shortlistedUserIds.length > 0) {
-            // Fetch user details for shortlisted users
-            const usersRef = collection(db, 'users');
-            
-            for (let i = 0; i < shortlistedUserIds.length; i += 30) {
-              const chunk = shortlistedUserIds.slice(i, Math.min(i + 30, shortlistedUserIds.length));
-              const usersQuery = query(usersRef, where(documentId(), 'in', chunk));
-              const usersSnapshot = await getDocs(usersQuery);
-              
-              usersSnapshot.forEach((doc) => {
-                allUsers.push({
-                  id: doc.id,
-                  userId: doc.id,
-                  ...doc.data()
-                });
-              });
-            }
-          }
-        } else if (category === 'samePassions') {
-          // For samePassions, fetch all users that share passions with the current user
-          // Check both top-level passions and selectedPersonalityTraitsMap.passions
-          const allAuthPassions = new Set();
-          
-          // Add top-level passions
-          if (userData?.passions && Array.isArray(userData.passions)) {
-            userData.passions.forEach(p => allAuthPassions.add(p));
-          }
-          
-          // Add selectedPersonalityTraitsMap.passions
-          if (userData?.selectedPersonalityTraitsMap?.passions && Array.isArray(userData.selectedPersonalityTraitsMap.passions)) {
-            userData.selectedPersonalityTraitsMap.passions.forEach(p => allAuthPassions.add(p));
-          }
-          
-          if (allAuthPassions.size > 0) {
-            const usersRef = collection(db, 'users');
-            const usersSnapshot = await getDocs(usersRef);
-            
-            usersSnapshot.forEach((doc) => {
-              const user = {
-                id: doc.id,
-                userId: doc.id,
-                ...doc.data()
-              };
-              
-              // Check for matches in both locations
-              let hasMatchingPassion = false;
-              
-              // Check top-level passions
-              if (user.passions && Array.isArray(user.passions)) {
-                hasMatchingPassion = user.passions.some(passion => allAuthPassions.has(passion));
-              }
-              
-              // Check selectedPersonalityTraitsMap.passions if no match found yet
-              if (!hasMatchingPassion && user.selectedPersonalityTraitsMap?.passions && Array.isArray(user.selectedPersonalityTraitsMap.passions)) {
-                hasMatchingPassion = user.selectedPersonalityTraitsMap.passions.some(passion => allAuthPassions.has(passion));
-              }
-              
-              if (hasMatchingPassion) {
-                allUsers.push(user);
-              }
-            });
-          }
-        } else if (category === 'sameInterests') {
-          // For sameInterests, fetch all users that share interests with the current user
-          // Check both top-level interests and selectedLikesInvolvesMap.interests
-          const allAuthInterests = new Set();
-          
-          // Add top-level interests
-          if (userData?.interests && Array.isArray(userData.interests)) {
-            userData.interests.forEach(i => allAuthInterests.add(i));
-          }
-          
-          // Add selectedLikesInvolvesMap.interests
-          if (userData?.selectedLikesInvolvesMap?.interests && Array.isArray(userData.selectedLikesInvolvesMap.interests)) {
-            userData.selectedLikesInvolvesMap.interests.forEach(i => allAuthInterests.add(i));
-          }
-          
-          if (allAuthInterests.size > 0) {
-            const usersRef = collection(db, 'users');
-            const usersSnapshot = await getDocs(usersRef);
-            
-            usersSnapshot.forEach((doc) => {
-              const user = {
-                id: doc.id,
-                userId: doc.id,
-                ...doc.data()
-              };
-              
-              // Check for matches in both locations
-              let hasMatchingInterest = false;
-              
-              // Check top-level interests
-              if (user.interests && Array.isArray(user.interests)) {
-                hasMatchingInterest = user.interests.some(interest => allAuthInterests.has(interest));
-              }
-              
-              // Check selectedLikesInvolvesMap.interests if no match found yet
-              if (!hasMatchingInterest && user.selectedLikesInvolvesMap?.interests && Array.isArray(user.selectedLikesInvolvesMap.interests)) {
-                hasMatchingInterest = user.selectedLikesInvolvesMap.interests.some(interest => allAuthInterests.has(interest));
-              }
-              
-              if (hasMatchingInterest) {
-                allUsers.push(user);
-              }
-            });
-          }
-        } else if (category === 'sameProfession') {
-          // For sameProfession, fetch all users that have the same dayJob as the current user
-          if (userData?.dayJob) {
-            const usersRef = collection(db, 'users');
-            const usersSnapshot = await getDocs(usersRef);
-            
-            usersSnapshot.forEach((doc) => {
-              const user = {
-                id: doc.id,
-                userId: doc.id,
-                ...doc.data()
-              };
-              
-              // Check if user has same dayJob as auth user
-              if (user.dayJob && user.dayJob === userData.dayJob) {
-                allUsers.push(user);
-              }
-            });
-          }
+        else if (category === 'beingLiked') {
+          const beingLikedSnapshot = await getDocs(
+            query(collection(db, 'favorites'), where('likedUser', '==', userData.userId))
+          );
+          categoryUserIds = beingLikedSnapshot.docs.map(doc => doc.data().likedBy);
+        }
+        else if (category === 'shortlisted') {
+          const shortlistSnapshot = await getDocs(
+            query(collection(db, 'shortlist'), where('shortlistedBy', '==', userData.userId))
+          );
+          categoryUserIds = shortlistSnapshot.docs.map(doc => doc.data().shortlistedUser);
+        }
+        else if (category === 'sameProfession' && userData.dayJob) {
+          const professionSnapshot = await getDocs(
+            query(collection(db, 'users'), where('dayJob', '==', userData.dayJob))
+          );
+          categoryUserIds = professionSnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+        }
+        else if (category === 'sameReligion' && userData.religion) {
+          const religionSnapshot = await getDocs(
+            query(collection(db, 'users'), where('religion', '==', userData.religion))
+          );
+          categoryUserIds = religionSnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+        }
+        else if (category === 'sameDegree' && userData.degree) {
+          const degreeSnapshot = await getDocs(
+            query(collection(db, 'users'), where('degree', '==', userData.degree))
+          );
+          categoryUserIds = degreeSnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+        }
+        else if (category === 'sameOriginCountry' && userData.originCountry) {
+          const originCountrySnapshot = await getDocs(
+            query(collection(db, 'users'), where('originCountry', '==', userData.originCountry))
+          );
+          categoryUserIds = originCountrySnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+        }
+        else if (category === 'sameSettledCountry' && userData.settledCountry) {
+          const settledCountrySnapshot = await getDocs(
+            query(collection(db, 'users'), where('settledCountry', '==', userData.settledCountry))
+          );
+          categoryUserIds = settledCountrySnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+        }
+        else if (category === 'sameLocation' && userData.currentPosition?.city) {
+          const locationSnapshot = await getDocs(
+            query(collection(db, 'users'), where('currentPosition.city', '==', userData.currentPosition.city))
+          );
+          categoryUserIds = locationSnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
         }
 
-        // Filter based on category
-        let filtered = [];
+        // Now fetch all discoverable users (matching Flutter StreamBuilder)
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('profileDiscovery', '==', true));
         
-        switch(category) {
-          case 'liked':
-            filtered = allUsers;
-            break;
-            
-          case 'beingLiked':
-            filtered = allUsers;
-            break;
-            
-          case 'samePassions':
-            filtered = allUsers;
-            break;
-            
-          case 'sameInterests':
-            filtered = allUsers;
-            break;
-            
-          case 'sameProfession':
-            filtered = allUsers;
-            break;
-            
-          case 'sameCity':
-            filtered = allUsers.filter(user => 
-              user.currentPosition?.city && userData.currentPosition?.city && 
-              user.currentPosition.city === userData.currentPosition.city
-            );
-            break;
-            
-          case 'sameCountry':
-            filtered = allUsers.filter(user => 
-              user.settledCountry && userData.settledCountry && 
-              user.settledCountry === userData.settledCountry
-            );
-            break;
-            
-          case 'sameEducation':
-            filtered = allUsers.filter(user => 
-              user.education && userData.education && user.education === userData.education
-            );
-            break;
-            
-          case 'sameReligion':
-            filtered = allUsers.filter(user => 
-              user.religion && userData.religion && user.religion === userData.religion
-            );
-            break;
-            
-          case 'sameNativeCountry':
-            filtered = allUsers.filter(user => 
-              user.nativeCountry && userData.nativeCountry && 
-              user.nativeCountry === userData.nativeCountry
-            );
-            break;
-            
-          case 'sameMotherTongue':
-            filtered = allUsers.filter(user => 
-              user.motherTongue && userData.motherTongue && 
-              user.motherTongue === userData.motherTongue
-            );
-            break;
-            
-          case 'sameStar':
-            filtered = allUsers.filter(user => 
-              user.star && userData.star && user.star === userData.star
-            );
-            break;
-            
-          case 'shortlisted':
-            filtered = allUsers;
-            break;
-            
-          default:
-            filtered = allUsers;
-        }
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          const allDiscoverableUsers = snapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => ({
+              id: doc.id,
+              userId: doc.id,
+              ...doc.data()
+            }));
 
-        setCategoryUsers(filtered);
+          // Get discoverable user IDs (matching Flutter: discoverableUsersId)
+          const discoverableUserIds = allDiscoverableUsers
+            .filter(user => user.profileDiscovery)
+            .map(user => user.userId);
+
+          // Filter category IDs to only include discoverable users (matching Flutter: categoryWiseUserId.retainWhere)
+          const filteredCategoryUserIds = categoryUserIds.filter(userId => 
+            discoverableUserIds.includes(userId)
+          );
+
+          // Get user profiles for this category (matching Flutter: currentCategoryUserProfileList)
+          let finalUsers = [];
+          
+          if (category === 'samePassions') {
+            // For samePassions, filter from all discoverable users (matching Flutter logic)
+            finalUsers = allDiscoverableUsers.filter(user => {
+              if (!userData?.selectedPersonalityTraitsMap?.passions?.length) return false;
+              const userPassions = user.selectedPersonalityTraitsMap?.passions || [];
+              return userPassions.some(passion => 
+                userData.selectedPersonalityTraitsMap.passions.includes(passion)
+              ) && user.profileDiscovery && discoverableUserIds.includes(user.userId);
+            });
+          }
+          else if (category === 'sameInterests') {
+            // For sameInterests, filter from all discoverable users (matching Flutter logic)
+            finalUsers = allDiscoverableUsers.filter(user => {
+              if (!userData?.selectedLikesInvolvesMap?.interests?.length) return false;
+              const userInterests = user.selectedLikesInvolvesMap?.interests || [];
+              return userInterests.some(interest => 
+                userData.selectedLikesInvolvesMap.interests.includes(interest)
+              ) && user.profileDiscovery && discoverableUserIds.includes(user.userId);
+            });
+          }
+          else {
+            // For other categories, use the filtered category user IDs (matching Flutter: currentCategoryUserProfileList)
+            finalUsers = allDiscoverableUsers.filter(user => 
+              user.profileDiscovery && filteredCategoryUserIds.includes(user.userId)
+            );
+          }
+
+          setCategoryUsers(finalUsers);
+          setLoading(false);
+        }, (error) => {
+          console.error('Error fetching category users:', error);
+          setLoading(false);
+        });
+
+        return () => unsubscribe();
       } catch (error) {
         console.error('Error fetching category users:', error);
-        toast.error('Failed to load users');
-      } finally {
         setLoading(false);
       }
     };
 
     fetchCategoryUsers();
-  }, [userData?.uid, category]);
+  }, [userData?.uid, userData?.userId, category]);
 
   const handleFavoriteToggle = async (e, userId) => {
     e.stopPropagation();

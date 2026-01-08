@@ -2,7 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, query, where, doc, updateDoc, documentId } from 'firebase/firestore';
+import { 
+  collection, 
+  getDocs, 
+  query, 
+  where, 
+  doc, 
+  updateDoc, 
+  onSnapshot 
+} from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import Header from './Header';
 import SubHeader from './SubHeader';
@@ -15,23 +23,20 @@ export default function Favorites() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState('favourites');
-  const [favorites, setFavorites] = useState([]);
-  const [countsLoading, setCountsLoading] = useState(true);
-  const [categorizedUsers, setCategorizedUsers] = useState({
-    liked: [],
-    beingLiked: [],
-    samePassions: [],
-    sameInterests: [],
-    sameProfession: [],
-    sameCity: [],
-    sameCountry: [],
-    sameEducation: [],
-    sameReligion: [],
-    sameNativeCountry: [],
-    sameMotherTongue: [],
-    sameStar: [],
-    shortlisted: []
-  });
+  const [allUsers, setAllUsers] = useState([]);
+  const [discoverableUsersId, setDiscoverableUsersId] = useState([]);
+  
+  // Category lists (matching Flutter structure)
+  const [likedPartnerId, setLikedPartnerId] = useState([]);
+  const [shortListedPartnerId, setShortListedPartnerId] = useState([]);
+  const [sameProfessionPartnerId, setSameProfessionPartnerId] = useState([]);
+  const [sameReligionPartnerId, setSameReligionPartnerId] = useState([]);
+  const [sameDegreePartnerId, setSameDegreePartnerId] = useState([]);
+  const [sameOriginCountryPartnerId, setSameOriginCountryPartnerId] = useState([]);
+  const [sameSettledCountryPartnerId, setSameSettledCountryPartnerId] = useState([]);
+  const [sameLocationPartnerId, setSameLocationPartnerId] = useState([]);
+  
+  const [dataFetched, setDataFetched] = useState(false);
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
@@ -60,6 +65,7 @@ export default function Favorites() {
             setUserData({
               uid: user.uid,
               email: user.email,
+              userId: userDoc.data().userId || userDoc.id,
               ...userDoc.data()
             });
           }
@@ -76,347 +82,191 @@ export default function Favorites() {
     return () => unsubscribe();
   }, [navigate]);
 
-  // Fetch favorites and categorize users
+  // State for being liked
+  const [beingLikedPartnerId, setBeingLikedPartnerId] = useState([]);
+
+  // Fetch initial data (matching Flutter fetchData)
   useEffect(() => {
-    const fetchFavoritesAndCategorize = async () => {
-      if (!userData?.uid) return;
-      
+    const fetchData = async () => {
+      if (!userData?.userId) return;
+
       try {
-        // Fetch favorites
-        const favoritesRef = collection(db, 'favorites');
-        const q = query(favoritesRef, where('likedBy', '==', userData.userId));
-        const favSnapshot = await getDocs(q);
-        
-        const favoriteUserIds = [];
-        favSnapshot.forEach((doc) => {
-          favoriteUserIds.push(doc.data().likedUser);
-        });
+        // Liked partners will be fetched via real-time stream (see useEffect below)
 
-        // Don't return early - we still need to fetch other categories
+        // Fetch shortlisted partners
+        const shortlistSnapshot = await getDocs(
+          query(collection(db, 'shortlist'), where('shortlistedBy', '==', userData.userId))
+        );
+        const shortlistedIds = shortlistSnapshot.docs.map(doc => doc.data().shortlistedUser);
+        setShortListedPartnerId(shortlistedIds);
 
-        // Fetch user details for favorites
-        const usersRef = collection(db, 'users');
-        const allFavoriteUsers = [];
-        
-        // Only fetch favorite users if there are any
-        if (favoriteUserIds.length > 0) {
-          // Fetch in chunks of 30 (Firestore limit)
-          for (let i = 0; i < favoriteUserIds.length; i += 30) {
-            const chunk = favoriteUserIds.slice(i, Math.min(i + 30, favoriteUserIds.length));
-            const usersSnapshot = await getDocs(usersRef);
-            
-            usersSnapshot.forEach((doc) => {
-              if (chunk.includes(doc.id)) {
-                allFavoriteUsers.push({
-                  id: doc.id,
-                  userId: doc.id,
-                  ...doc.data()
-                });
-              }
-            });
-          }
+        // Fetch same profession partners
+        if (userData.dayJob) {
+          const professionSnapshot = await getDocs(
+            query(collection(db, 'users'), where('dayJob', '==', userData.dayJob))
+          );
+          const professionIds = professionSnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+          setSameProfessionPartnerId(professionIds);
         }
 
-        setFavorites(allFavoriteUsers);
-
-        // Categorize users
-        const categorized = {
-          liked: allFavoriteUsers,
-          beingLiked: [],
-          samePassions: [],
-          sameInterests: [],
-          sameProfession: [],
-          sameCity: [],
-          sameCountry: [],
-          sameEducation: [],
-          sameReligion: [],
-          sameNativeCountry: [],
-          sameMotherTongue: [],
-          sameStar: [],
-          shortlisted: []
-        };
-
-        // Fetch all users who liked the current user
-        const likedByQuery = query(favoritesRef, where('likedUser', '==', userData.userId));
-        const likedBySnapshot = await getDocs(likedByQuery);
-        const likedByUserIds = [];
-        likedBySnapshot.forEach((doc) => {
-          likedByUserIds.push(doc.data().likedBy);
-        });
-
-        // Fetch user details for users who liked the current user
-        if (likedByUserIds.length > 0) {
-          const usersRef = collection(db, 'users');
-          
-          for (let i = 0; i < likedByUserIds.length; i += 30) {
-            const chunk = likedByUserIds.slice(i, Math.min(i + 30, likedByUserIds.length));
-            const usersQuery = query(usersRef, where(documentId(), 'in', chunk));
-            const usersSnapshot = await getDocs(usersQuery);
-            
-            usersSnapshot.forEach((doc) => {
-              categorized.beingLiked.push({
-                id: doc.id,
-                userId: doc.id,
-                ...doc.data()
-              });
-            });
-          }
+        // Fetch same religion partners
+        if (userData.religion) {
+          const religionSnapshot = await getDocs(
+            query(collection(db, 'users'), where('religion', '==', userData.religion))
+          );
+          const religionIds = religionSnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+          setSameReligionPartnerId(religionIds);
         }
 
-        // Fetch users with same passions
-        // Check both top-level passions and selectedPersonalityTraitsMap.passions
-        const allAuthPassions = new Set();
-        
-        // Add top-level passions
-        if (userData?.passions && Array.isArray(userData.passions)) {
-          userData.passions.forEach(p => allAuthPassions.add(p));
-        }
-        
-        // Add selectedPersonalityTraitsMap.passions
-        if (userData?.selectedPersonalityTraitsMap?.passions && Array.isArray(userData.selectedPersonalityTraitsMap.passions)) {
-          userData.selectedPersonalityTraitsMap.passions.forEach(p => allAuthPassions.add(p));
-        }
-        
-        if (allAuthPassions.size > 0) {
-          const usersRef = collection(db, 'users');
-          const usersSnapshot = await getDocs(usersRef);
-          
-          usersSnapshot.forEach((doc) => {
-            const user = {
-              id: doc.id,
-              userId: doc.id,
-              ...doc.data()
-            };
-            
-            // Check for matches in both locations
-            let hasMatchingPassion = false;
-            
-            // Check top-level passions
-            if (user.passions && Array.isArray(user.passions)) {
-              hasMatchingPassion = user.passions.some(passion => allAuthPassions.has(passion));
-            }
-            
-            // Check selectedPersonalityTraitsMap.passions if no match found yet
-            if (!hasMatchingPassion && user.selectedPersonalityTraitsMap?.passions && Array.isArray(user.selectedPersonalityTraitsMap.passions)) {
-              hasMatchingPassion = user.selectedPersonalityTraitsMap.passions.some(passion => allAuthPassions.has(passion));
-            }
-            
-            if (hasMatchingPassion) {
-              categorized.samePassions.push(user);
-            }
-          });
-        }
-        
-        // Fetch users with same interests
-        // Check both top-level interests and selectedLikesInvolvesMap.interests
-        const allAuthInterests = new Set();
-        
-        // Add top-level interests
-        if (userData?.interests && Array.isArray(userData.interests)) {
-          userData.interests.forEach(i => allAuthInterests.add(i));
-        }
-        
-        // Add selectedLikesInvolvesMap.interests
-        if (userData?.selectedLikesInvolvesMap?.interests && Array.isArray(userData.selectedLikesInvolvesMap.interests)) {
-          userData.selectedLikesInvolvesMap.interests.forEach(i => allAuthInterests.add(i));
-        }
-        
-        if (allAuthInterests.size > 0) {
-          const usersRef = collection(db, 'users');
-          const usersSnapshot = await getDocs(usersRef);
-          
-          usersSnapshot.forEach((doc) => {
-            const user = {
-              id: doc.id,
-              userId: doc.id,
-              ...doc.data()
-            };
-            
-            // Check for matches in both locations
-            let hasMatchingInterest = false;
-            
-            // Check top-level interests
-            if (user.interests && Array.isArray(user.interests)) {
-              hasMatchingInterest = user.interests.some(interest => allAuthInterests.has(interest));
-            }
-            
-            // Check selectedLikesInvolvesMap.interests if no match found yet
-            if (!hasMatchingInterest && user.selectedLikesInvolvesMap?.interests && Array.isArray(user.selectedLikesInvolvesMap.interests)) {
-              hasMatchingInterest = user.selectedLikesInvolvesMap.interests.some(interest => allAuthInterests.has(interest));
-            }
-            
-            if (hasMatchingInterest) {
-              categorized.sameInterests.push(user);
-            }
-          });
+        // Fetch same degree partners
+        if (userData.degree) {
+          const degreeSnapshot = await getDocs(
+            query(collection(db, 'users'), where('degree', '==', userData.degree))
+          );
+          const degreeIds = degreeSnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+          setSameDegreePartnerId(degreeIds);
         }
 
-        // Fetch users with same profession
-        if (userData?.dayJob) {
-          const usersRef = collection(db, 'users');
-          const usersSnapshot = await getDocs(usersRef);
-          
-          usersSnapshot.forEach((doc) => {
-            // Skip the authenticated user
-            if (doc.id === userData.userId) return;
-            
-            const user = {
-              id: doc.id,
-              userId: doc.id,
-              ...doc.data()
-            };
-            
-            // Check if user has same dayJob as auth user
-            if (user.dayJob && user.dayJob === userData.dayJob) {
-              categorized.sameProfession.push(user);
-            }
-          });
+        // Fetch same origin country partners
+        if (userData.originCountry) {
+          const originCountrySnapshot = await getDocs(
+            query(collection(db, 'users'), where('originCountry', '==', userData.originCountry))
+          );
+          const originCountryIds = originCountrySnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+          setSameOriginCountryPartnerId(originCountryIds);
         }
 
-        // Fetch users with same country
-        if (userData?.settledCountry) {
-          const usersRef = collection(db, 'users');
-          const usersSnapshot = await getDocs(usersRef);
-          
-          usersSnapshot.forEach((doc) => {
-            // Skip the authenticated user
-            if (doc.id === userData.userId) return;
-            
-            const user = {
-              id: doc.id,
-              userId: doc.id,
-              ...doc.data()
-            };
-            
-            // Check if user has same settledCountry as auth user
-            if (user.settledCountry && user.settledCountry === userData.settledCountry) {
-              categorized.sameCountry.push(user);
-            }
-          });
+        // Fetch same settled country partners
+        if (userData.settledCountry) {
+          const settledCountrySnapshot = await getDocs(
+            query(collection(db, 'users'), where('settledCountry', '==', userData.settledCountry))
+          );
+          const settledCountryIds = settledCountrySnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+          setSameSettledCountryPartnerId(settledCountryIds);
         }
 
-        // Fetch shortlisted users
-        const shortlistRef = collection(db, 'shortlist');
-        const shortlistQuery = query(shortlistRef, where('shortlistedBy', '==', userData.userId));
-        const shortlistSnapshot = await getDocs(shortlistQuery);
-        const shortlistedIds = new Set();
-        shortlistSnapshot.forEach((doc) => {
-          shortlistedIds.add(doc.data().shortlistedUser);
-        });
-
-        // Only process favorite users if they exist
-        if (allFavoriteUsers.length > 0) {
-          allFavoriteUsers.forEach((user) => {
-            // Shortlisted
-            if (shortlistedIds.has(user.userId)) {
-              categorized.shortlisted.push(user);
-            }
-
-            // Same Passions - only add if not already in the list
-            // Check for matching passions in both top-level and selectedPersonalityTraitsMap
-            let hasMatchingPassion = false;
-            
-            // Check top-level passions
-            if (user.passions && Array.isArray(user.passions)) {
-              hasMatchingPassion = user.passions.some(passion => allAuthPassions.has(passion));
-            }
-            
-            // Check selectedPersonalityTraitsMap.passions if no match found yet
-            if (!hasMatchingPassion && user.selectedPersonalityTraitsMap?.passions && Array.isArray(user.selectedPersonalityTraitsMap.passions)) {
-              hasMatchingPassion = user.selectedPersonalityTraitsMap.passions.some(passion => allAuthPassions.has(passion));
-            }
-            
-            if (hasMatchingPassion) {
-              // Check if user is already in samePassions to avoid duplicates
-              const userAlreadyInSamePassions = categorized.samePassions.some(u => u.userId === user.userId);
-              if (!userAlreadyInSamePassions) {
-                categorized.samePassions.push(user);
-              }
-            }
-
-            // Same Interests
-            // Combine user interests from both locations
-            const userAllInterests = new Set();
-            
-            // Add top-level interests
-            if (user.interests && Array.isArray(user.interests)) {
-              user.interests.forEach(i => userAllInterests.add(i));
-            }
-            
-            // Add selectedLikesInvolvesMap.interests
-            if (user.selectedLikesInvolvesMap?.interests && Array.isArray(user.selectedLikesInvolvesMap.interests)) {
-              user.selectedLikesInvolvesMap.interests.forEach(i => userAllInterests.add(i));
-            }
-            
-            // Combine auth user interests from both locations
-            const authAllInterests = new Set();
-            
-            // Add top-level interests
-            if (userData.interests && Array.isArray(userData.interests)) {
-              userData.interests.forEach(i => authAllInterests.add(i));
-            }
-            
-            // Add selectedLikesInvolvesMap.interests
-            if (userData.selectedLikesInvolvesMap?.interests && Array.isArray(userData.selectedLikesInvolvesMap.interests)) {
-              userData.selectedLikesInvolvesMap.interests.forEach(i => authAllInterests.add(i));
-            }
-            
-            // Check if there are any common interests
-            if (authAllInterests.size > 0 && userAllInterests.size > 0) {
-              const hasCommonInterest = [...userAllInterests].some(interest => authAllInterests.has(interest));
-              if (hasCommonInterest) {
-                categorized.sameInterests.push(user);
-              }
-            }
-
-            // Same City
-            if (user.currentPosition?.city && userData.currentPosition?.city && 
-                user.currentPosition.city === userData.currentPosition.city) {
-              categorized.sameCity.push(user);
-            }
-
-            // Same Education
-            if (user.education && userData.education && user.education === userData.education) {
-              categorized.sameEducation.push(user);
-            }
-
-            // Same Religion
-            if (user.religion && userData.religion && user.religion === userData.religion) {
-              categorized.sameReligion.push(user);
-            }
-
-            // Same Native Country
-            if (user.nativeCountry && userData.nativeCountry && 
-                user.nativeCountry === userData.nativeCountry) {
-              categorized.sameNativeCountry.push(user);
-            }
-
-            // Same Mother Tongue
-            if (user.motherTongue && userData.motherTongue && 
-                user.motherTongue === userData.motherTongue) {
-              categorized.sameMotherTongue.push(user);
-            }
-
-            // Same Star
-            if (user.star && userData.star && user.star === userData.star) {
-              categorized.sameStar.push(user);
-            }
-          });
+        // Fetch same location partners
+        if (userData.currentPosition?.city) {
+          const locationSnapshot = await getDocs(
+            query(collection(db, 'users'), where('currentPosition.city', '==', userData.currentPosition.city))
+          );
+          const locationIds = locationSnapshot.docs
+            .filter(doc => {
+              const data = doc.data();
+              const blockedUsers = data.blockedUsers || [];
+              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+            })
+            .map(doc => doc.id);
+          setSameLocationPartnerId(locationIds);
         }
 
-        setCategorizedUsers(categorized);
+        setDataFetched(true);
       } catch (error) {
-        console.error('Error fetching favorites:', error);
-        toast.error('Failed to load favorites');
-      } finally {
-        setCountsLoading(false);
-        setLoading(false);
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load favorites data');
       }
     };
 
-    fetchFavoritesAndCategorize();
-    
-  }, [userData?.uid]);
+    fetchData();
+  }, [userData?.userId]);
+
+  // Stream liked partners (matching Flutter getFavoritesByUser)
+  useEffect(() => {
+    if (!userData?.userId) return;
+
+    const favoritesRef = collection(db, 'favorites');
+    const q = query(favoritesRef, where('likedBy', '==', userData.userId));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const likedIds = snapshot.docs.map(doc => doc.data().likedUser.toString());
+      setLikedPartnerId(likedIds);
+    }, (error) => {
+      console.error('Error fetching liked partners:', error);
+    });
+
+    return () => unsubscribe();
+  }, [userData?.userId]);
+
+  // Stream being liked partners (matching Flutter getFavoritesByOthers)
+  useEffect(() => {
+    if (!userData?.userId) return;
+
+    const favoritesRef = collection(db, 'favorites');
+    const q = query(favoritesRef, where('likedUser', '==', userData.userId));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const beingLikedIds = snapshot.docs.map(doc => doc.data().likedBy.toString());
+      setBeingLikedPartnerId(beingLikedIds);
+    }, (error) => {
+      console.error('Error fetching being liked partners:', error);
+    });
+
+    return () => unsubscribe();
+  }, [userData?.userId]);
+
+  // Stream all users (matching Flutter StreamBuilder)
+  useEffect(() => {
+    if (!userData?.userId || !dataFetched) return;
+
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('profileDiscovery', '==', true));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const users = snapshot.docs
+        .filter(doc => {
+          const data = doc.data();
+          const blockedUsers = data.blockedUsers || [];
+          return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+        })
+        .map(doc => ({
+          id: doc.id,
+          userId: doc.id,
+          ...doc.data()
+        }));
+
+      setAllUsers(users);
+      
+      // Update discoverable users ID list
+      const discoverableIds = users
+        .filter(user => user.profileDiscovery)
+        .map(user => user.userId);
+      setDiscoverableUsersId(discoverableIds);
+    }, (error) => {
+      console.error('Error fetching users:', error);
+    });
+
+    return () => unsubscribe();
+  }, [userData?.userId, dataFetched]);
 
   const handleLogout = async () => {
     try {
@@ -449,38 +299,89 @@ export default function Favorites() {
     }
   };
 
+  // Calculate categorized users for UI (matching Flutter logic)
+  const [categorizedUsers, setCategorizedUsers] = useState({
+    liked: [],
+    beingLiked: [],
+    samePassions: [],
+    sameInterests: [],
+    sameProfession: [],
+    sameCity: [],
+    sameCountry: [],
+    sameEducation: [],
+    sameReligion: [],
+    sameNativeCountry: [],
+    sameMotherTongue: [],
+    sameStar: [],
+    shortlisted: []
+  });
+  const [countsLoading, setCountsLoading] = useState(true);
+
+  // Update categorized users when data changes (matching Flutter buildCategoryTile logic)
+  useEffect(() => {
+    if (!allUsers.length || !userData?.userId) return;
+
+    // Filter category IDs to only include discoverable users (matching Flutter: categoryWiseUserId.retainWhere)
+    const filterDiscoverable = (userIds) => {
+      return userIds.filter(userId => discoverableUsersId.includes(userId));
+    };
+
+    // Get user profiles for category (matching Flutter: currentCategoryUserProfileList)
+    const getCategoryUsers = (userIds) => {
+      const filteredIds = filterDiscoverable(userIds);
+      return allUsers.filter(user => 
+        user.profileDiscovery && filteredIds.includes(user.userId)
+      );
+    };
+
+    setCategorizedUsers({
+      liked: getCategoryUsers(likedPartnerId),
+      beingLiked: getCategoryUsers(beingLikedPartnerId),
+      samePassions: allUsers.filter(user => {
+        if (!userData?.selectedPersonalityTraitsMap?.passions?.length) return false;
+        const userPassions = user.selectedPersonalityTraitsMap?.passions || [];
+        return userPassions.some(passion => 
+          userData.selectedPersonalityTraitsMap.passions.includes(passion)
+        ) && discoverableUsersId.includes(user.userId) && user.profileDiscovery;
+      }),
+      sameInterests: allUsers.filter(user => {
+        if (!userData?.selectedLikesInvolvesMap?.interests?.length) return false;
+        const userInterests = user.selectedLikesInvolvesMap?.interests || [];
+        return userInterests.some(interest => 
+          userData.selectedLikesInvolvesMap.interests.includes(interest)
+        ) && discoverableUsersId.includes(user.userId) && user.profileDiscovery;
+      }),
+      sameProfession: getCategoryUsers(sameProfessionPartnerId),
+      sameReligion: getCategoryUsers(sameReligionPartnerId),
+      sameDegree: getCategoryUsers(sameDegreePartnerId),
+      sameOriginCountry: getCategoryUsers(sameOriginCountryPartnerId),
+      sameSettledCountry: getCategoryUsers(sameSettledCountryPartnerId),
+      sameLocation: getCategoryUsers(sameLocationPartnerId),
+      sameCity: [], // Not in Flutter but keeping for compatibility
+      sameCountry: [], // Not in Flutter but keeping for compatibility
+      sameEducation: [], // Not in Flutter but keeping for compatibility
+      sameNativeCountry: [], // Not in Flutter but keeping for compatibility
+      sameMotherTongue: [], // Not in Flutter but keeping for compatibility
+      sameStar: [], // Not in Flutter but keeping for compatibility
+      shortlisted: getCategoryUsers(shortListedPartnerId)
+    });
+
+    setCountsLoading(false);
+  }, [allUsers, discoverableUsersId, likedPartnerId, beingLikedPartnerId, shortListedPartnerId, 
+      sameProfessionPartnerId, sameReligionPartnerId, sameDegreePartnerId, 
+      sameOriginCountryPartnerId, sameSettledCountryPartnerId, sameLocationPartnerId, userData]);
+
   const handleCategoryClick = (category) => {
     navigate(`/favorites/${category}`);
   };
 
-  // Handle specific category view
-  const params = new URLSearchParams(window.location.search);
-  const categoryParam = params.get('category');
-  const specificCategory = categoryParam || null;
-
-  if (loading) {
+  if (loading || !dataFetched) {
     return (
       <div className="dashboard-loading">
         <img src="/images/logo.png" alt="Ybe Logo" className="loading-logo" />
       </div>
     );
   }
-
-  const categories = [
-    { key: 'liked', label: 'Liked', image: '/images/my_favorites/liked.png', count: categorizedUsers.liked.length },
-    { key: 'beingLiked', label: 'Being Liked', image: '/images/my_favorites/being_liked.png', count: categorizedUsers.beingLiked.length },
-    { key: 'samePassions', label: 'Same Passions', image: '/images/my_favorites/same_passions.png', count: categorizedUsers.samePassions.length },
-    { key: 'sameInterests', label: 'Same Interests', image: '/images/my_favorites/same_interests.png', count: categorizedUsers.sameInterests.length },
-    { key: 'sameProfession', label: 'Same Profession', image: '/images/my_favorites/same_professions.png', count: categorizedUsers.sameProfession.length },
-    { key: 'sameCity', label: 'Same City', image: '/images/my_favorites/same_city.png', count: categorizedUsers.sameCity.length },
-    { key: 'sameCountry', label: 'Same Country', image: '/images/my_favorites/same_country.png', count: categorizedUsers.sameCountry.length },
-    { key: 'sameEducation', label: 'Same Level Education', image: '/images/my_favorites/same_education.png', count: categorizedUsers.sameEducation.length },
-    { key: 'sameReligion', label: 'Same Religion', image: '/images/my_favorites/same_religion.png', count: categorizedUsers.sameReligion.length },
-    { key: 'sameNativeCountry', label: 'Same Native Country', image: '/images/my_favorites/same_native_country.png', count: categorizedUsers.sameNativeCountry.length },
-    { key: 'sameMotherTongue', label: 'Same Mother Tongue', image: '/images/my_favorites/same_mother_tongue.png', count: categorizedUsers.sameMotherTongue.length },
-    { key: 'sameStar', label: 'Same Star', image: '/images/my_favorites/same_star.png', count: categorizedUsers.sameStar.length },
-    { key: 'shortlisted', label: 'Shortlisted', image: '/images/my_favorites/shortlisted.jpg', count: categorizedUsers.shortlisted.length }
-  ];
 
   return (
     <div className="favorites-container">
@@ -496,12 +397,26 @@ export default function Favorites() {
         setActiveTab={setActiveTab}
       />
 
-      {/* Content */}
+      {/* Content - Original UI structure */}
       <div className="favorites-content">
         <h2 className="favorites-title">Favourites</h2>
         
         <div className="categories-grid">
-          {categories.map((category) => (
+          {[
+            { key: 'liked', label: 'Liked', image: '/images/my_favorites/liked.png', count: categorizedUsers.liked.length },
+            { key: 'beingLiked', label: 'Being Liked', image: '/images/my_favorites/being_liked.png', count: categorizedUsers.beingLiked.length },
+            { key: 'samePassions', label: 'Same Passions', image: '/images/my_favorites/same_passions.png', count: categorizedUsers.samePassions.length },
+            { key: 'sameInterests', label: 'Same Interests', image: '/images/my_favorites/same_interests.png', count: categorizedUsers.sameInterests.length },
+            { key: 'sameProfession', label: 'Same Profession', image: '/images/my_favorites/same_professions.png', count: categorizedUsers.sameProfession.length },
+            { key: 'sameCity', label: 'Same City', image: '/images/my_favorites/same_city.png', count: categorizedUsers.sameCity.length },
+            { key: 'sameCountry', label: 'Same Country', image: '/images/my_favorites/same_country.png', count: categorizedUsers.sameCountry.length },
+            { key: 'sameEducation', label: 'Same Level Education', image: '/images/my_favorites/same_education.png', count: categorizedUsers.sameEducation.length },
+            { key: 'sameReligion', label: 'Same Religion', image: '/images/my_favorites/same_religion.png', count: categorizedUsers.sameReligion.length },
+            { key: 'sameNativeCountry', label: 'Same Native Country', image: '/images/my_favorites/same_native_country.png', count: categorizedUsers.sameNativeCountry.length },
+            { key: 'sameMotherTongue', label: 'Same Mother Tongue', image: '/images/my_favorites/same_mother_tongue.png', count: categorizedUsers.sameMotherTongue.length },
+            { key: 'sameStar', label: 'Same Star', image: '/images/my_favorites/same_star.png', count: categorizedUsers.sameStar.length },
+            { key: 'shortlisted', label: 'Shortlisted', image: '/images/my_favorites/shortlisted.jpg', count: categorizedUsers.shortlisted.length }
+          ].map((category) => (
             <div 
               key={category.key} 
               className="category-card"
