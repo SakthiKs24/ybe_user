@@ -14,8 +14,9 @@ export default function Upgrade() {
   const [currency, setCurrency] = useState({ code: 'GBP', symbol: '£' });
   const [userCountry, setUserCountry] = useState('GB');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(null); // Track which plan is processing
   const [userData, setUserData] = useState(null);
+  const [userSubscription, setUserSubscription] = useState(null);
 
   // Currency mapping
   const currencyMap = {
@@ -99,12 +100,17 @@ export default function Upgrade() {
           
           if (!querySnapshot.empty) {
             const userDoc = querySnapshot.docs[0];
+            const userDocData = userDoc.data();
             setUserData({
               uid: user.uid,
               email: user.email,
-              userId: userDoc.data().userId || userDoc.id,
-              ...userDoc.data()
+              userId: userDocData.userId || userDoc.id,
+              ...userDocData
             });
+            // Set user subscription if exists
+            if (userDocData.subscriptions) {
+              setUserSubscription(userDocData.subscriptions);
+            }
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -361,7 +367,24 @@ export default function Upgrade() {
       return;
     }
 
-    setPaymentLoading(true);
+    // Check if user is already subscribed to this plan
+    if (userSubscription?.planName) {
+      // Use exact plan name from Flutter constants
+      const currentPlan = plan.name; // Should be "Ybe Plus", "Ybe Premium", or "Ybe Gold"
+      
+      if (userSubscription.planName === currentPlan) {
+        // Check if subscription is still valid
+        if (userSubscription.validUntil) {
+          const validUntil = new Date(userSubscription.validUntil);
+          if (validUntil > new Date()) {
+            toast.info('You are already subscribed to this plan');
+            return;
+          }
+        }
+      }
+    }
+
+    setPaymentLoading(plan.name); // Track which plan is processing
     try {
       console.log('Payment initiated:', {
         plan: plan.name,
@@ -376,12 +399,29 @@ export default function Upgrade() {
         userData.email,
         currency.code
       );
-      // Note: setPaymentLoading(false) is not needed here as user will be redirected
+      // Note: setPaymentLoading(null) is not needed here as user will be redirected
     } catch (error) {
       console.error('Payment error:', error);
       toast.error(error.message || 'Failed to initiate payment. Please try again.');
-      setPaymentLoading(false);
+      setPaymentLoading(null);
     }
+  };
+  
+  // Helper function to check if plan is subscribed
+  const isPlanSubscribed = (plan) => {
+    if (!userSubscription?.planName) return false;
+    
+    // Use exact plan name from Flutter constants
+    const planName = plan.name; // Should be "Ybe Plus", "Ybe Premium", or "Ybe Gold"
+    
+    if (userSubscription.planName === planName) {
+      // Check if subscription is still valid
+      if (userSubscription.validUntil) {
+        const validUntil = new Date(userSubscription.validUntil);
+        return validUntil > new Date();
+      }
+    }
+    return false;
   };
 
   const handleLogout = async () => {
@@ -482,9 +522,14 @@ export default function Upgrade() {
                 <button 
                   className="plan-button"
                   onClick={() => handlePayment(plan)}
-                  disabled={paymentLoading}
+                  disabled={paymentLoading === plan.name || isPlanSubscribed(plan)}
                 >
-                  {paymentLoading ? 'Processing...' : `Starting at ${currency.symbol}${plan.cost}`}
+                  {paymentLoading === plan.name 
+                    ? 'Processing...' 
+                    : isPlanSubscribed(plan)
+                    ? 'Subscribed'
+                    : `Starting at ${currency.symbol}${plan.cost}`
+                  }
                 </button>
               </div>
             );
