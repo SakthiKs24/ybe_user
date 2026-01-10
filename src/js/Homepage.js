@@ -26,8 +26,8 @@ export default function Homepage() {
       <main className="main-content">
         <div className="left-section">
           <h1 className="main-heading">
-            Where Majority of<br />
-            NRIs <span className="highlight">date and marry</span>
+            <span className="heading-part1">Where Majority of<br />NRIs </span>
+            <span className="heading-part2">date and marry</span>
           </h1>
           <p className="subheading">
             Join thousands of people finding their<br />
@@ -113,6 +113,17 @@ export default function Homepage() {
             <p className="step-description">After completing the work, live test is done</p>
           </div>
         </div>
+      </footer>
+
+      {/* Footer Navigation */}
+      <footer className="homepage-bottom-footer">
+        <div className="footer-separator"></div>
+        <div className="footer-bottom-content">
+          <div className="footer-copyright">
+            © Copyright 2026, All Rights Reserved
+          </div>
+        </div>
+        <div className="footer-bottom-border"></div>
       </footer>
     </div>
   );

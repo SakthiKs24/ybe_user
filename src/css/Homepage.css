@@ -32,15 +32,18 @@ body {
 }
 
 .main-heading {
-  font-size: 56px;
-  font-weight: 700;
+  font-size: 40px;
+  font-weight: 500;
   line-height: 1.2;
-  color: #000;
   margin-bottom: 24px;
-  font-family: 'Poppins';
+  font-family: 'Poppins', sans-serif;
 }
 
-.highlight {
+.heading-part1 {
+  color: #12141D;
+}
+
+.heading-part2 {
   color: #FF2821;
 }
 
@@ -295,7 +298,7 @@ body {
 /* Footer - Standard Work Process */
 .homepage-footer {
   background: #FFFFFF;
-  
+  padding-bottom: 60px;
 }
 
 .footer-title {
@@ -406,6 +409,61 @@ body {
   }
 }
 
+/* Bottom Footer */
+.homepage-bottom-footer {
+  background: #FFFFFF;
+  width: 100%;
+}
+
+.footer-separator {
+  height: 1px;
+  background: #E0E0E0;
+  width: 100%;
+  margin: 0;
+  margin-top: 40px;
+}
+
+.footer-bottom-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px 80px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.footer-nav {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+}
+
+.footer-nav-link {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: #12141D;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.footer-nav-link:hover {
+  color: #FF3141;
+}
+
+.footer-copyright {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: #000000;
+}
+
+.footer-bottom-border {
+  height: 2px;
+  background: #E3F2FD;
+  width: 100%;
+}
+
 @media (max-width: 768px) {
   .homepage-footer {
     padding: 40px 20px;
@@ -433,5 +491,18 @@ body {
 
   .step-arrow {
     display: none;
+  }
+
+  .footer-bottom-content {
+    flex-direction: column;
+    gap: 20px;
+    padding: 30px 20px;
+    text-align: center;
+  }
+
+  .footer-nav {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
   }
 }
