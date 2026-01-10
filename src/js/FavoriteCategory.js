@@ -539,13 +539,11 @@ export default function FavoriteCategory() {
                         >
                           {user.name || 'Anonymous'}
                         </h3>
-                        {isVerified && (
-                          <img 
-                            src="/images/verified.png" 
-                            alt="Verified" 
-                            className="verified-badge-img"
-                          />
-                        )}
+                        <img 
+                          src="/images/verified.png" 
+                          alt="Verified" 
+                          className="verified-badge-img"
+                        />
                         <div className="online-status-indicator1">
                           <img
                             src="/images/online_now.png"

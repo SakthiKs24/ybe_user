@@ -24,6 +24,7 @@ export default function Dashboard() {
   const [userToBlock, setUserToBlock] = useState(null);
   const dropdownRef = useRef(null);
   const [activeTab, setActiveTab] = useState('new-matches');
+  const [expandedBios, setExpandedBios] = useState({});
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -842,6 +843,13 @@ export default function Dashboard() {
                     const isFavorited = favorites.has(user.userId || user.id);
                     const isBlocked = blockedUsers.has(user.userId || user.id);
                     
+                    // Read more functionality for bio
+                    const userId = user.userId || user.id;
+                    const bioText = user.aboutMe || '';
+                    const isBioExpanded = expandedBios[userId] || false;
+                    const shouldTruncate = bioText.length > 80;
+                    const displayBio = isBioExpanded ? bioText : (bioText.substring(0, 80) || '');
+                    
                     return (
                       <div key={user.id} className="match-card">
                         <div className="match-card-content">
@@ -872,13 +880,11 @@ export default function Dashboard() {
                               >
                                 {user.name || 'Anonymous'}
                               </h3>
-                              { (
-                                <img 
-                                  src="/images/verified.png" 
-                                  alt="Verified" 
-                                  className="verified-badge-img"
-                                />
-                              )}
+                              <img 
+                                src="/images/verified.png" 
+                                alt="Verified" 
+                                className="verified-badge-img"
+                              />
                               <div className="online-status-indicator1">
                                 <img
                                   src="/images/online_now.png"
@@ -919,10 +925,23 @@ export default function Dashboard() {
                             </div>
                             
                             <div className="match-bio">
-                              {user.aboutMe ? (
+                              {bioText ? (
                                 <>
-                                  {user.aboutMe.substring(0, 80)}
-                                  {user.aboutMe.length > 80 && <span className="more-link"> more</span>}
+                                  {displayBio}
+                                  {shouldTruncate && (
+                                    <span 
+                                      className="more-link" 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setExpandedBios(prev => ({
+                                          ...prev,
+                                          [userId]: !isBioExpanded
+                                        }));
+                                      }}
+                                    >
+                                      {isBioExpanded ? ' less' : ' more'}
+                                    </span>
+                                  )}
                                 </>
                               ) : (
                                 'No bio available'
