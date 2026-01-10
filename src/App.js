@@ -13,6 +13,7 @@ import Profile from './js/Profile';
 import Favorites from './js/Favorites';
 import PaymentSuccess from './js/PaymentSuccess';
 import PaymentCancel from './js/PaymentCancel';
+import PrivacyPolicy from './js/PrivacyPolicy';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -35,6 +36,7 @@ function App() {
         <Route path="/favorites/:category" element={<FavoriteCategory />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/payment-cancel" element={<PaymentCancel />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
       </Routes>
     </Router>

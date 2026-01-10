@@ -288,8 +288,9 @@ function Home() {
               style={styles.navButton}
               onMouseEnter={(e) => e.target.style.color = '#ef4444'}
               onMouseLeave={(e) => e.target.style.color = '#374151'}
+              onClick={() => window.location.href = '/privacy-policy'}
             >
-              About Us
+              Privacy Policy
             </button>
             <button 
               style={styles.navButton}

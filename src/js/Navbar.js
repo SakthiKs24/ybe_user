@@ -17,7 +17,10 @@ export default function Navbar({ onLoginClick }) {
       </div>
 
       <nav className="nav">
-        <a href="#about">About us</a>
+        <a href="/privacy-policy" onClick={(e) => {
+          e.preventDefault();
+          window.location.href = '/privacy-policy';
+        }}>Privacy Policy</a>
         <a href="#help">Help</a>
         <a href="#login" className="login-link" onClick={(e) => {
           e.preventDefault();
