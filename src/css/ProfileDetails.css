@@ -80,18 +80,23 @@
   }
   
   .upgrade-btn {
-    background-color: #FF4458;
+    background: linear-gradient(180deg, #FF003F 0%, #FF5300 100%);
     color: white;
     border: none;
-    padding: 10px 25px;
+    padding: 10px 20px;
     border-radius: 25px;
-    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(255, 0, 63, 0.3);
   }
   
   .upgrade-btn:hover {
-    background-color: #e63946;
+    background: linear-gradient(180deg, #E0003A 0%, #E04A00 100%);
+    box-shadow: 0 4px 12px rgba(255, 0, 63, 0.4);
+    transform: translateY(-1px);
   }
   
   .icon-btn {

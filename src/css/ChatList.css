@@ -100,15 +100,18 @@
   color: white;
   border: none;
   padding: 10px 20px;
-  border-radius: 20px;
-  font-size: 14px;
+  border-radius: 25px;
+  font-size: 16px;
   font-weight: 500;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(255, 0, 63, 0.3);
 }
 
 .upgrade-btn:hover {
-  transform: translateY(-2px);
+  background: linear-gradient(180deg, #E0003A 0%, #E04A00 100%);
+  box-shadow: 0 4px 12px rgba(255, 0, 63, 0.4);
+  transform: translateY(-1px);
 }
 
 .icon-btn {
