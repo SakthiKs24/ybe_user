@@ -12,6 +12,7 @@ body {
 .homepage {
   min-height: 100vh;
   background: linear-gradient(180deg, #FFFFFF 0%, #FFD6E5 100%);
+  overflow-y: auto;
 }
 
 /* Main Content */
@@ -288,5 +289,149 @@ body {
 
   .main-content {
     padding: 40px 20px;
+  }
+}
+
+/* Footer - Standard Work Process */
+.homepage-footer {
+  background: #FFFFFF;
+  
+}
+
+.footer-title {
+  font-family: 'Poppins', sans-serif;
+  padding: 50px 0;
+  font-weight: 600;
+  font-size: 30px;
+  color: #12141D;
+  text-align: center;
+  margin-bottom: 1px;
+}
+
+.footer-subtitle {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400;
+  font-size: 18px;
+  color: #12141D;
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 30px;
+  padding-top: 0;
+  opacity: 0.8;
+}
+
+.process-steps {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.process-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.step-number {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #FFE8F5;
+  color: #FF2E43;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.step-heading {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: #12141D;
+  margin-bottom: 12px;
+}
+
+.step-description {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  color: #12141D;
+  line-height: 1.5;
+}
+
+.step-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  flex-shrink: 0;
+}
+
+.step-arrow img {
+  width: auto;
+  height: 40px;
+  object-fit: contain;
+}
+
+/* Responsive Design for Footer */
+@media (max-width: 1024px) {
+  .homepage-footer {
+    padding: 60px 40px;
+  }
+
+  .footer-title {
+    font-size: 36px;
+  }
+
+  .footer-subtitle {
+    font-size: 16px;
+  }
+
+  .process-steps {
+    gap: 30px;
+  }
+
+  .step-arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .homepage-footer {
+    padding: 40px 20px;
+  }
+
+  .footer-title {
+    font-size: 28px;
+  }
+
+  .footer-subtitle {
+    font-size: 14px;
+    margin-bottom: 40px;
+  }
+
+  .process-steps {
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+  }
+
+  .process-step {
+    max-width: 100%;
+    min-width: auto;
+  }
+
+  .step-arrow {
+    display: none;
   }
 }

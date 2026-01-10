@@ -70,6 +70,50 @@ export default function Homepage() {
           </div>
         </div>
       </main>
+
+      {/* Footer - Standard Work Process */}
+      <footer className="homepage-footer">
+        <h2 className="footer-title">We always follow the standard work process</h2>
+        <p className="footer-subtitle">We solve clients' projects in a simple & efficient way</p>
+        
+        <div className="process-steps">
+          <div className="process-step">
+            <div className="step-number">1</div>
+            <h3 className="step-heading">Research</h3>
+            <p className="step-description">We do research before we start any projects</p>
+          </div>
+          
+          <div className="step-arrow">
+            <img src="/images/arrow.png" alt="Arrow" />
+          </div>
+          
+          <div className="process-step">
+            <div className="step-number">2</div>
+            <h3 className="step-heading">Designing</h3>
+            <p className="step-description">Designed according to client's requirements</p>
+          </div>
+          
+          <div className="step-arrow">
+            <img src="/images/arrow.png" alt="Arrow" />
+          </div>
+          
+          <div className="process-step">
+            <div className="step-number">3</div>
+            <h3 className="step-heading">Development</h3>
+            <p className="step-description">Developed by skilled team developers</p>
+          </div>
+          
+          <div className="step-arrow">
+            <img src="/images/arrow.png" alt="Arrow" />
+          </div>
+          
+          <div className="process-step">
+            <div className="step-number">4</div>
+            <h3 className="step-heading">Live Testing</h3>
+            <p className="step-description">After completing the work, live test is done</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
