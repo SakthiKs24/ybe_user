@@ -583,7 +583,9 @@
   }
   
   .loading-logo {
-    width: 120px;
+    width: 35px;
+    height: 35px;
+    object-fit: contain;
     animation: pulse 1.5s ease-in-out infinite;
   }
   
