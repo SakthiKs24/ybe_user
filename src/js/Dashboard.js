@@ -864,7 +864,7 @@ export default function Dashboard() {
                               {isVip && (
                                 <div className="vip-badge">
                                   <img src="/images/vip.png" alt="VIP" className="vip-icon-img" />
-                                  <span className="vip-text">vip</span>
+                                  <span className="vip-text">VIP</span>
                                 </div>
                               )}
                             </div>

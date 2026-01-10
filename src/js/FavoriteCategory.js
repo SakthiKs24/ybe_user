@@ -486,9 +486,9 @@ export default function FavoriteCategory() {
           <button className="back-btn" onClick={() => navigate('/favorites')}>
             ← Back to Favorites
           </button>
-          <h2 className="category-title">
+          <h3 className="category-title">
             {getCategoryTitle()} ({categoryUsers.length})
-          </h2>
+          </h3>
           <div className="pagination-info">
             Showing {categoryUsers.length > 0 ? indexOfFirstUser + 1 : 0}-{Math.min(indexOfLastUser, categoryUsers.length)} of {categoryUsers.length}
           </div>
@@ -600,7 +600,7 @@ export default function FavoriteCategory() {
                         <img src="/images/Reject.png" alt="Reject" className="action-icon" />
                       </button>
                       <button 
-                        className="action-btn favorite-btn"
+                        className={`action-btn favorite-btn ${isFavorited ? 'favorited' : ''}`}
                         onClick={(e) => handleFavoriteToggle(e, user.userId || user.id)}
                         title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                       >

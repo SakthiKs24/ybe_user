@@ -263,7 +263,7 @@
   .vip-badge {
     position: absolute;
     top: 8px;
-    left: 8px;
+    right: 8px;
     background: linear-gradient(135deg, #ffd700, #ffed4e);
     padding: 4px 10px;
     border-radius: 12px;
@@ -272,6 +272,8 @@
     gap: 4px;
     font-size: 12px;
     font-weight: 600;
+    z-index: 1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
   
   .vip-icon-img {
@@ -285,7 +287,7 @@
     font-size: 12px;
     font-weight: 500;
     color: #FF027D;
-    text-transform: lowercase;
+    text-transform: uppercase;
   }
   
   /* Middle Content */
