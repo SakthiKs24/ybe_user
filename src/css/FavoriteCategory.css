@@ -230,8 +230,8 @@
   
   .match-card-content {
     display: flex;
-    padding: 20px;
-    gap: 20px;
+    padding: 15px;
+    gap: 12px;
     align-items: stretch;
   }
   
@@ -248,6 +248,7 @@
     height: 200px;
     border-radius: 8px;
     overflow: hidden;
+    border: none;
     flex-shrink: 0;
   }
   
@@ -429,6 +430,12 @@
   .action-icon {
     width: 28px;
     height: 28px;
+    object-fit: contain;
+  }
+  
+  .favorite-btn img[src*="Heart_unlike"] {
+    width: 20px;
+    height: 20px;
     object-fit: contain;
   }
   

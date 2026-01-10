@@ -330,19 +330,20 @@
   font-size: 16px;
   font-weight: 500;
   color: #000000;
-  margin-bottom: 25px;
+  margin-bottom: 20px;
 }
 
 .matches-grid {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 15px;
 }
 
 .match-card {
   background: white;
   border: 1px solid #e0e0e0;
   border-radius: 12px;
+  padding: 1px;
   position: relative;
   transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -372,12 +373,12 @@
   height: 200px;
   border-radius: 8px;
   overflow: hidden;
-  border: 2px solid #4A90E2;
+  border: none;
   flex-shrink: 0;
 }
 
 .profile-image {
-  width: 100%;
+  width: 80%;
   height: 100%;
   object-fit: cover;
   object-position: center;
@@ -543,8 +544,8 @@
 }
 
 .action-btn {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -562,6 +563,12 @@
 .action-icon {
   width: 28px;
   height: 28px;
+  object-fit: contain;
+}
+
+.favorite-btn img[src*="Heart_unlike"] {
+  width: 20px;
+  height: 20px;
   object-fit: contain;
 }
 
