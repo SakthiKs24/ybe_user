@@ -30,6 +30,8 @@ const Header = ({ userData, showProfileDropdown = false, setShowProfileDropdown 
       }
 
       await signOut(auth);
+      // Clear localStorage to prevent auth state restoration
+      localStorage.removeItem('userDetails');
       toast.success('Logged out successfully!');
       setTimeout(() => {
         navigate('/');
@@ -40,19 +42,26 @@ const Header = ({ userData, showProfileDropdown = false, setShowProfileDropdown 
     }
   };
 
+  // Check if this is a public page (privacy policy without user data)
+  const isPublicPage = currentPage === 'privacy' && !userData;
+
   return (
     <>
       {/* Header */}
       <header className="dashboard-header">
         <div className="header-left">
-          <img src="/images/logo.png" alt="Ybe Logo" className="header-logo" />
-          <nav className="header-nav">
-            <a href="#" className={`nav-link ${currentPage === 'dashboard' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>Matches</a>
-            <a href="/chat" className={`nav-link ${currentPage === 'chat' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); navigate('/chat'); }}>Messages</a>
-          </nav>
+          <img src="/images/logo.png" alt="Ybe Logo" className="header-logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
+          {!isPublicPage && (
+            <nav className="header-nav">
+              <a href="#" className={`nav-link ${currentPage === 'dashboard' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>Matches</a>
+              <a href="/chat" className={`nav-link ${currentPage === 'chat' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); navigate('/chat'); }}>Messages</a>
+            </nav>
+          )}
         </div>
         <div className="header-right">
-          <button className="upgrade-btn" onClick={() => navigate('/upgrade')}>Upgrade now</button>
+          {!isPublicPage && (
+            <button className="upgrade-btn" onClick={() => navigate('/upgrade')}>Upgrade now</button>
+          )}
           {userData ? (
             <>
               <button 
@@ -74,13 +83,10 @@ const Header = ({ userData, showProfileDropdown = false, setShowProfileDropdown 
                 <img src="/images/logout.jpeg" alt="Logout" className="logout-icon-img" />
               </button>
             </>
-          ) : (
+          ) : !isPublicPage && (
             <>
-              <button className="icon-btn profile-icon-btn" onClick={() => navigate('/profile')}>
+              <button className="icon-btn profile-icon-btn" onClick={() => navigate('/')}>
                 <img src="/images/profile.png" alt="Profile" className="profile-icon-img" />
-              </button>
-              <button className="icon-btn logout-icon-btn" onClick={() => setShowLogoutModal(true)}>
-                <img src="/images/logout.jpeg" alt="Logout" className="logout-icon-img" />
               </button>
             </>
           )}

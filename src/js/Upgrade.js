@@ -494,6 +494,8 @@ export default function Upgrade() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      // Clear localStorage to prevent auth state restoration
+      localStorage.removeItem('userDetails');
       toast.success('Logged out successfully!', {
         position: "top-right",
         autoClose: 2000,

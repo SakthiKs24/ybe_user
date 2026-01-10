@@ -321,6 +321,8 @@ export default function Favorites() {
       }
 
       await signOut(auth);
+      // Clear localStorage to prevent auth state restoration
+      localStorage.removeItem('userDetails');
       toast.success('Logged out successfully!');
       setTimeout(() => {
         navigate('/');

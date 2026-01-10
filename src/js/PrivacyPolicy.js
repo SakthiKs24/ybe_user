@@ -13,9 +13,27 @@ export default function PrivacyPolicy() {
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
-    // Fetch user data if authenticated
+    // Privacy Policy is a public page - check auth state but don't require it
+    // Only fetch user data if user is currently authenticated (for Header display)
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
+      // Check if userDetails exists in localStorage first (to avoid unnecessary queries)
+      const userDetailsStr = localStorage.getItem('userDetails');
+      
+      if (user && userDetailsStr) {
+        // User is authenticated and has cached data - use it
+        try {
+          const parsed = JSON.parse(userDetailsStr);
+          setUserData({
+            uid: user.uid,
+            email: user.email,
+            ...parsed
+          });
+        } catch (error) {
+          console.error('Error parsing userDetails:', error);
+          setUserData(null);
+        }
+      } else if (user) {
+        // User is authenticated but no cached data - fetch from Firestore
         try {
           const usersRef = collection(db, 'users');
           const q = query(usersRef, where('email', '==', user.email));
@@ -28,10 +46,16 @@ export default function PrivacyPolicy() {
               email: user.email,
               ...userDoc.data()
             });
+          } else {
+            setUserData(null);
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
+          setUserData(null);
         }
+      } else {
+        // User is not authenticated - explicitly set userData to null
+        setUserData(null);
       }
     });
 
