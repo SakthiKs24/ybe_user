@@ -330,6 +330,8 @@ body {
   gap: 20px;
   flex-wrap: nowrap;
   width: 100%;
+  padding-left: 80px;
+  padding-right: 80px;
 }
 
 .process-step {
@@ -505,4 +507,65 @@ body {
     justify-content: center;
     gap: 20px;
   }
+}
+.footer-top-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 80px 30px;
+  background: #FFFFFF;
+}
+
+.footer-logo-section {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-ybe-logo {
+  height: 50px;
+  width: auto;
+  padding-right: 350px;
+}
+
+.footer-app-buttons {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.footer-store-btn {
+  height: 45px;
+  width: auto;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.footer-store-btn:hover {
+  transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+  .footer-top-section {
+    flex-direction: column;
+    gap: 20px;
+    padding: 30px 20px 20px;
+  }
+  
+  .footer-app-buttons {
+    flex-direction: column;
+  }
+  
+  .footer-store-btn {
+    width: 180px;
+    height: auto;
+  }
+}
+.footer-main-heading{
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 1.2;
+  margin-bottom: 24px;
+  font-family: 'Poppins', sans-serif;
+  padding-top: 25px;
 }

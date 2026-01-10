@@ -116,13 +116,36 @@ export default function Homepage() {
       </footer>
 
       {/* Footer Navigation */}
+      <div className="footer-separator"></div>
       <footer className="homepage-bottom-footer">
+        <div className="footer-top-section">
+          <div className="footer-logo-section">
+            <img src="/images/logo.png" alt="Ybe" className="footer-ybe-logo" />
+            <h1 className="footer-main-heading">
+                  <span className="heading-part1">Where Majority of<br />NRIs </span>
+                  <span className="heading-part2">date and marry</span>
+                </h1>
+                
+          </div>
+          <div className="footer-app-buttons">
+            <a href="#" target="_blank" rel="noopener noreferrer">
+              <img src="/images/appstore.webp" alt="Download on App Store" className="footer-store-btn" />
+            </a>
+            <a href="https://play.google.com/store/apps/details?id=com.ube.social&hl=en" target="_blank" rel="noopener noreferrer">
+              <img src="/images/playstore.webp" alt="Get it on Google Play" className="footer-store-btn" />
+            </a>
+          </div>
+        </div>
+        
         <div className="footer-separator"></div>
+        
         <div className="footer-bottom-content">
+          
           <div className="footer-copyright">
             © Copyright 2026, All Rights Reserved
           </div>
         </div>
+        
         <div className="footer-bottom-border"></div>
       </footer>
     </div>
