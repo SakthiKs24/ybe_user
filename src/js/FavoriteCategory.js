@@ -523,7 +523,7 @@ export default function FavoriteCategory() {
                         <img src={profileImage} alt={user.name || 'User'} className="profile-image" />
                         {isVip && (
                           <div className="vip-badge">
-                            <span className="vip-icon">😊</span>
+                            <img src="/images/vip.png" alt="VIP" className="vip-icon-img" />
                             <span className="vip-text">vip</span>
                           </div>
                         )}
@@ -539,12 +539,18 @@ export default function FavoriteCategory() {
                         >
                           {user.name || 'Anonymous'}
                         </h3>
-                        {isVerified && <span className="verified-badge">✓</span>}
+                        {isVerified && (
+                          <img 
+                            src="/images/verified.png" 
+                            alt="Verified" 
+                            className="verified-badge-img"
+                          />
+                        )}
                         <div className="online-status-indicator1">
                           <img
-                            src={isOnline ? "/images/online_now.png" : "/images/offline.png"}
+                            src="/images/online_now.png"
                             alt={isOnline ? "Online" : "Offline"}
-                            className="online-status-icon"
+                            className={`online-status-icon ${isOnline ? "online" : "offline"}`}
                           />
                           <span className={`online-text1 ${isOnline ? "online" : "offline"}`}>
                             {isOnline ? "Online now" : "Offline"}

@@ -60,23 +60,25 @@
 }
 
 .nav-link {
+  font-family: 'Poppins', sans-serif;
   text-decoration: none;
-  color: #666;
+  color: #FF2B45;
   font-size: 16px;
   font-weight: 500;
   padding: 5px 0;
-  border-bottom: 2px solid transparent;
+  border: none;
+  border-bottom: none;
   transition: all 0.3s;
 }
 
 .nav-link.active {
   color: #FF2B45;
-  border-bottom-color: #FF2B45;
+  border-bottom: none;
 }
 
-.nav-link:hover {
+/* .nav-link:hover {
   color: #FF2B45;
-}
+} */
 
 
 .header-right {
@@ -172,12 +174,13 @@
 }
 
 .sidebar-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #FF2B45;
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #FF3141;
   margin-bottom: 25px;
   padding-bottom: 15px;
-  border-bottom: 2px solid #FF2B45;
+  border-bottom: 2px solid #FF3141;
 }
 
 .filter-section {
@@ -185,8 +188,9 @@
 }
 
 .filter-label {
+  font-family: 'Poppins', sans-serif;
   display: block;
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 600;
   color: #333;
   margin-bottom: 12px;
@@ -322,9 +326,10 @@
 }
 
 .matches-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #FF2B45;
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #000000;
   margin-bottom: 25px;
 }
 
@@ -362,11 +367,12 @@
 
 .profile-image-container {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: auto;
+  height: 20vh;
   border-radius: 8px;
   overflow: hidden;
   border: 2px solid #4A90E2;
+  aspect-ratio: 1;
 }
 
 .profile-image {
@@ -392,14 +398,19 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.vip-icon {
-  font-size: 10px;
+.vip-icon-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 
 .vip-text {
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #FF027D;
+  text-transform: lowercase;
+  letter-spacing: 0;
 }
 
 .match-card-middle {
@@ -415,24 +426,22 @@
   flex-wrap: wrap;
 }
 
+.online-status-indicator1 {
+  margin-left: auto;
+}
+
 .match-name {
+  font-family: 'Poppins', sans-serif;
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: #474653;
   margin: 0;
 }
 
-.verified-badge {
-  background-color: #4CAF50;
-  color: white;
+.verified-badge-img {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: bold;
+  object-fit: contain;
   flex-shrink: 0;
 }
 
@@ -449,12 +458,19 @@
 }
 
 .online-text1 {
-  font-size: 13px;
-  color: #666;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #72727C;
 }
 .online-status-icon{
   width: 20px;
   height: 20px;
+}
+
+.online-status-icon.offline {
+  opacity: 0.5;
+  filter: grayscale(100%);
 }
 .favorite-btn {
   background: none;
@@ -492,22 +508,29 @@
 }
 
 .detail-item {
+  font-family: 'Poppins', sans-serif;
   font-size: 14px;
-  color: #666;
+  font-weight: 500;
+  color: #72727C;
   line-height: 1.4;
 }
 
 .match-bio {
+  font-family: 'Poppins', sans-serif;
   font-size: 14px;
-  color: #666;
+  font-weight: 500;
+  color: #72727C;
   line-height: 1.5;
   margin-top: 8px;
 }
 
 .more-link {
+  font-family: 'Poppins', sans-serif;
   color: #FF2B45;
   cursor: pointer;
   font-weight: 500;
+  font-size: 14px;
+  text-decoration: underline;
 }
 
 .match-card-actions {

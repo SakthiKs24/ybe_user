@@ -241,8 +241,11 @@
   
   .profile-image-container {
     position: relative;
-    width: 140px;
-    height: 180px;
+    width: auto;
+    height: 20vh;
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 1;
   }
   
   .profile-image {
@@ -266,13 +269,18 @@
     font-weight: 600;
   }
   
-  .vip-icon {
-    font-size: 14px;
+  .vip-icon-img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
   }
   
   .vip-text {
-    color: #333;
-    text-transform: uppercase;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #FF027D;
+    text-transform: lowercase;
   }
   
   /* Middle Content */
@@ -289,25 +297,23 @@
     gap: 10px;
     flex-wrap: wrap;
   }
+
+  .online-status-indicator1 {
+    margin-left: auto;
+  }
   
   .match-name {
-    font-size: 20px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
     font-weight: 600;
-    color: #333;
+    color: #474653;
     margin: 0;
   }
   
-  .verified-badge {
-    background-color: #4CAF50;
-    color: white;
+  .verified-badge-img {
     width: 20px;
     height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
+    object-fit: contain;
     flex-shrink: 0;
   }
   
@@ -323,18 +329,25 @@
     width: 20px;
     height: 20px;
   }
+
+  .online-status-icon.offline {
+    opacity: 0.5;
+    filter: grayscale(100%);
+  }
   
   .online-text1 {
-    font-size: 13px;
-    color: #666;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #72727C;
   }
   
   .online-text1.online {
-    color: #4CAF50;
+    color: #72727C;
   }
   
   .online-text1.offline {
-    color: #999;
+    color: #72727C;
   }
   
   .match-details {
@@ -358,22 +371,29 @@
   }
   
   .detail-item {
-    color: #666;
+    font-family: 'Poppins', sans-serif;
     font-size: 14px;
+    font-weight: 500;
+    color: #72727C;
     line-height: 1.4;
   }
   
   .match-bio {
-    color: #666;
+    font-family: 'Poppins', sans-serif;
     font-size: 14px;
+    font-weight: 500;
+    color: #72727C;
     line-height: 1.5;
     max-width: 600px;
   }
   
   .more-link {
+    font-family: 'Poppins', sans-serif;
     color: #ff6b6b;
     cursor: pointer;
     font-weight: 500;
+    font-size: 14px;
+    text-decoration: underline;
   }
   
   /* Action Buttons */

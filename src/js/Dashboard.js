@@ -667,7 +667,7 @@ export default function Dashboard() {
       <div className="dashboard-content">
         {/* Left Sidebar - Filters */}
         <aside className="filters-sidebar">
-          <h2 className="sidebar-title">New matches</h2>
+          <h4 className="sidebar-title">New matches</h4>
           
           <div className="filter-section">
             <label className="filter-label">Location</label>
@@ -855,7 +855,7 @@ export default function Dashboard() {
                               <img src={profileImage} alt={user.name || 'User'} className="profile-image" />
                               {isVip && (
                                 <div className="vip-badge">
-                                  <span className="vip-icon">😊</span>
+                                  <img src="/images/vip.png" alt="VIP" className="vip-icon-img" />
                                   <span className="vip-text">vip</span>
                                 </div>
                               )}
@@ -872,18 +872,23 @@ export default function Dashboard() {
                               >
                                 {user.name || 'Anonymous'}
                               </h3>
-                              {isVerified && <span className="verified-badge">✓</span>}
+                              { (
+                                <img 
+                                  src="/images/verified.png" 
+                                  alt="Verified" 
+                                  className="verified-badge-img"
+                                />
+                              )}
                               <div className="online-status-indicator1">
                                 <img
-                                  src={isOnline ? "/images/online_now.png" : "/images/offline.png"}
+                                  src="/images/online_now.png"
                                   alt={isOnline ? "Online" : "Offline"}
-                                  className="online-status-icon"
+                                  className={`online-status-icon ${isOnline ? "online" : "offline"}`}
                                 />
                                 <span className={`online-text1 ${isOnline ? "online" : "offline"}`}>
                                   {isOnline ? "Online now" : "Offline"}
                                 </span>
                               </div>
-
                             </div>
                             
                             <div className="match-details">

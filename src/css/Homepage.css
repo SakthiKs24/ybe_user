@@ -226,6 +226,48 @@ body {
   }
 }
 
+/* User Card Styles for Homepage */
+.homepage-user-card {
+  font-family: 'Poppins', sans-serif;
+}
+
+.homepage-user-name {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: #474653;
+  margin: 0;
+}
+
+.homepage-online-status {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #72727C;
+}
+
+.homepage-user-details {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #72727C;
+}
+
+.homepage-user-about {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #72727C;
+  line-height: 1.5;
+}
+
+.homepage-read-more {
+  color: #FF2B45;
+  cursor: pointer;
+  font-weight: 500;
+  text-decoration: underline;
+}
+
 @media (max-width: 768px) {
   .main-heading {
     font-size: 40px;
