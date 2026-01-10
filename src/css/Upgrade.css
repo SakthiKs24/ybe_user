@@ -1,5 +1,9 @@
 /* Upgrade.css */
 
+* {
+  font-family: 'Poppins', sans-serif;
+}
+
 .upgrade-container {
   min-height: 100vh;
   background: linear-gradient(180deg, #FFFFFF 0.72%, #f58bbf 100%);

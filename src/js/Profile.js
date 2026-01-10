@@ -464,10 +464,10 @@ export default function Profile() {
         return (
           <div className="section-content">
             <div className="section-header">
-              <h2>Profile Information</h2>
+              <h3>Profile Information</h3>
               {!editMode && (
                 <button className="edit-btn" onClick={() => setEditMode(true)}>
-                  ✏️ Edit
+                  ✏️  Edit
                 </button>
               )}
             </div>
@@ -1227,7 +1227,7 @@ case 'personalityTraits':
       <div className="profile-content">
         {/* Left Sidebar */}
         <aside className="profile-sidebar">
-          <h2 className="sidebar-title">Profile settings</h2>
+          <h3 className="sidebar-title">Profile settings</h3>
           
           {/* Profile Card */}
           <div className="profile-card">

@@ -1,3 +1,7 @@
+* {
+  font-family: 'Poppins', sans-serif;
+}
+
 /* Create Account Page */
 .create-account-page {
     min-height: 100vh;

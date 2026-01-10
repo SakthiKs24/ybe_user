@@ -1,4 +1,8 @@
-.profile-details-container {
+  * {
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .profile-details-container {
     min-height: 100vh;
     background-color: #f8f9fa;
   }
