@@ -50,7 +50,7 @@ const Header = ({ userData, showProfileDropdown = false, setShowProfileDropdown 
       {/* Header */}
       <header className="dashboard-header">
         <div className="header-left">
-          <img src="/images/logo.png" alt="Ybe Logo" className="header-logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
+          <img src="/images/logo.png" alt="Ybe Logo" className="header-logo" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }} />
           {!isPublicPage && (
             <nav className="header-nav">
               <a href="#" className={`nav-link ${currentPage === 'dashboard' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>Matches</a>

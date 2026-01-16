@@ -820,7 +820,7 @@ export default function Dashboard() {
             <>
               <div className="matches-header">
                 <h2 className="matches-title">
-                  New matches who match your preferences ({filteredUsers.length})
+                  New matches who match your preferences 
                 </h2>
                 <div className="pagination-info">
                   Showing {filteredUsers.length > 0 ? indexOfFirstUser + 1 : 0}-{Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length}

@@ -524,7 +524,10 @@ export default function Upgrade() {
         <div className="header-left">
           <img src="/images/logo.png" alt="Ybe Logo" className="header-logo" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }} />
           <nav className="header-nav">
-            <a href="#" className="nav-link">Matches</a>
+            {/* <a href="#" className="nav-link">Matches</a> */}
+            <a href="/dashboard" className="nav-link" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>Matches</a>
+
+            {/* <a href="#" className={`nav-link ${currentPage === 'dashboard' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>Matches</a> */}
             <a href="/chat" className="nav-link" onClick={(e) => { e.preventDefault(); navigate('/chat'); }}>Messages</a>
           </nav>
         </div>

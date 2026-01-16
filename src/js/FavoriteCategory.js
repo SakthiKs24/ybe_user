@@ -489,7 +489,7 @@ export default function FavoriteCategory() {
             ← Back to Favorites
           </button>
           <h3 className="category-title">
-            {getCategoryTitle()} ({categoryUsers.length})
+            {getCategoryTitle()}
           </h3>
           <div className="pagination-info">
             Showing {categoryUsers.length > 0 ? indexOfFirstUser + 1 : 0}-{Math.min(indexOfLastUser, categoryUsers.length)} of {categoryUsers.length}
@@ -628,7 +628,7 @@ export default function FavoriteCategory() {
             })
           ) : (
             <div className="no-matches">
-              <p>No users found in this category.</p>
+              <p>To No luck at the moment.</p>
             </div>
           )}
         </div>
