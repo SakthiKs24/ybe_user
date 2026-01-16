@@ -135,7 +135,7 @@
   }
   
   /* Progress Bar */
-  .progress-bar {
+  .progress-bar1 {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -256,7 +256,7 @@
     margin-bottom: 20px;
   }
   
-  .form-label {
+  .form-label1 {
     display: block;
     font-size: 16px;
     font-weight: 600;
@@ -348,13 +348,13 @@
     font-family: 'Poppins';
   }
   
-  .btn-primary {
-    background: linear-gradient(180deg, #FF003F 0%, #FF5300 100%);
+  .btn-primary1 {
+    background: linear-gradient(180deg, #FF003F 0%, #FF5300 100%) ;
     color: white;
     box-shadow: 0 5px 20px rgba(255, 2, 125, 0.3);
   }
   
-  .btn-primary:hover:not(:disabled) {
+  .btn-primary1:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(255, 2, 125, 0.4);
   }
@@ -544,7 +544,7 @@
       font-size: 35px;
     }
   
-    .progress-bar {
+    .progress-bar1 {
       gap: 15px;
     }
   

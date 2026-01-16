@@ -657,7 +657,7 @@ export default function ProfileSetup() {
     };
 
     return (
-      <div className="progress-bar" data-step={currentStep}>
+      <div className="progress-bar1" data-step={currentStep}>
         <div className={`progress-step ${getStepStatus(2)}`}>
           <div className="progress-icon">
             <img src={getImageSrc('basic_info', 2)} alt="Basic Info" />
@@ -716,7 +716,7 @@ export default function ProfileSetup() {
               <p className="subtitle">Let's set up your profile to find the perfect match</p>
 
               <div className="form-section">
-                <label className="form-label">This Profile is for</label>
+                <label className="form-labe1">This Profile is for</label>
                 <div className="radio-group">
                   {['Myself', 'Parents', 'Brother', 'Sister', 'Relative', 'Friend', 'Others'].map(option => (
                     <div className="radio-option" key={option}>
@@ -735,7 +735,7 @@ export default function ProfileSetup() {
               </div>
 
               <div className="form-section">
-                <label className="form-label">Interested in</label>
+                <label className="form-label1">Interested in</label>
                 <div className="radio-group">
                   {['Dating', 'Marriage', 'Both'].map(option => (
                     <div className="radio-option" key={option}>
@@ -754,7 +754,7 @@ export default function ProfileSetup() {
               </div>
 
               <div className="btn-group">
-                <button className="btn btn-primary" onClick={nextStep}>Continue</button>
+                <button className="btn btn-primary1" onClick={nextStep}>Continue</button>
               </div>
             </div>
           )}
@@ -766,7 +766,7 @@ export default function ProfileSetup() {
 
               <div className="two-col">
                 <div className="form-group">
-                  <label className="form-label">Height</label>
+                  <label className="form-label1">Height</label>
                   <select
                     className="form-select"
                     value={profileData.height}
@@ -779,7 +779,7 @@ export default function ProfileSetup() {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Religion</label>
+                  <label className="form-label1">Religion</label>
                   <select
                     className="form-select"
                     value={profileData.religion}
@@ -801,7 +801,7 @@ export default function ProfileSetup() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Mother Tongue</label>
+                <label className="form-label1">Mother Tongue</label>
                 <select
                   className="form-select"
                   value={profileData.motherTongue}
@@ -815,7 +815,7 @@ export default function ProfileSetup() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Community</label>
+                <label className="form-label1">Community</label>
                 <select
                   className="form-select"
                   name="community"
@@ -843,7 +843,7 @@ export default function ProfileSetup() {
               </div>
 
               <div className="btn-group">
-                <button className="btn btn-primary" onClick={nextStep}>Continue</button>
+                <button className="btn btn-primary1" onClick={nextStep}>Continue</button>
               </div>
             </div>
           )}
@@ -854,7 +854,7 @@ export default function ProfileSetup() {
               <h2 className="section-title"> Location</h2>
 
               <div className="form-group">
-                <label className="form-label">Origin Country</label>
+                <label className="form-label1">Origin Country</label>
                 <select
                   className="form-select"
                   value={profileData.originCountry}
@@ -868,13 +868,13 @@ export default function ProfileSetup() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Settled Country</label>
+                <label className="form-label1">Settled City</label>
                 <select
                   className="form-select"
                   value={profileData.settledCountry}
                   onChange={(e) => handleChange('settledCountry', e.target.value)}
                 >
-                  <option value="">Select Settled Country</option>
+                  <option value="">Select Settled City</option>
                   {countries.map(country => (
                     <option key={country} value={country}>{country}</option>
                   ))}
@@ -882,7 +882,7 @@ export default function ProfileSetup() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Grow Up Country</label>
+                <label className="form-label1">Grow Up Country</label>
                 <select
                   className="form-select"
                   value={profileData.growUpCountry}
@@ -900,7 +900,7 @@ export default function ProfileSetup() {
               </div>
 
               <div className="btn-group">
-                <button className="btn btn-primary" onClick={nextStep}>Continue</button>
+                <button className="btn btn-primary1" onClick={nextStep}>Continue</button>
               </div>
             </div>
           )}
@@ -911,7 +911,7 @@ export default function ProfileSetup() {
               <h2 className="section-title"> Education & Career</h2>
 
               <div className="form-group">
-                <label className="form-label">Highest Education</label>
+                <label className="form-label1">Highest Education</label>
                 <select
                   className="form-select"
                   value={profileData.degree}
@@ -929,7 +929,7 @@ export default function ProfileSetup() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Day Job</label>
+                <label className="form-label1">Day Job</label>
                 <select
                   className="form-select"
                   value={profileData.dayJob}
@@ -961,7 +961,7 @@ export default function ProfileSetup() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Marital Status</label>
+                <label className="form-label1">Marital Status</label>
                 <select
                   className="form-select"
                   value={profileData.maritalStatus}
@@ -978,7 +978,7 @@ export default function ProfileSetup() {
               </div>
 
               <div className="btn-group">
-                <button className="btn btn-primary" onClick={nextStep}>Continue</button>
+                <button className="btn btn-primary1" onClick={nextStep}>Continue</button>
               </div>
             </div>
           )}
@@ -991,7 +991,7 @@ export default function ProfileSetup() {
               <div className="lifestyle-container">
                 {/* Physical Build Type - Single Select */}
                 <div className="lifestyle-category">
-                  <label className="form-label">Physical Build Type</label>
+                  <label className="form-label1">Physical Build Type</label>
                   <div className="radio-group">
                     {physicalBuildType.map(option => (
                       <div className="radio-option" key={option}>
@@ -1013,7 +1013,7 @@ export default function ProfileSetup() {
                   ['personalityType', 'starSign', 'drink', 'smoke', 'exercise'].includes(key)
                 ).map(([key, options]) => (
                   <div className="lifestyle-category" key={key}>
-                    <label className="form-label">
+                    <label className="form-label1">
                       {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
                     </label>
                     <div className="radio-group">
@@ -1038,7 +1038,7 @@ export default function ProfileSetup() {
                   ['weatherType', 'poison', 'tripsType', 'pets', 'weekendNight', 'weekendActivities', 'eveningRoutine', 'passions'].includes(key)
                 ).map(([key, options]) => (
                   <div className="lifestyle-category" key={key}>
-                    <label className="form-label">
+                    <label className="form-label1">
                       {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
                     </label>
                     <div className="checkbox-group">
@@ -1067,7 +1067,7 @@ export default function ProfileSetup() {
                   
                   return (
                     <div className="lifestyle-category" key={key}>
-                      <label className="form-label">{key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}</label>
+                      <label className="form-label1">{key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}</label>
                       <div className={isSingleSelect ? "radio-group" : "checkbox-group"}>
                         {options.map(option => {
                           const currentValue = profileData.selectedLikesInvolvesMap[key] || [];
@@ -1099,7 +1099,7 @@ export default function ProfileSetup() {
 
               <div className="btn-group">
                 <button
-                  className="btn btn-primary"
+                  className="btn btn-primary1"
                   onClick={nextStep}
                 >
                   Continue
@@ -1195,7 +1195,7 @@ export default function ProfileSetup() {
 
     <div className="btn-group" style={{ marginTop: '30px' }}>
       <button
-        className="btn btn-primary"
+        className="btn btn-primary1"
         onClick={nextStep}
         disabled={uploadedPhotos.filter(p => p).length < 3}
       >
@@ -1222,7 +1222,7 @@ export default function ProfileSetup() {
 
               <div className="btn-group">
                 <button
-                  className="btn btn-primary"
+                  className="btn btn-primary1"
                   onClick={completeProfile}
                   disabled={loading}
                 >
@@ -1244,7 +1244,7 @@ export default function ProfileSetup() {
               <p className="subtitle">Your profile is ready. Start searching and find your perfect match!</p>
 
               <button
-                className="btn btn-primary"
+                className="btn btn-primary1"
                 onClick={startExploring}
                 style={{ width: '100%', marginTop: '30px' }}
               >

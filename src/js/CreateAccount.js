@@ -87,7 +87,11 @@ export default function CreateAccount() {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-
+  const getMaxDate = () => {
+    const today = new Date();
+    const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    return maxDate.toISOString().split('T')[0];
+  };
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -474,7 +478,7 @@ export default function CreateAccount() {
                   >
                     {COUNTRIES_DATA.map((country) => (
                       <option key={country.code} value={country.dial_code}>
-                        {country.dial_code}
+                        {country.dial_code} - {country.code}
                       </option>
                     ))}
                   </select>
@@ -544,8 +548,8 @@ export default function CreateAccount() {
                   value={formData.dateOfBirth}
                   onChange={(e) => handleChange('dateOfBirth', e.target.value)}
                   disabled={loading}
-                  max={new Date().toISOString().split('T')[0]}
-                />
+                  max={getMaxDate()}
+                  />
                 {errors.dateOfBirth && (
                   <span style={{ color: '#FF027D', fontSize: '13px', marginTop: '5px', display: 'block' }}>
                     {errors.dateOfBirth}
