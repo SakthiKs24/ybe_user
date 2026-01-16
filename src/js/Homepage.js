@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Navbar from './Navbar';
 import Login from './Login';
 import '../css/Homepage.css';
+import CookiePolicy from '../js/CookiePolicy'; 
 
 export default function Homepage() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -16,7 +17,7 @@ export default function Homepage() {
       <Navbar onLoginClick={() => setIsLoginOpen(true)} />
       {isLoginOpen && (
         <Login
-          key={loginKey}      // <-- this forces a fresh component
+          key={loginKey}     
           isOpen={isLoginOpen}
           onClose={() => setIsLoginOpen(false)}
         />
@@ -148,6 +149,7 @@ export default function Homepage() {
         
         <div className="footer-bottom-border"></div>
       </footer>
+      <CookiePolicy />
     </div>
   );
 }
