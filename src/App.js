@@ -14,30 +14,117 @@ import Favorites from './js/Favorites';
 import PaymentSuccess from './js/PaymentSuccess';
 import PaymentCancel from './js/PaymentCancel';
 import PrivacyPolicy from './js/PrivacyPolicy';
+import { ProtectedRoute, PublicRoute } from './js/ProtectedRoute';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   return (
-    
     <Router>
-              <ToastContainer />
-
+      <ToastContainer />
       <Routes>
-        <Route path="/" element={<Homepage />} />
-        <Route path="/create-account" element={<CreateAccount />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/profile-setup" element={<ProfileSetup />} />
-        <Route path="/upgrade" element={<Upgrade />} />
-        <Route path="/chat/:chatId?" element={<ChatList />} />
-        <Route path="/profile/:userId" element={<ProfileDetails />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/favorites" element={<Favorites />} />
-        <Route path="/favorites/:category" element={<FavoriteCategory />} />
-        <Route path="/payment-success" element={<PaymentSuccess />} />
-        <Route path="/payment-cancel" element={<PaymentCancel />} />
+        {/* Public Routes - Only accessible when NOT logged in */}
+        <Route 
+          path="/" 
+          element={
+            <PublicRoute>
+              <Homepage />
+            </PublicRoute>
+          } 
+        />
+        <Route 
+          path="/create-account" 
+          element={
+            <PublicRoute>
+              <CreateAccount />
+            </PublicRoute>
+          } 
+        />
+        
+        {/* Protected Routes - Only accessible when logged in */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/profile-setup" 
+          element={
+            <ProtectedRoute>
+              <ProfileSetup />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/upgrade" 
+          element={
+            <ProtectedRoute>
+              <Upgrade />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/chat/:chatId?" 
+          element={
+            <ProtectedRoute>
+              <ChatList />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/profile/:userId" 
+          element={
+            <ProtectedRoute>
+              <ProfileDetails />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/favorites" 
+          element={
+            <ProtectedRoute>
+              <Favorites />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/favorites/:category" 
+          element={
+            <ProtectedRoute>
+              <FavoriteCategory />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/payment-success" 
+          element={
+            <ProtectedRoute>
+              <PaymentSuccess />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/payment-cancel" 
+          element={
+            <ProtectedRoute>
+              <PaymentCancel />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Public route - accessible to everyone */}
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-
       </Routes>
     </Router>
   );
