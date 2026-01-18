@@ -458,6 +458,8 @@ export default function Profile() {
     { key: 'lifestyle', label: 'Lifestyle', completed: !!(userData?.bodyBuild) },
     { key: 'personalityTraits', label: 'Personality Traits', completed: !!(userData?.selectedPersonalityTraitsMap?.personalityType) },
     { key: 'likesInvolves', label: 'Likes & Involves', completed: !!(userData?.selectedLikesInvolvesMap?.movies?.length > 0) },
+    { key: 'logout', label: 'Logout', completed: true }, // ADD THIS LINE
+
   ];
 
   const renderSectionContent = () => {
@@ -1268,24 +1270,36 @@ case 'personalityTraits':
             <div className="onboarding-steps">
               {onboardingSteps.map((step) => (
                 <div 
-                  key={step.key}
-                  className={`onboarding-step ${activeSection === step.key ? 'active' : ''}`}
-                  onClick={() => {
+                key={step.key}
+                className={`onboarding-step ${activeSection === step.key ? 'active' : ''} ${step.key === 'logout' ? 'logout-step' : ''}`}
+                onClick={() => {
+                  if (step.key === 'logout') {
+                    setShowLogoutModal(true);
+                  } else {
                     setActiveSection(step.key);
                     setEditMode(false);
-                  }}
-                >
+                  }
+                }}
+              >
                  <div className={`step-checkbox ${step.completed ? 'completed' : 'pending'}`}>
-                    <img
-                      src={
-                        step.completed
-                          ? '/images/step-tick.png'
-                          : '/images/step-untick.png'
-                      }
-                      alt={step.completed ? 'Completed' : 'Not Completed'}
-                      className="step-status-img"
-                    />
-                  </div>
+  {step.key === 'logout' ? (
+    <img
+      src="/images/logout.jpeg"
+      alt="Logout"
+      className="step-status-img"
+    />
+  ) : (
+    <img
+      src={
+        step.completed
+          ? '/images/step-tick.png'
+          : '/images/step-untick.png'
+      }
+      alt={step.completed ? 'Completed' : 'Not Completed'}
+      className="step-status-img"
+    />
+  )}
+</div>
 
                   <span className="step-label">{step.label}</span>
                   <span className="step-arrow">›</span>

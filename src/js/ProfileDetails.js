@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import Header from './Header';
@@ -10,10 +10,37 @@ export default function ProfileDetails() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
+  const [currentUserData, setCurrentUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Fetch current logged-in user data for header
+  useEffect(() => {
+    const fetchCurrentUserData = async () => {
+      try {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          const usersRef = collection(db, 'users');
+          const q = query(usersRef, where('email', '==', currentUser.email));
+          const querySnapshot = await getDocs(q);
+
+          if (!querySnapshot.empty) {
+            const userDoc = querySnapshot.docs[0];
+            setCurrentUserData({
+              id: userDoc.id,
+              ...userDoc.data()
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching current user data:', error);
+      }
+    };
+
+    fetchCurrentUserData();
+  }, []);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -122,7 +149,7 @@ export default function ProfileDetails() {
   return (
     <div className="profile-details-container">
       <Header 
-        userData={null}
+        userData={currentUserData}
         showProfileDropdown={showProfileDropdown}
         setShowProfileDropdown={setShowProfileDropdown}
         dropdownRef={dropdownRef}
@@ -216,7 +243,7 @@ export default function ProfileDetails() {
               <div className="info-grid">
                 <InfoRow label="Birth Time" value={userData.birthTime || 'Not Specified'} />
                 <InfoRow label="Country of Birth" value={userData.countryOfBirth || 'Not Specified'} />
-                <InfoRow label="Star" value={userData.selectedPersonalityTraitsMap.starSign || "Don't Know"} />
+                <InfoRow label="Star" value={userData.selectedPersonalityTraitsMap?.starSign || "Don't Know"} />
              
               </div>
             </section>

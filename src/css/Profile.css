@@ -158,10 +158,10 @@
 }
 
 .profile-avatar {
-  width: 100px;
+  width: 80px;
   height: 100px;
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: contain;
   border: 3px solid white;
 }
 
@@ -539,7 +539,7 @@
 .photo-item img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .photo-placeholder {
@@ -759,4 +759,7 @@
 .lifestyle-container1 {
   overflow-y: auto;
   padding-right: 10px;
+}
+.step-status-img{
+  height: 30px;
 }

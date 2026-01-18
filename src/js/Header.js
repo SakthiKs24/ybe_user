@@ -75,13 +75,13 @@ const Header = ({ userData, showProfileDropdown = false, setShowProfileDropdown 
                   className="profile-icon-img" 
                 />
               </button>
-              <button 
+              {/* <button 
                 className="icon-btn logout-icon-btn" 
                 onClick={() => setShowLogoutModal(true)}
                 title="Logout"
               >
                 <img src="/images/logout.jpeg" alt="Logout" className="logout-icon-img" />
-              </button>
+              </button> */}
             </>
           ) : !isPublicPage && (
             <>
