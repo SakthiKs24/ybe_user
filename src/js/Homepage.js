@@ -1,20 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { toast } from 'react-toastify';
 import Navbar from './Navbar';
 import Login from './Login';
 import '../css/Homepage.css';
 import CookiePolicy from '../js/CookiePolicy'; 
 
 export default function Homepage() {
+  const navigate = useNavigate();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [loginKey, setLoginKey] = useState(0); // new key for Login
+  const [loginKey, setLoginKey] = useState(0);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authChecking, setAuthChecking] = useState(true);
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setAuthChecking(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const openLogin = () => {
-    setLoginKey(prev => prev + 1); // increment key to reset Login state
+    setLoginKey(prev => prev + 1);
     setIsLoginOpen(true);
   };
+
+  const handleFindMatchClick = () => {
+    if (currentUser) {
+      // User is logged in, redirect to dashboard
+      navigate('/dashboard');
+    } else {
+      // User is not logged in, show login popup with message
+      toast.info('Please login first to find your matches!');
+      openLogin();
+    }
+  };
+
+  if (authChecking) {
+    return (
+      <div className="homepage-loading">
+        <img src="/images/logo.png" alt="Loading" className="loading-logo" />
+      </div>
+    );
+  }
+
   return (
     <div className="homepage">
-      <Navbar onLoginClick={() => setIsLoginOpen(true)} />
+      <Navbar onLoginClick={openLogin} currentUser={currentUser} />
       {isLoginOpen && (
         <Login
           key={loginKey}     
@@ -22,7 +59,6 @@ export default function Homepage() {
           onClose={() => setIsLoginOpen(false)}
         />
       )}
-      {/* <Login isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} /> */}
 
       <main className="main-content">
         <div className="left-section">
@@ -35,7 +71,7 @@ export default function Homepage() {
             soulmate through our trusted platform
           </p>
 
-          <button className="cta-btn">
+          <button className="cta-btn" onClick={handleFindMatchClick}>
             Find Your match
           </button>
 

@@ -23,15 +23,10 @@ function App() {
     <Router>
       <ToastContainer />
       <Routes>
+        {/* Homepage - accessible to everyone (both logged in and logged out) */}
+        <Route path="/" element={<Homepage />} />
+        
         {/* Public Routes - Only accessible when NOT logged in */}
-        <Route 
-          path="/" 
-          element={
-            <PublicRoute>
-              <Homepage />
-            </PublicRoute>
-          } 
-        />
         <Route 
           path="/create-account" 
           element={
