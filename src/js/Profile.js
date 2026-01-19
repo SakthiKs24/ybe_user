@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'react-toastify';
 import Header from './Header';
@@ -18,6 +18,7 @@ export default function Profile() {
   const [editMode, setEditMode] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const dropdownRef = useRef(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Form data state for editing
   const [formData, setFormData] = useState({
@@ -364,7 +365,33 @@ export default function Profile() {
       setSaveLoading(false);
     }
   };
-
+  const handleDeleteAccount = async () => {
+    try {
+      if (userData && userData.docId) {
+        // Delete user document from Firestore
+        const userDocRef = doc(db, 'users', userData.docId);
+        await deleteDoc(userDocRef);
+        
+        // Sign out the user
+        await signOut(auth);
+        
+        // Clear localStorage
+        localStorage.removeItem('userDetails');
+        
+        toast.success('Account deleted successfully!', {
+          position: "top-right",
+          autoClose: 2000,
+        });
+        
+        setTimeout(() => {
+          navigate('/');
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast.error('Failed to delete account. Please try again.');
+    }
+  };
   const handlePhotoUpload = async (event, index) => {
     const file = event.target.files[0];
     if (file) {
@@ -458,7 +485,8 @@ export default function Profile() {
     { key: 'lifestyle', label: 'Lifestyle', completed: !!(userData?.bodyBuild) },
     { key: 'personalityTraits', label: 'Personality Traits', completed: !!(userData?.selectedPersonalityTraitsMap?.personalityType) },
     { key: 'likesInvolves', label: 'Likes & Involves', completed: !!(userData?.selectedLikesInvolvesMap?.movies?.length > 0) },
-    { key: 'logout', label: 'Logout', completed: true }, // ADD THIS LINE
+    { key: 'deleteAccount', label: 'Delete Account', completed: true }, // NEW LINE
+    { key: 'logout', label: 'Logout', completed: true }, 
 
   ];
 
@@ -1269,41 +1297,49 @@ case 'personalityTraits':
             <h3 className="onboarding-title">Profile Sections</h3>
             <div className="onboarding-steps">
               {onboardingSteps.map((step) => (
-                <div 
-                key={step.key}
-                className={`onboarding-step ${activeSection === step.key ? 'active' : ''} ${step.key === 'logout' ? 'logout-step' : ''}`}
-                onClick={() => {
-                  if (step.key === 'logout') {
-                    setShowLogoutModal(true);
-                  } else {
-                    setActiveSection(step.key);
-                    setEditMode(false);
-                  }
-                }}
-              >
-                 <div className={`step-checkbox ${step.completed ? 'completed' : 'pending'}`}>
-  {step.key === 'logout' ? (
-    <img
-      src="/images/logout.jpeg"
-      alt="Logout"
-      className="step-status-img"
-    />
-  ) : (
-    <img
-      src={
-        step.completed
-          ? '/images/step-tick.png'
-          : '/images/step-untick.png'
-      }
-      alt={step.completed ? 'Completed' : 'Not Completed'}
-      className="step-status-img"
-    />
-  )}
-</div>
-
-                  <span className="step-label">{step.label}</span>
-                  <span className="step-arrow">›</span>
-                </div>
+               <div 
+               key={step.key}
+               className={`onboarding-step ${activeSection === step.key ? 'active' : ''} ${step.key === 'logout' || step.key === 'deleteAccount' ? 'logout-step' : ''}`}
+               onClick={() => {
+                 if (step.key === 'logout') {
+                   setShowLogoutModal(true);
+                 } else if (step.key === 'deleteAccount') {
+                   setShowDeleteModal(true);
+                 } else {
+                   setActiveSection(step.key);
+                   setEditMode(false);
+                 }
+               }}
+             >
+               <div className={`step-checkbox ${step.completed ? 'completed' : 'pending'}`}>
+                 {step.key === 'logout' ? (
+                   <img
+                     src="/images/logout.jpeg"
+                     alt="Logout"
+                     className="step-status-img"
+                   />
+                 ) : step.key === 'deleteAccount' ? (
+                   <img
+                     src="/images/delete.png"
+                     alt="Delete Account"
+                     className="step-status-img"
+                   />
+                 ) : (
+                   <img
+                     src={
+                       step.completed
+                         ? '/images/step-tick.png'
+                         : '/images/step-untick.png'
+                     }
+                     alt={step.completed ? 'Completed' : 'Not Completed'}
+                     className="step-status-img"
+                   />
+                 )}
+               </div>
+               <span className="step-label">{step.label}</span>
+               <span className="step-arrow">›</span>
+             </div>
+             
               ))}
             </div>
           </div>
@@ -1342,7 +1378,34 @@ case 'personalityTraits':
             </div>
           </div>
         </div>
+        
       )}
+      {showDeleteModal && (
+  <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <h3>Delete Account</h3>
+      <p>Do you want to delete your account? This action cannot be undone.</p>
+      <div className="modal-buttons">
+        <button
+          onClick={() => setShowDeleteModal(false)}
+          className="btn-cancel"
+        >
+          No, Keep it
+        </button>
+        <button
+          onClick={() => {
+            setShowDeleteModal(false);
+            handleDeleteAccount();
+          }}
+          className="btn-confirm"
+          style={{ backgroundColor: '#FF2B45' }}
+        >
+          Delete Account
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

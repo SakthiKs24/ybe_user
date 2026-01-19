@@ -18,6 +18,11 @@ export default function Dashboard() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [uniqueLocations, setUniqueLocations] = useState([]);
+  const [uniqueLanguages, setUniqueLanguages] = useState([]);
+  const [uniqueJobs, setUniqueJobs] = useState([]);
+  const [uniqueLookingFor, setUniqueLookingFor] = useState([]);
+  const [uniqueEducation, setUniqueEducation] = useState([]);
+  const [uniqueReligions, setUniqueReligions] = useState([]);
   const [favorites, setFavorites] = useState(new Set());
   const [blockedUsers, setBlockedUsers] = useState(new Set());
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
@@ -33,9 +38,15 @@ export default function Dashboard() {
   // Filter states
   const [filters, setFilters] = useState({
     location: 'All',
+    language: 'All',
+    job: 'All',
+    lookingFor: 'All',
+    education: 'All',
+    religion: 'All',
     interestedIn: 'Women',
     sortBy: 'High Match',
     age: [20, 60],
+    maxDistance: [0, 500], // 0 to 500 km
     maritalStatus: {
       neverMarried: false,
       divorced: false,
@@ -103,6 +114,20 @@ export default function Dashboard() {
     }
     
     return pageNumbers;
+  };
+
+  // Helper function to calculate distance between two coordinates
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of Earth in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+    return distance;
   };
 
   // Reset to page 1 when filters change
@@ -237,6 +262,11 @@ export default function Dashboard() {
         // Map snapshot to users, exclude current user
         const users = [];
         const locationsSet = new Set();
+        const languagesSet = new Set();
+        const jobsSet = new Set();
+        const lookingForSet = new Set();
+        const educationSet = new Set();
+        const religionsSet = new Set();
         
         querySnapshot.forEach((doc) => {
           if (doc.id !== userData.uid) {
@@ -247,21 +277,35 @@ export default function Dashboard() {
               ...userData
             });
             
-            // Extract unique locations
+            // Extract unique values for dropdowns
             if (userData.settledCountry) {
               locationsSet.add(userData.settledCountry);
             }
-            // Also check for other location fields
-            if (userData.currentPosition?.city) {
-              const locationStr = `${userData.currentPosition.city}, ${userData.settledCountry || ''}`.trim();
-              locationsSet.add(locationStr);
+            if (userData.motherTongue) {
+              languagesSet.add(userData.motherTongue);
+            }
+            if (userData.dayJob) {
+              jobsSet.add(userData.dayJob);
+            }
+            if (userData.lookingFor) {
+              lookingForSet.add(userData.lookingFor);
+            }
+            if (userData.degree) {
+              educationSet.add(userData.degree);
+            }
+            if (userData.religion) {
+              religionsSet.add(userData.religion);
             }
           }
         });
         
-        // Set unique locations for dropdown
-        const locationsArray = Array.from(locationsSet).filter(loc => loc && loc.trim() !== '').sort();
-        setUniqueLocations(['All', ...locationsArray]);
+        // Set unique values for dropdowns
+        setUniqueLocations(['All', ...Array.from(locationsSet).filter(loc => loc && loc.trim() !== '').sort()]);
+        setUniqueLanguages(['All', ...Array.from(languagesSet).filter(lang => lang && lang.trim() !== '').sort()]);
+        setUniqueJobs(['All', ...Array.from(jobsSet).filter(job => job && job.trim() !== '').sort()]);
+        setUniqueLookingFor(['All', ...Array.from(lookingForSet).filter(lf => lf && lf.trim() !== '').sort()]);
+        setUniqueEducation(['All', ...Array.from(educationSet).filter(edu => edu && edu.trim() !== '').sort()]);
+        setUniqueReligions(['All', ...Array.from(religionsSet).filter(rel => rel && rel.trim() !== '').sort()]);
         
         // Collect all user IDs to check blocks
         const userIds = users.map((user) => user.userId || user.id);
@@ -326,12 +370,65 @@ export default function Dashboard() {
       if (filters.location && filters.location !== 'All') {
         filtered = filtered.filter(user => {
           const userLocation = user.settledCountry || '';
-          const userCity = user.currentPosition?.city || '';
-          const fullLocation = userCity ? `${userCity}, ${userLocation}` : userLocation;
+          return userLocation === filters.location;
+        });
+      }
+
+      // Filter by language
+      if (filters.language && filters.language !== 'All') {
+        filtered = filtered.filter(user => {
+          const userLanguage = user.motherTongue || '';
+          return userLanguage === filters.language;
+        });
+      }
+
+      // Filter by job
+      if (filters.job && filters.job !== 'All') {
+        filtered = filtered.filter(user => {
+          const userJob = user.dayJob || '';
+          return userJob === filters.job;
+        });
+      }
+
+      // Filter by looking for
+      if (filters.lookingFor && filters.lookingFor !== 'All') {
+        filtered = filtered.filter(user => {
+          const userLookingFor = user.lookingFor || '';
+          return userLookingFor === filters.lookingFor;
+        });
+      }
+
+      // Filter by education
+      if (filters.education && filters.education !== 'All') {
+        filtered = filtered.filter(user => {
+          const userEducation = user.degree || '';
+          return userEducation === filters.education;
+        });
+      }
+
+      // Filter by religion
+      if (filters.religion && filters.religion !== 'All') {
+        filtered = filtered.filter(user => {
+          const userReligion = user.religion || '';
+          return userReligion === filters.religion;
+        });
+      }
+
+      // Filter by maximum distance
+      if (filters.maxDistance[1] < 500 && userData?.currentPosition?.latitude && userData?.currentPosition?.longitude) {
+        filtered = filtered.filter(user => {
+          if (!user.currentPosition?.latitude || !user.currentPosition?.longitude) {
+            return false; // Exclude users without location data
+          }
           
-          return userLocation.includes(filters.location) || 
-                 fullLocation.includes(filters.location) ||
-                 filters.location.includes(userLocation);
+          const distance = calculateDistance(
+            userData.currentPosition.latitude,
+            userData.currentPosition.longitude,
+            user.currentPosition.latitude,
+            user.currentPosition.longitude
+          );
+          
+          return distance >= filters.maxDistance[0] && distance <= filters.maxDistance[1];
         });
       }
 
@@ -383,7 +480,7 @@ export default function Dashboard() {
     }, 100);
 
     return () => clearTimeout(filterTimeout);
-  }, [filters, allUsers]);
+  }, [filters, allUsers, userData?.currentPosition]);
 
   const handleFilterChange = (filterType, value) => {
     setFilters(prev => ({
@@ -452,8 +549,6 @@ export default function Dashboard() {
   const generateRandomId = () => {
     return Math.random().toString(36).substring(2, 10).toUpperCase();
   };
-
-
 
   // Handle superlike
   const handleSuperlike = async (e, userId) => {
@@ -688,38 +783,136 @@ export default function Dashboard() {
           </div>
 
           <div className="filter-section">
-            <label className="filter-label">Interested in</label>
-            <div className="radio-group">
-              {['Women', 'Men', 'Both'].map(option => (
-                <label key={option} className="radio-label">
-                  <input
-                    type="radio"
-                    name="interestedIn"
-                    value={option}
-                    checked={filters.interestedIn === option}
-                    onChange={(e) => handleFilterChange('interestedIn', e.target.value)}
-                  />
-                  <span>{option}</span>
-                </label>
+            <label className="filter-label">Language</label>
+            <select 
+              className="filter-select"
+              value={filters.language}
+              onChange={(e) => handleFilterChange('language', e.target.value)}
+            >
+              {uniqueLanguages.map((language, index) => (
+                <option key={index} value={language}>
+                  {language}
+                </option>
               ))}
-            </div>
+            </select>
           </div>
 
           <div className="filter-section">
-            <label className="filter-label">Sort By</label>
-            <div className="radio-group">
-              {['Online', 'offline', 'High Match'].map(option => (
-                <label key={option} className="radio-label">
-                  <input
-                    type="radio"
-                    name="sortBy"
-                    value={option}
-                    checked={filters.sortBy === option}
-                    onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                  />
-                  <span>{option}</span>
-                </label>
+            <label className="filter-label">Professional Job</label>
+            <select 
+              className="filter-select"
+              value={filters.job}
+              onChange={(e) => handleFilterChange('job', e.target.value)}
+            >
+              {uniqueJobs.map((job, index) => (
+                <option key={index} value={job}>
+                  {job}
+                </option>
               ))}
+            </select>
+          </div>
+
+          <div className="filter-section">
+            <label className="filter-label">Looking For</label>
+            <select 
+              className="filter-select"
+              value={filters.lookingFor}
+              onChange={(e) => handleFilterChange('lookingFor', e.target.value)}
+            >
+              {uniqueLookingFor.map((lf, index) => (
+                <option key={index} value={lf}>
+                  {lf}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-section">
+            <label className="filter-label">Educational Qualification</label>
+            <select 
+              className="filter-select"
+              value={filters.education}
+              onChange={(e) => handleFilterChange('education', e.target.value)}
+            >
+              {uniqueEducation.map((edu, index) => (
+                <option key={index} value={edu}>
+                  {edu}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-section">
+            <label className="filter-label">Religion</label>
+            <select 
+              className="filter-select"
+              value={filters.religion}
+              onChange={(e) => handleFilterChange('religion', e.target.value)}
+            >
+              {uniqueReligions.map((religion, index) => (
+                <option key={index} value={religion}>
+                  {religion}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          
+          <div className="filter-section">
+            <label className="filter-label">Maximum Distance (km)</label>
+            
+            <div className="age-range-display">
+              <span className="age-value">{filters.maxDistance[0]}</span>
+              <span className="age-separator">-</span>
+              <span className="age-value">{filters.maxDistance[1]}</span>
+              <span className="age-unit">km</span>
+            </div>
+            <div className="slider-labels">
+              <span>0</span>
+              <span>125</span>
+              <span>250</span>
+              <span>375</span>
+              <span>500</span>
+            </div>
+            <div className="dual-range-slider">
+              <div className="slider-track">
+                <div 
+                  className="slider-range" 
+                  style={{
+                    left: `${(filters.maxDistance[0] / 500) * 100}%`,
+                    width: `${((filters.maxDistance[1] - filters.maxDistance[0]) / 500) * 100}%`
+                  }}
+                ></div>
+              </div>
+              
+              <input
+                type="range"
+                min="0"
+                max="500"
+                step="10"
+                value={filters.maxDistance[0]}
+                onChange={(e) => {
+                  const newMin = parseInt(e.target.value);
+                  if (newMin < filters.maxDistance[1]) {
+                    handleFilterChange('maxDistance', [newMin, filters.maxDistance[1]]);
+                  }
+                }}
+                className="slider-thumb slider-thumb-min"
+              />
+              <input
+                type="range"
+                min="0"
+                max="500"
+                step="10"
+                value={filters.maxDistance[1]}
+                onChange={(e) => {
+                  const newMax = parseInt(e.target.value);
+                  if (newMax > filters.maxDistance[0]) {
+                    handleFilterChange('maxDistance', [filters.maxDistance[0], newMax]);
+                  }
+                }}
+                className="slider-thumb slider-thumb-max"
+              />
             </div>
           </div>
 
@@ -779,35 +972,7 @@ export default function Dashboard() {
             
           </div>
 
-          <div className="filter-section">
-            <label className="filter-label">MARITAL STATUS</label>
-            <div className="checkbox-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={filters.maritalStatus.neverMarried}
-                  onChange={() => handleCheckboxChange('maritalStatus', 'neverMarried')}
-                />
-                <span>Never Married</span>
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={filters.maritalStatus.divorced}
-                  onChange={() => handleCheckboxChange('maritalStatus', 'divorced')}
-                />
-                <span>Divorced</span>
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={filters.maritalStatus.widowed}
-                  onChange={() => handleCheckboxChange('maritalStatus', 'widowed')}
-                />
-                <span>Widowed</span>
-              </label>
-            </div>
-          </div>
+          
         </aside>
 
         {/* Main Content - Match Cards */}
@@ -882,11 +1047,13 @@ export default function Dashboard() {
                               >
                                 {user.name || 'Anonymous'}
                               </h3>
-                              <img 
-                                src="/images/verified.png" 
-                                alt="Verified" 
-                                className="verified-badge-img"
-                              />
+                              {isVip && (
+                                <img 
+                                  src="/images/verified.png" 
+                                  alt="Verified" 
+                                  className="verified-badge-img"
+                                />
+                              )}
                               <div className="online-status-indicator1">
                                 <img
                                   src="/images/online_now.png"
