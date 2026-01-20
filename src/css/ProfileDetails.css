@@ -277,6 +277,37 @@
     margin-top: 15px;
   }
   
+  /* Actions under gallery */
+  .profile-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 14px;
+  }
+  
+  .action-btn {
+    width: 50px;
+    height: 50px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+    padding: 0;
+  }
+  
+  .action-btn:hover {
+    transform: scale(1.06);
+  }
+  
+  .action-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+  }
+  
   .dot {
     width: 8px;
     height: 8px;
@@ -297,6 +328,8 @@
     display: flex;
     flex-direction: column;
     gap: 25px;
+    position: relative;
+
   }
   
   .info-section {
@@ -304,6 +337,13 @@
     border-radius: 15px;
     padding: 25px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  
+  .profile-actions-right {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    z-index: 10;
   }
   
   .section-title {
@@ -396,6 +436,98 @@
     border-radius: 25px;
     font-weight: 600;
     cursor: pointer;
+  }
+  
+  /* Block Confirm Dialog Styles (parity with dashboard) */
+  .block-confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .block-confirm-dialog {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  }
+  
+  .block-confirm-icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  
+  .block-confirm-content {
+    text-align: center;
+    margin-bottom: 25px;
+  }
+  
+  .block-confirm-title {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  
+  .block-confirm-name {
+    font-size: 20px;
+    color: #FF2B45;
+    font-weight: 600;
+    margin-bottom: 15px;
+  }
+  
+  .block-confirm-description {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.5;
+  }
+  
+  .block-confirm-actions {
+    display: flex;
+    gap: 15px;
+  }
+  
+  .block-confirm-cancel,
+  .block-confirm-block {
+    flex: 1;
+    padding: 12px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .block-confirm-cancel {
+    border: 1px solid #ccc;
+    background: #f1f1f1;
+    color: #333;
+  }
+  
+  .block-confirm-cancel:hover {
+    background: #e0e0e0;
+  }
+  
+  .block-confirm-block {
+    border: none;
+    background: #FF2B45;
+    color: white;
+    box-shadow: 0 2px 8px rgba(255, 43, 69, 0.3);
+  }
+  
+  .block-confirm-block:hover {
+    background: #E0243D;
+    box-shadow: 0 4px 12px rgba(255, 43, 69, 0.4);
   }
   
   /* Responsive */

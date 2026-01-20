@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, deleteDoc, setDoc, updateDoc, doc, documentId } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import Header from './Header';
 import '../css/ProfileDetails.css';
@@ -15,6 +15,10 @@ export default function ProfileDetails() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const [favorites, setFavorites] = useState(new Set());
+  const [blockedUsers, setBlockedUsers] = useState(new Set());
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [userToBlock, setUserToBlock] = useState(null);
 
   // Fetch current logged-in user data for header
   useEffect(() => {
@@ -30,6 +34,7 @@ export default function ProfileDetails() {
             const userDoc = querySnapshot.docs[0];
             setCurrentUserData({
               id: userDoc.id,
+              uid: currentUser.uid,
               ...userDoc.data()
             });
           }
@@ -41,6 +46,34 @@ export default function ProfileDetails() {
 
     fetchCurrentUserData();
   }, []);
+
+  // Load current user's favorites and block list
+  useEffect(() => {
+    const loadUserRelations = async () => {
+      try {
+        if (!currentUserData) return;
+        // Favorites
+        const favRef = collection(db, 'favorites');
+        const favQ = query(favRef, where('likedBy', '==', currentUserData.userId || currentUserData.id));
+        const favSnap = await getDocs(favQ);
+        const favSet = new Set();
+        favSnap.forEach(d => favSet.add(d.data().likedUser));
+        setFavorites(favSet);
+        // Blocked
+        const blockRef = collection(db, 'block');
+        const blockQ = query(blockRef, where(documentId(), '==', currentUserData.uid || currentUserData.id));
+        const blockSnap = await getDocs(blockQ);
+        if (!blockSnap.empty) {
+          const data = blockSnap.docs[0].data();
+          const blockedBy = data.blockedBy || [];
+          setBlockedUsers(new Set(blockedBy));
+        }
+      } catch (e) {
+        console.error('Failed loading relations', e);
+      }
+    };
+    loadUserRelations();
+  }, [currentUserData]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -125,6 +158,125 @@ export default function ProfileDetails() {
     }
   };
 
+  const generateRandomId = () => Math.random().toString(36).substring(2, 10).toUpperCase();
+
+  const handleFavoriteToggle = async () => {
+    try {
+      if (!currentUserData?.userId) return;
+      const targetId = userData.userId || userData.id;
+      const isFavorite = favorites.has(targetId);
+      if (isFavorite) {
+        const favoritesRef = collection(db, 'favorites');
+        const qFav = query(favoritesRef, where('likedBy', '==', currentUserData.userId), where('likedUser', '==', targetId));
+        const snap = await getDocs(qFav);
+        snap.forEach(async (ds) => {
+          await deleteDoc(doc(db, 'favorites', ds.id));
+        });
+        setFavorites(prev => {
+          const s = new Set(prev);
+          s.delete(targetId);
+          return s;
+        });
+        toast.success('Removed from favorites');
+      } else {
+        await addDoc(collection(db, 'favorites'), {
+          likedBy: currentUserData.userId,
+          likedUser: targetId,
+        });
+        setFavorites(prev => new Set(prev).add(targetId));
+        toast.success('Added to favorites');
+      }
+    } catch (e) {
+      console.error('favorite toggle failed', e);
+      toast.error('Failed to update favorites');
+    }
+  };
+
+  const handleShortlistToggle = async () => {
+    try {
+      if (!currentUserData?.userId) return;
+      const targetId = userData.userId || userData.id;
+      const shortlistRef = collection(db, 'shortlist');
+      const qS = query(shortlistRef, where('shortlistedBy', '==', currentUserData.userId), where('shortlistedUser', '==', targetId));
+      const snap = await getDocs(qS);
+      if (!snap.empty) {
+        snap.forEach(async (ds) => {
+          await deleteDoc(doc(db, 'shortlist', ds.id));
+        });
+        toast.success('Shortlist removed!');
+      } else {
+        const customDocId = `${currentUserData.userId}-${generateRandomId()}`;
+        const dref = doc(collection(db, 'shortlist'), customDocId);
+        await setDoc(dref, {
+          shortlistedBy: currentUserData.userId,
+          shortlistedUser: targetId,
+        });
+        toast.success('User shortlisted!');
+      }
+    } catch (e) {
+      console.error('shortlist toggle failed', e);
+      toast.error('Failed to update shortlist');
+    }
+  };
+
+  const handleBlockToggle = async () => {
+    try {
+      if (!currentUserData?.uid) return;
+      const targetId = userData.userId || userData.id;
+      const isBlocked = blockedUsers.has(targetId);
+      if (isBlocked) {
+        // Unblock directly
+        const blockRef = collection(db, 'block');
+        const blockDocRef = doc(blockRef, currentUserData.uid);
+        const blockQ = query(blockRef, where(documentId(), '==', currentUserData.uid));
+        const blockSnap = await getDocs(blockQ);
+        if (!blockSnap.empty) {
+          const currentData = blockSnap.docs[0].data();
+          const updated = (currentData.blockedBy || []).filter(id => id !== targetId);
+          await updateDoc(blockDocRef, { blockedBy: updated });
+        }
+        setBlockedUsers(prev => {
+          const s = new Set(prev);
+          s.delete(targetId);
+          return s;
+        });
+        toast.success('User unblocked');
+      } else {
+        // Ask confirmation
+        setUserToBlock({ userId: targetId, userName: userData.name || 'this user' });
+        setShowBlockConfirm(true);
+      }
+    } catch (e) {
+      console.error('block toggle failed', e);
+      toast.error('Failed to update block');
+    }
+  };
+
+  const confirmBlock = async () => {
+    try {
+      if (!currentUserData?.uid || !userToBlock) return;
+      const targetId = userToBlock.userId;
+      const blockRef = collection(db, 'block');
+      const blockDocRef = doc(blockRef, currentUserData.uid);
+      const blockQ = query(blockRef, where(documentId(), '==', currentUserData.uid));
+      const blockSnap = await getDocs(blockQ);
+      if (blockSnap.empty) {
+        await setDoc(blockDocRef, { blockedBy: [targetId] });
+      } else {
+        const currentData = blockSnap.docs[0].data();
+        const updated = [...(currentData.blockedBy || []), targetId];
+        await updateDoc(blockDocRef, { blockedBy: updated });
+      }
+      setBlockedUsers(prev => new Set(prev).add(targetId));
+      toast.success('Blocked this user');
+      setShowBlockConfirm(false);
+      setUserToBlock(null);
+    } catch (e) {
+      console.error('confirm block failed', e);
+      toast.error('Failed to block user');
+    }
+  };
+
   if (loading) {
     return (
       <div className="profile-loading">
@@ -145,6 +297,8 @@ export default function ProfileDetails() {
   const age = userData.age || calculateAge(userData.dateOfBirth) || 'N/A';
   const height = formatHeight(userData.height);
   const profileImages = userData.profileImageUrls || ['/images/profile_badge.png'];
+  const isFavorited = favorites.has(userData.userId || userData.id);
+  const isBlocked = blockedUsers.has(userData.userId || userData.id);
 
   return (
     <div className="profile-details-container">
@@ -217,6 +371,44 @@ export default function ProfileDetails() {
 
           {/* Right Side - User Details */}
           <div className="profile-right">
+            {/* Action buttons aligned right */}
+            <div className="profile-actions-right">
+              <button 
+                className="action-btn reject-btn" 
+                onClick={handleBlockToggle}
+                title={isBlocked ? 'Unblock' : 'Block'}
+              >
+                <img 
+                  src="/images/Reject.png" 
+                  alt={isBlocked ? 'Unblock' : 'Block'} 
+                  className="action-icon" 
+                  style={{ opacity: isBlocked ? 0.5 : 1 }}
+                />
+              </button>
+              <button 
+                className="action-btn favorite-btn"
+                onClick={handleFavoriteToggle}
+                title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+              >
+                <img 
+                  src={isFavorited ? '/images/Heart_like.png' : '/images/Heart_unlike.png'} 
+                  alt={isFavorited ? 'Favorited' : 'Favorite'} 
+                  className="action-icon" 
+                />
+              </button>
+              <button 
+                className="action-btn superlike-btn" 
+                onClick={handleShortlistToggle}
+                title="Shortlist">
+                <img src="/images/Star.png" alt="Shortlist" className="action-icon" />
+              </button>
+              <button 
+                className="action-btn message-btn"
+                onClick={() => navigate(`/chat/${userData.userId || userData.id}`)}
+                title="Message">
+                <img src="/images/Chat.png" alt="Message" className="action-icon" />
+              </button>
+            </div>
             {/* Basic Info */}
             <section className="info-section">
               <h2 className="section-title">Basic Info</h2>
@@ -272,6 +464,43 @@ export default function ProfileDetails() {
           </div>
         </div>
       </div>
+      
+      {/* Block Confirmation Dialog */}
+      {showBlockConfirm && (
+        <div className="block-confirm-overlay" onClick={() => setShowBlockConfirm(false)}>
+          <div className="block-confirm-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="block-confirm-icon">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="#FF2B45"/>
+              </svg>
+            </div>
+            <div className="block-confirm-content">
+              <p className="block-confirm-title">Do you want to block</p>
+              <p className="block-confirm-name">{userToBlock?.userName || 'this user'}?</p>
+              <p className="block-confirm-description">
+                You won't be able to send or receive messages from this user. You can unblock them anytime.
+              </p>
+            </div>
+            <div className="block-confirm-actions">
+              <button 
+                className="block-confirm-cancel"
+                onClick={() => {
+                  setShowBlockConfirm(false);
+                  setUserToBlock(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="block-confirm-block"
+                onClick={confirmBlock}
+              >
+                Block
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

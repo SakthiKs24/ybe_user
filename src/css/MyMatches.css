@@ -16,12 +16,11 @@
     margin-bottom: 30px;
   }
   
-  .matches-grid-cards {
-    display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
-    padding: 20px 0;
-  }
+.matches-grid-cards {
+  column-count: 4;
+  column-gap: 24px;
+  padding: 20px 0;
+}
   
   .match-profile-card {
     background: white;
@@ -31,6 +30,9 @@
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     position: relative;
+  display: inline-block;
+  width: 100%;
+  margin: 0 0 24px;
   }
   
   .match-profile-card:hover {
@@ -41,10 +43,21 @@
   .match-image-wrapper {
     position: relative;
     width: 100%;
-  padding-top: 133%; /* 3:4 aspect ratio */
+  padding-top: 133%; /* default 3:4 aspect ratio */
     overflow: hidden;
   }
   
+/* Zig-zag variable sizes */
+.match-profile-card.size-s .match-image-wrapper {
+  padding-top: 110%;
+}
+.match-profile-card.size-m .match-image-wrapper {
+  padding-top: 133%;
+}
+.match-profile-card.size-l .match-image-wrapper {
+  padding-top: 155%;
+}
+
   .match-profile-image {
     position: absolute;
     top: 0;
@@ -385,15 +398,15 @@
   /* Responsive Design */
   @media (max-width: 1200px) {
     .matches-grid-cards {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 18px;
+      column-count: 3;
+      column-gap: 18px;
     }
   }
   
   @media (max-width: 768px) {
     .matches-grid-cards {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+      column-count: 2;
+      column-gap: 12px;
     }
   
     .my-matches-title {

@@ -559,16 +559,18 @@ export default function MyMatches() {
           {allMatches.length > 0 ? (
             allMatches
               .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
-              .map((user) => {
+              .map((user, index) => {
               const age = user.age || calculateAge(user.dateOfBirth) || 'N/A';
               const profileImage = user.profileImageUrls?.[0] || '/images/profile_badge.png';
               const isOnline = user.onlineStatus === true;
               const isFavorited = favorites.has(user.userId || user.id);
+              const sizePattern = ['size-m', 'size-s', 'size-l', 'size-m', 'size-s', 'size-l'];
+              const sizeClass = sizePattern[index % sizePattern.length];
 
               return (
                 <div 
                   key={user.id} 
-                  className="match-profile-card"
+                  className={`match-profile-card ${sizeClass}`}
                   onClick={() => handleCardClick(user)}
                 >
                   <div className="match-image-wrapper">
