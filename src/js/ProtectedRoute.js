@@ -66,9 +66,9 @@ export function PublicRoute({ children }) {
     );
   }
 
-  // If logged in, redirect to dashboard
+  // If logged in, redirect to profile setup (avoid dashboard redirect)
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/profile-setup" replace />;
   }
 
   return children;
