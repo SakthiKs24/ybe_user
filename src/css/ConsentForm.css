@@ -1,0 +1,82 @@
+.consent-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFE8F5 100%);
+}
+.consent-header {
+  padding: 16px 24px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.logo-img {
+  height: 36px;
+}
+.consent-container {
+  max-width: 680px;
+  margin: 40px auto;
+  padding: 0 16px;
+}
+.consent-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 80px 24px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  position: relative;
+  border: 2px solid #FF027D;
+}
+.consent-illustration {
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
+  margin-bottom: 12px;
+}
+.consent-icon {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  opacity: 0.95;
+}
+.consent-back-btn {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  border: none;
+  background: transparent;
+  font-size: 30px;
+  cursor: pointer;
+}
+.consent-title {
+  text-align: center;
+  margin: 8px 0 16px 0;
+  font-size: 22px;
+  color: #222;
+}
+.consent-content {
+  margin-bottom: 24px;
+}
+.consent-content p {
+  color: #444;
+  line-height: 1.6;
+  text-align: center;
+  margin: 0 0 14px 0;
+}
+.consent-accept-btn {
+  display: block;
+  width: 200px;
+  margin: 0 auto;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FF003F 0%, #FF5300 100%);
+  color: #fff;
+  padding: 12px 20px;
+  font-weight: 700;
+  cursor: pointer;
+}
+@media (max-width: 480px) {
+  .consent-icon {
+    width: 96px;
+    height: 96px;
+  }
+  .consent-title {
+    font-size: 20px;
+  }
+}

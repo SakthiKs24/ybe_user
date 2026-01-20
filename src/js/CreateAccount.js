@@ -87,6 +87,14 @@ export default function CreateAccount() {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  
+  // Require consent acceptance before accessing this page
+  React.useEffect(() => {
+    const accepted = sessionStorage.getItem('consentAccepted') === 'true';
+    if (!accepted) {
+      navigate('/consent', { replace: true });
+    }
+  }, [navigate]);
   const getMaxDate = () => {
     const today = new Date();
     const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());

@@ -15,6 +15,7 @@ import Favorites from './js/Favorites';
 import PaymentSuccess from './js/PaymentSuccess';
 import PaymentCancel from './js/PaymentCancel';
 import PrivacyPolicy from './js/PrivacyPolicy';
+import ConsentForm from './js/ConsentForm';
 import { ProtectedRoute, PublicRoute } from './js/ProtectedRoute';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -36,6 +37,7 @@ function App() {
             </PublicRoute>
           } 
         />
+        <Route path="/consent" element={<ConsentForm />} />
         
         {/* Protected Routes - Only accessible when logged in */}
         <Route 

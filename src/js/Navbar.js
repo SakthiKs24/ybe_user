@@ -6,7 +6,7 @@ export default function Navbar({ onLoginClick, currentUser }) {
   const navigate = useNavigate();
 
   const handleSignupClick = () => {
-    navigate('/create-account');
+    navigate('/consent');
   };
 
   const handleDashboardClick = () => {
