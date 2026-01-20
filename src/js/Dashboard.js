@@ -30,6 +30,26 @@ export default function Dashboard() {
   const dropdownRef = useRef(null);
   const [activeTab, setActiveTab] = useState('new-matches');
   const [expandedBios, setExpandedBios] = useState({});
+  
+  // Per-load shuffling utilities (new order on each page load)
+  const shuffleSeedRef = useRef(Math.floor(Math.random() * 4294967295));
+  const mulberry32 = (a) => {
+    return function() {
+      let t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+  };
+  const shuffleArray = (arr) => {
+    const rng = mulberry32(shuffleSeedRef.current);
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  };
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -43,7 +63,6 @@ export default function Dashboard() {
     lookingFor: 'All',
     education: 'All',
     religion: 'All',
-    interestedIn: 'Women',
     sortBy: 'High Match',
     age: [20, 60],
     maxDistance: [0, 500], // 0 to 500 km
@@ -232,30 +251,11 @@ export default function Dashboard() {
       
       try {
         const usersRef = collection(db, 'users');
-        let userQuery;
-        
-        // Build query based on gender preference and profileDiscovery
-        const genderPreference = filters.interestedIn;
-        
-        if (genderPreference === 'Men') {
-          userQuery = query(
-            usersRef,
-            where('profileDiscovery', '==', true),
-            where('userGender', '==', 'Male')
-          );
-        } else if (genderPreference === 'Women') {
-          userQuery = query(
-            usersRef,
-            where('profileDiscovery', '==', true),
-            where('userGender', '==', 'Female')
-          );
-        } else {
-          // Both - only filter by profileDiscovery
-          userQuery = query(
-            usersRef,
-            where('profileDiscovery', '==', true)
-          );
-        }
+        // Fetch all discoverable users; exclude current user later
+        const userQuery = query(
+          usersRef,
+          where('profileDiscovery', '==', true)
+        );
         
         const querySnapshot = await getDocs(userQuery);
         
@@ -342,8 +342,10 @@ export default function Dashboard() {
           return !blockedBy.includes(userData.uid);
         });
         
-        setAllUsers(filteredUsers);
-        setFilteredUsers(filteredUsers);
+        // Shuffle to randomize order
+        const randomized = shuffleArray(filteredUsers);
+        setAllUsers(randomized);
+        setFilteredUsers(randomized);
       } catch (error) {
         console.error('Error fetching users:', error);
         toast.error('Failed to load users');
@@ -353,7 +355,7 @@ export default function Dashboard() {
     };
 
     fetchUsers();
-  }, [userData?.uid, filters.interestedIn]);
+  }, [userData?.uid]);
 
   // Apply filters
   useEffect(() => {
@@ -475,7 +477,8 @@ export default function Dashboard() {
         });
       }
 
-      setFilteredUsers(filtered);
+      // Randomize the final order so the first profile varies
+      setFilteredUsers(shuffleArray(filtered));
       setFilterLoading(false);
     }, 100);
 
@@ -767,6 +770,7 @@ export default function Dashboard() {
         <aside className="filters-sidebar">
           <h4 className="sidebar-title">New matches</h4>
           
+        
           <div className="filter-section">
             <label className="filter-label">Location</label>
             <select 

@@ -8,6 +8,8 @@ const SubHeader = ({ activeTab, setActiveTab }) => {
     setActiveTab(tabName);
     if (tabName === 'new-matches' && activeTab !== 'new-matches') {
       navigate('/dashboard');
+    } else if (tabName === 'my-matches' && activeTab !== 'my-matches') {
+      navigate('/my-matches');
     } else if (tabName === 'favourites' && activeTab !== 'favourites') {
       navigate('/favorites');
     }
@@ -20,6 +22,13 @@ const SubHeader = ({ activeTab, setActiveTab }) => {
         onClick={() => handleTabClick('new-matches')}
       >
         New Matches
+      </button>
+      
+      <button 
+        className={`tab-btn ${activeTab === 'my-matches' ? 'active' : ''}`}
+        onClick={() => handleTabClick('my-matches')}
+      >
+        My Matches
       </button>
       
       <button 

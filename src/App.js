@@ -7,6 +7,7 @@ import ProfileSetup from './js/ProfileSetup';
 import Upgrade from './js/Upgrade';
 import ChatList from './js/ChatList';
 import ChatDetail from './js/ChatDetail';
+import MyMatches from './js/MyMatches';
 import ProfileDetails from './js/ProfileDetails';
 import FavoriteCategory from './js/FavoriteCategory';
 import Profile from './js/Profile';
@@ -98,6 +99,14 @@ function App() {
           element={
             <ProtectedRoute>
               <FavoriteCategory />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/my-matches" 
+          element={
+            <ProtectedRoute>
+              <MyMatches />
             </ProtectedRoute>
           } 
         />
