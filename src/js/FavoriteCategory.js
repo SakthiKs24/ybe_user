@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, query, where, doc, updateDoc, addDoc, deleteDoc, documentId, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, getDoc, query, where, doc, updateDoc, addDoc, deleteDoc, documentId, onSnapshot } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import Header from './Header';
 import SubHeader from './SubHeader';
+import Upgrade from './Upgrade';
 import '../css/FavoriteCategory.css';
 
 export default function FavoriteCategory() {
@@ -18,6 +19,8 @@ export default function FavoriteCategory() {
   const [categoryUsers, setCategoryUsers] = useState([]);
   const [favorites, setFavorites] = useState(new Set());
   const dropdownRef = useRef(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [profileViewLimit, setProfileViewLimit] = useState(null);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -146,6 +149,29 @@ export default function FavoriteCategory() {
 
     fetchFavorites();
   }, [userData?.uid]);
+
+  // Fetch global daily profile view limit from 'users/RegisteredUsers'
+  useEffect(() => {
+    const fetchDailyLimit = async () => {
+      try {
+        const cfgRef = doc(db, 'users', 'RegisteredUsers');
+        const snap = await getDoc(cfgRef);
+        if (snap.exists()) {
+          const data = snap.data() || {};
+          const limit = data.dailyLimit && typeof data.dailyLimit.profileViewCount === 'number'
+            ? data.dailyLimit.profileViewCount
+            : null;
+          setProfileViewLimit(limit);
+        } else {
+          setProfileViewLimit(null);
+        }
+      } catch (e) {
+        console.error('Failed to fetch daily limit config', e);
+        setProfileViewLimit(null);
+      }
+    };
+    fetchDailyLimit();
+  }, []);
 
   // Fetch category users (matching Flutter logic - using same filtering as Favorites.js)
   useEffect(() => {
@@ -437,8 +463,48 @@ export default function FavoriteCategory() {
     return age;
   };
 
-  const handleProfileClick = (userId) => {
-    navigate(`/profile/${userId}`);
+  const handleProfileClick = async (targetUserId) => {
+    try {
+      const planName = userData?.subscriptions?.planName || 'Free';
+      if (String(planName).toLowerCase() !== 'free') {
+        navigate(`/profile/${targetUserId}`);
+        return;
+      }
+      const maxPerDay = typeof profileViewLimit === 'number' ? profileViewLimit : 5;
+      if (!userData?.userId) {
+        navigate(`/profile/${targetUserId}`);
+        return;
+      }
+      const today = new Date().toISOString().split('T')[0];
+      const currentDaily = userData.dailyLimit || {};
+      const isNewDay = currentDaily.date !== today;
+      const usedCount = isNewDay ? 0 : (currentDaily.profileViewCount || 0);
+      if (usedCount >= maxPerDay) {
+        setShowUpgradeModal(true);
+        return;
+      }
+      // Update daily counter
+      const newCount = usedCount + 1;
+      const userDocRef = doc(db, 'users', userData.userId);
+      await updateDoc(userDocRef, {
+        'dailyLimit.date': today,
+        'dailyLimit.profileViewCount': newCount,
+      });
+      // Update local state
+      setUserData(prev => ({
+        ...prev,
+        dailyLimit: {
+          ...prev?.dailyLimit,
+          date: today,
+          profileViewCount: newCount,
+          swipeCount: prev?.dailyLimit?.swipeCount || 0
+        }
+      }));
+      navigate(`/profile/${targetUserId}`);
+    } catch (e) {
+      console.error('Failed enforcing daily profile view limit (category)', e);
+      navigate(`/profile/${targetUserId}`);
+    }
   };
 
   const handleChatClick = (e, userId) => {
@@ -694,6 +760,17 @@ export default function FavoriteCategory() {
                 Yes, Sure
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {showUpgradeModal && (
+        <div className="modal-overlay" onClick={() => setShowUpgradeModal(false)}>
+          <div className="modal-content upgrade-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="upgrade-modal-header">
+              <h3 className="upgrade-modal-title">You’ve Reached Today’s Limit</h3>
+              <p className="upgrade-modal-subtitle">Upgrade your plan to continue viewing profiles.</p>
+            </div>
+            <Upgrade embedded />
           </div>
         </div>
       )}

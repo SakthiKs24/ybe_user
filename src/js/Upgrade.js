@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 import { createCheckoutSession } from './services/stripeService';
 import '../css/Upgrade.css';
 
-export default function Upgrade() {
+export default function Upgrade({ embedded = false }) {
   const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -517,6 +517,49 @@ export default function Upgrade() {
     );
   }
 
+  if (embedded) {
+    return (
+      <div className="upgrade-embedded">
+        <div className="plans-grid">
+          {plans.map((plan, index) => {
+            const type = plan.type || getPlanType(plan.name);
+            const displayName = getPlanDisplayName(plan.name, type);
+            const planImage = type === 'plus' ? '/images/ybe_plus.png' 
+              : type === 'premium' ? '/images/ybe_gold.png' 
+              : '/images/ybe_platinum.png';
+            return (
+              <div key={index} className={`plan-card plan-${type}`}>
+                <div className={`plan-header header-${type}`}>
+                  <img src={planImage} alt={displayName} className="plan-icon-large" />
+                </div>
+                <div className="plan-body" style={{ padding: '16px' }}>
+                  <div className={`feature-title title-${type}`} style={{ marginBottom: 8 }}>
+                    {displayName}
+                  </div>
+                  <div className="price-line" style={{ fontWeight: 600 }}>
+                    Starting at {currency.symbol}{plan.cost}
+                  </div>
+                </div>
+                <button 
+                  className="plan-button"
+                  onClick={() => handlePayment(plan)}
+                  disabled={paymentLoading === plan.name || isPlanSubscribed(plan)}
+                >
+                  {paymentLoading === plan.name 
+                    ? 'Processing...' 
+                    : isPlanSubscribed(plan)
+                    ? 'Subscribed'
+                    : 'Upgrade'
+                  }
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="upgrade-container">
       {/* Header */}
@@ -524,10 +567,7 @@ export default function Upgrade() {
         <div className="header-left">
           <img src="/images/logo.png" alt="Ybe Logo" className="header-logo" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }} />
           <nav className="header-nav">
-            {/* <a href="#" className="nav-link">Matches</a> */}
             <a href="/dashboard" className="nav-link" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>Matches</a>
-
-            {/* <a href="#" className={`nav-link ${currentPage === 'dashboard' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>Matches</a> */}
             <a href="/chat" className="nav-link" onClick={(e) => { e.preventDefault(); navigate('/chat'); }}>Messages</a>
           </nav>
         </div>
@@ -557,16 +597,12 @@ export default function Upgrade() {
             const type = plan.type || getPlanType(plan.name);
             const features = planFeatures[type] || planFeatures.plus;
             const displayName = getPlanDisplayName(plan.name, type);
-            const badge = getPlanBadge(type);
-
             const planImage = type === 'plus' ? '/images/ybe_plus.png' 
               : type === 'premium' ? '/images/ybe_gold.png' 
               : '/images/ybe_platinum.png';
-            
             const planTitle = type === 'plus' ? 'Upgrade to Plus' 
               : type === 'premium' ? 'Upgrade to Premium'
               : 'Upgrade to Gold';
-
             return (
               <div key={index} className={`plan-card plan-${type}`}>
                 <div className={`plan-header header-${type}`}>

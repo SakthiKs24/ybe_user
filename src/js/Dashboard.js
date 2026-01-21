@@ -6,6 +6,7 @@ import { collection, getDocs, getDoc, query, where, documentId, doc, updateDoc, 
 import { toast } from 'react-toastify';
 import Header from './Header';
 import SubHeader from './SubHeader';
+import Upgrade from './Upgrade';
 import '../css/Dashboard.css';
 
 export default function Dashboard() {
@@ -32,6 +33,8 @@ export default function Dashboard() {
   const dropdownRef = useRef(null);
   const [activeTab, setActiveTab] = useState('new-matches');
   const [expandedBios, setExpandedBios] = useState({});
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [profileViewLimit, setProfileViewLimit] = useState(null);
   
   // Per-load shuffling utilities (new order on each page load)
   const shuffleSeedRef = useRef(Math.floor(Math.random() * 4294967295));
@@ -197,6 +200,29 @@ export default function Dashboard() {
 
     return () => unsubscribe();
   }, [navigate]);
+
+  // Fetch global daily profile view limit from 'users/RegisteredUsers'
+  useEffect(() => {
+    const fetchDailyLimit = async () => {
+      try {
+        const cfgRef = doc(db, 'users', 'RegisteredUsers');
+        const snap = await getDoc(cfgRef);
+        if (snap.exists()) {
+          const data = snap.data() || {};
+          const limit = data.dailyLimit && typeof data.dailyLimit.profileViewCount === 'number'
+            ? data.dailyLimit.profileViewCount
+            : null;
+          setProfileViewLimit(limit);
+        } else {
+          setProfileViewLimit(null);
+        }
+      } catch (e) {
+        console.error('Failed to fetch daily limit config', e);
+        setProfileViewLimit(null);
+      }
+    };
+    fetchDailyLimit();
+  }, []);
 
   // Fetch favorites
   useEffect(() => {
@@ -802,9 +828,52 @@ export default function Dashboard() {
     return `${ft}'${inch}"`;
   };
 
-  // Handle profile navigation
-  const handleProfileClick = (userId) => {
-    navigate(`/profile/${userId}`);
+  // Handle profile navigation with daily limit enforcement for Free plan
+  const handleProfileClick = async (targetUserId) => {
+    try {
+      const planName = userData?.subscriptions?.planName || 'Free';
+      if (String(planName).toLowerCase() !== 'free') {
+        navigate(`/profile/${targetUserId}`);
+        return;
+      }
+      // If limit not configured, default deny additional views after 5 per day
+      const maxPerDay = typeof profileViewLimit === 'number' ? profileViewLimit : 5;
+      if (!userData?.userId) {
+        navigate(`/profile/${targetUserId}`);
+        return;
+      }
+      const today = new Date().toISOString().split('T')[0];
+      const currentDaily = userData.dailyLimit || {};
+      const isNewDay = currentDaily.date !== today;
+      const usedCount = isNewDay ? 0 : (currentDaily.profileViewCount || 0);
+      if (usedCount >= maxPerDay) {
+        setShowUpgradeModal(true);
+        return;
+      }
+      // Update daily counter in Firestore
+      const newCount = usedCount + 1;
+      const userDocRef = doc(db, 'users', userData.userId);
+      await updateDoc(userDocRef, {
+        'dailyLimit.date': today,
+        'dailyLimit.profileViewCount': newCount,
+        // keep swipeCount as is if present; do not overwrite
+      });
+      // Update local state to avoid refetch
+      setUserData(prev => ({
+        ...prev,
+        dailyLimit: {
+          ...prev?.dailyLimit,
+          date: today,
+          profileViewCount: newCount,
+          swipeCount: prev?.dailyLimit?.swipeCount || 0
+        }
+      }));
+      navigate(`/profile/${targetUserId}`);
+    } catch (e) {
+      console.error('Failed enforcing daily profile view limit', e);
+      // Fallback: allow navigation
+      navigate(`/profile/${targetUserId}`);
+    }
   };
 
   if (loading) {
@@ -1348,6 +1417,17 @@ export default function Dashboard() {
                 Block
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {showUpgradeModal && (
+        <div className="modal-overlay" onClick={() => setShowUpgradeModal(false)}>
+          <div className="modal-content upgrade-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="upgrade-modal-header">
+              <h3 className="upgrade-modal-title">You’ve Reached Today’s Limit</h3>
+              <p className="upgrade-modal-subtitle">Upgrade your plan to continue viewing profiles.</p>
+            </div>
+            <Upgrade embedded />
           </div>
         </div>
       )}
