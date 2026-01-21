@@ -25,6 +25,8 @@ export default function Dashboard() {
   const [uniqueReligions, setUniqueReligions] = useState([]);
   const [favorites, setFavorites] = useState(new Set());
   const [blockedUsers, setBlockedUsers] = useState(new Set());
+  const [shortlistedUsers, setShortlistedUsers] = useState(new Set());
+  const [messagedUsers, setMessagedUsers] = useState(new Set());
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
   const [userToBlock, setUserToBlock] = useState(null);
   const dropdownRef = useRef(null);
@@ -241,6 +243,61 @@ export default function Dashboard() {
 
     fetchBlockedUsers();
   }, [userData?.uid]);
+
+  // Fetch shortlisted users for current user
+  useEffect(() => {
+    const fetchShortlisted = async () => {
+      if (!userData?.userId) return;
+      try {
+        const shortlistRef = collection(db, 'shortlist');
+        const q = query(shortlistRef, where('shortlistedBy', '==', userData.userId));
+        const snap = await getDocs(q);
+        const setIds = new Set();
+        snap.forEach(d => {
+          const v = d.data()?.shortlistedUser;
+          if (v) setIds.add(String(v));
+        });
+        setShortlistedUsers(setIds);
+      } catch (e) {
+        console.error('Error fetching shortlisted users:', e);
+      }
+    };
+    fetchShortlisted();
+  }, [userData?.userId]);
+
+  // Fetch users with whom the current user has chats (to show filled message icon)
+  useEffect(() => {
+    const fetchMessaged = async () => {
+      if (!userData?.userId) return;
+      try {
+        const chatsRef = collection(db, 'chats');
+        let q;
+        try {
+          q = query(chatsRef, where('chatUserData.participants', 'array-contained-in', [userData.userId]));
+        } catch (_) {
+          // fallback for environments without array-contained-in (use array-contains and filter client-side)
+          q = query(chatsRef, where('chatUserData.participants', 'array-contains', userData.userId));
+        }
+        const snap = await getDocs(q);
+        const setIds = new Set();
+        snap.forEach(docSnap => {
+          const data = docSnap.data() || {};
+          const parts = (data.chatUserData && data.chatUserData.participants) || data.participants || [];
+          if (Array.isArray(parts)) {
+            parts.forEach(p => {
+              if (String(p) !== String(userData.userId)) {
+                setIds.add(String(p));
+              }
+            });
+          }
+        });
+        setMessagedUsers(setIds);
+      } catch (e) {
+        console.error('Error fetching messaged users:', e);
+      }
+    };
+    fetchMessaged();
+  }, [userData?.userId]);
 
   // Fetch all users excluding current user and blocked users
   useEffect(() => {
@@ -581,6 +638,11 @@ export default function Dashboard() {
         });
         
         toast.success('Shortlist removed!');
+        setShortlistedUsers(prev => {
+          const s = new Set(prev);
+          s.delete(String(userId));
+          return s;
+        });
       } else {
         // If document doesn't exist, create it (shortlist)
         const customDocId = `${userData.userId}-${generateRandomId()}`;
@@ -600,6 +662,7 @@ export default function Dashboard() {
         });
         
         toast.success('User shortlisted!');
+        setShortlistedUsers(prev => new Set(prev).add(String(userId)));
       }
     } catch (error) {
       console.error('Error handling shortliste:', error);
@@ -1011,8 +1074,11 @@ export default function Dashboard() {
                       ? `${user.currentPosition.city},${user.settledCountry}` 
                       : user.settledCountry || 'N/A';
                     
-                    const isFavorited = favorites.has(user.userId || user.id);
-                    const isBlocked = blockedUsers.has(user.userId || user.id);
+                    const uidStr = String(user.userId || user.id);
+                    const isFavorited = favorites.has(uidStr);
+                    const isBlocked = blockedUsers.has(uidStr);
+                    const isShortlisted = shortlistedUsers.has(uidStr);
+                    const hasMessaged = messagedUsers.has(uidStr);
                     
                     // Read more functionality for bio
                     const userId = user.userId || user.id;
@@ -1132,8 +1198,7 @@ export default function Dashboard() {
                               <img 
                                 src="/images/Reject.png" 
                                 alt={isBlocked ? 'Unblock' : 'Block'} 
-                                className="action-icon" 
-                                style={{ opacity: isBlocked ? 0.5 : 1 }}
+                                className={`action-icon ${isBlocked ? 'active' : 'inactive'}`} 
                               />
                             </button>
                             <button 
@@ -1144,14 +1209,18 @@ export default function Dashboard() {
                               <img 
                                 src={isFavorited ? '/images/Heart_like.png' : '/images/Heart_unlike.png'} 
                                 alt={isFavorited ? 'Favorited' : 'Favorite'} 
-                                className="action-icon" 
+                                className={`action-icon ${isFavorited ? 'active' : 'inactive'}`} 
                               />
                             </button>
                             <button 
                               className="action-btn superlike-btn" 
                               onClick={(e) => handleSuperlike(e, user.userId || user.id)}
                               title="Shortlist">
-                              <img src="/images/Star.png" alt="Shortlist" className="action-icon" />
+                              <img 
+                                src="/images/Star.png" 
+                                alt="Shortlist" 
+                                className={`action-icon ${isShortlisted ? 'active' : 'inactive'}`} 
+                              />
                             </button>
                             <button 
                               className="action-btn message-btn"
@@ -1160,7 +1229,11 @@ export default function Dashboard() {
                                 navigate(`/chat/${user.userId || user.id}`);
                               }}
                               title="Message">
-                              <img src="/images/Chat.png" alt="Message" className="action-icon" />
+                              <img 
+                                src="/images/Chat.png" 
+                                alt="Message" 
+                                className={`action-icon ${hasMessaged ? 'active' : 'inactive'}`} 
+                              />
                             </button>
                           </div>
                         </div>

@@ -19,6 +19,8 @@ export default function ProfileDetails() {
   const [blockedUsers, setBlockedUsers] = useState(new Set());
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
   const [userToBlock, setUserToBlock] = useState(null);
+  const [isShortlisted, setIsShortlisted] = useState(false);
+  const [hasMessaged, setHasMessaged] = useState(false);
 
   // Fetch current logged-in user data for header
   useEffect(() => {
@@ -104,6 +106,44 @@ export default function ProfileDetails() {
       fetchUserData();
     }
   }, [userId, navigate]);
+
+  // Derive shortlist and message states for this profile
+  useEffect(() => {
+    const deriveStates = async () => {
+      try {
+        if (!currentUserData?.userId || !userData?.userId && !userData?.id) return;
+        const targetId = userData.userId || userData.id;
+        // Check shortlist
+        const shortlistRef = collection(db, 'shortlist');
+        const qS = query(shortlistRef, where('shortlistedBy', '==', currentUserData.userId), where('shortlistedUser', '==', targetId));
+        const sSnap = await getDocs(qS);
+        setIsShortlisted(!sSnap.empty);
+        // Check existing chat
+        const chatsRef = collection(db, 'chats');
+        let qChats;
+        try {
+          // array-contained-in is not widely available; fallback below covers
+          qChats = query(chatsRef, where('chatUserData.participants', 'array-contains', currentUserData.userId));
+        } catch (_) {
+          qChats = query(chatsRef, where('chatUserData.participants', 'array-contains', currentUserData.userId));
+        }
+        const cSnap = await getDocs(qChats);
+        let exists = false;
+        cSnap.forEach(docSnap => {
+          const data = docSnap.data() || {};
+          const parts = (data.chatUserData && data.chatUserData.participants) || data.participants || [];
+          if (Array.isArray(parts) && parts.some(p => String(p) === String(targetId))) {
+            exists = true;
+          }
+        });
+        setHasMessaged(exists);
+      } catch (e) {
+        // Non-blocking
+        console.warn('deriveStates failed', e);
+      }
+    };
+    deriveStates();
+  }, [currentUserData, userData]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -204,6 +244,7 @@ export default function ProfileDetails() {
           await deleteDoc(doc(db, 'shortlist', ds.id));
         });
         toast.success('Shortlist removed!');
+        setIsShortlisted(false);
       } else {
         const customDocId = `${currentUserData.userId}-${generateRandomId()}`;
         const dref = doc(collection(db, 'shortlist'), customDocId);
@@ -212,6 +253,7 @@ export default function ProfileDetails() {
           shortlistedUser: targetId,
         });
         toast.success('User shortlisted!');
+        setIsShortlisted(true);
       }
     } catch (e) {
       console.error('shortlist toggle failed', e);
@@ -381,8 +423,7 @@ export default function ProfileDetails() {
                 <img 
                   src="/images/Reject.png" 
                   alt={isBlocked ? 'Unblock' : 'Block'} 
-                  className="action-icon" 
-                  style={{ opacity: isBlocked ? 0.5 : 1 }}
+                  className={`action-icon ${isBlocked ? 'active' : 'inactive'}`} 
                 />
               </button>
               <button 
@@ -393,20 +434,23 @@ export default function ProfileDetails() {
                 <img 
                   src={isFavorited ? '/images/Heart_like.png' : '/images/Heart_unlike.png'} 
                   alt={isFavorited ? 'Favorited' : 'Favorite'} 
-                  className="action-icon" 
+                  className={`action-icon ${isFavorited ? 'active' : 'inactive'}`} 
                 />
               </button>
               <button 
                 className="action-btn superlike-btn" 
                 onClick={handleShortlistToggle}
                 title="Shortlist">
-                <img src="/images/Star.png" alt="Shortlist" className="action-icon" />
+                <img src="/images/Star.png" alt="Shortlist" className={`action-icon ${isShortlisted ? 'active' : 'inactive'}`} />
               </button>
               <button 
                 className="action-btn message-btn"
-                onClick={() => navigate(`/chat/${userData.userId || userData.id}`)}
+                onClick={() => {
+                  setHasMessaged(true);
+                  navigate(`/chat/${userData.userId || userData.id}`);
+                }}
                 title="Message">
-                <img src="/images/Chat.png" alt="Message" className="action-icon" />
+                <img src="/images/Chat.png" alt="Message" className={`action-icon ${hasMessaged ? 'active' : 'inactive'}`} />
               </button>
             </div>
             {/* Basic Info */}

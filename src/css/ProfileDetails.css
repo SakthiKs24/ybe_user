@@ -308,6 +308,18 @@
     object-fit: contain;
   }
   
+  /* Unfilled/filled states */
+  .action-icon.inactive {
+    filter: grayscale(1);
+    opacity: 0.5;
+    transition: filter 0.2s ease, opacity 0.2s ease;
+  }
+  .action-icon.active {
+    filter: none;
+    opacity: 1;
+    transition: filter 0.2s ease, opacity 0.2s ease;
+  }
+  
   .dot {
     width: 8px;
     height: 8px;
