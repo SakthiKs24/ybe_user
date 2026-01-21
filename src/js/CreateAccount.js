@@ -88,6 +88,7 @@ export default function CreateAccount() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   
+  
   // Require consent acceptance before accessing this page
   React.useEffect(() => {
     const accepted = sessionStorage.getItem('consentAccepted') === 'true';
@@ -156,6 +157,7 @@ export default function CreateAccount() {
     if (!formData.genderPreference) {
       newErrors.genderPreference = 'Please select gender preference';
     }
+    // Education and Day Job are collected in Profile Setup
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -608,6 +610,8 @@ export default function CreateAccount() {
               </div>
 
             </div>
+
+            {/* Highest Education & Day Job will be handled in Profile Setup */}
 
             <button
               onClick={handleSubmit}

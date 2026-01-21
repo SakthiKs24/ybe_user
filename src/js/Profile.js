@@ -91,6 +91,40 @@ export default function Profile() {
     "తెలుగు", "ತುಳು", "اردو", "ગુજરાતી"
   ];
 
+  // Standard options for Degree and Day Job (to support "Others" input)
+  const degreeOptions = [
+    "Doctorate",
+    "PhD",
+    "Masters",
+    "Bachelors",
+    "Associates",
+    "Trade School",
+    "High School"
+  ];
+  const dayJobOptions = [
+    "Doctor",
+    "Engineer",
+    "Teacher",
+    "Actor",
+    "Accountant",
+    "Archaeologist",
+    "Architect",
+    "Artist",
+    "Aviation Professional",
+    "Beautician",
+    "Chef",
+    "Nurse",
+    "IT Manager",
+    "Bank Job",
+    "Marketing Manager",
+    "Fashion Designer",
+    "Business owner",
+    "Advocate",
+    "Biomedical Engineer",
+    "Biologist",
+    "Professor"
+  ];
+
   // Countries
   const countries = [
     "Abu Dhabi", "Ahmedabad", "Auckland", "Bangkok", "Barcelona", "Berlin", 
@@ -742,53 +776,77 @@ export default function Profile() {
             <div className="form-group">
               <label className="form-label">Highest Education</label>
               <select
-                value={editMode ? formData.degree : userData?.degree || ''}
-                onChange={(e) => handleChange('degree', e.target.value)}
+                value={
+                  editMode
+                    ? (degreeOptions.includes(formData.degree) ? formData.degree : (formData.degree ? 'Others' : ''))
+                    : (degreeOptions.includes(userData?.degree || '') ? (userData?.degree || '') : 'Others')
+                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (!editMode) return;
+                  if (v === 'Others') {
+                    setFormData(prev => ({ ...prev, degree: '' }));
+                  } else {
+                    setFormData(prev => ({ ...prev, degree: v }));
+                  }
+                }}
                 className="form-input"
                 disabled={!editMode}
               >
                 <option value="">Select Degree</option>
-                <option value="Doctorate">Doctorate</option>
-                <option value="PhD">PhD</option>
-                <option value="Masters">Masters</option>
-                <option value="Bachelors">Bachelors</option>
-                <option value="Associates">Associates</option>
-                <option value="Trade School">Trade School</option>
-                <option value="High School">High School</option>
+                {degreeOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+                <option value="Others">Others</option>
               </select>
+              {editMode && (!degreeOptions.includes(formData.degree)) && (
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Enter your highest education"
+                  value={formData.degree}
+                  onChange={(e) => handleChange('degree', e.target.value)}
+                  style={{ marginTop: 8 }}
+                />
+              )}
             </div>
 
             <div className="form-group">
               <label className="form-label">Day Job</label>
               <select
-                value={editMode ? formData.dayJob : userData?.dayJob || ''}
-                onChange={(e) => handleChange('dayJob', e.target.value)}
+                value={
+                  editMode
+                    ? (dayJobOptions.includes(formData.dayJob) ? formData.dayJob : (formData.dayJob ? 'Others' : ''))
+                    : (dayJobOptions.includes(userData?.dayJob || '') ? (userData?.dayJob || '') : 'Others')
+                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (!editMode) return;
+                  if (v === 'Others') {
+                    setFormData(prev => ({ ...prev, dayJob: '' }));
+                  } else {
+                    setFormData(prev => ({ ...prev, dayJob: v }));
+                  }
+                }}
                 className="form-input"
                 disabled={!editMode}
               >
                 <option value="">Select Day Job</option>
-                <option value="Doctor">Doctor</option>
-                <option value="Engineer">Engineer</option>
-                <option value="Teacher">Teacher</option>
-                <option value="Actor">Actor</option>
-                <option value="Accountant">Accountant</option>
-                <option value="Archaeologist">Archaeologist</option>
-                <option value="Architect">Architect</option>
-                <option value="Artist">Artist</option>
-                <option value="Aviation Professional">Aviation Professional</option>
-                <option value="Beautician">Beautician</option>
-                <option value="Chef">Chef</option>
-                <option value="Nurse">Nurse</option>
-                <option value="IT Manager">IT Manager</option>
-                <option value="Bank Job">Bank Job</option>
-                <option value="Marketing Manager">Marketing Manager</option>
-                <option value="Fashion Designer">Fashion Designer</option>
-                <option value="Business owner">Business owner</option>
-                <option value="Advocate">Advocate</option>
-                <option value="Biomedical Engineer">Biomedical Engineer</option>
-                <option value="Biologist">Biologist</option>
-                <option value="Professor">Professor</option>
+                {dayJobOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+                <option value="Others">Others</option>
               </select>
+              {editMode && (!dayJobOptions.includes(formData.dayJob)) && (
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Enter your day job"
+                  value={formData.dayJob}
+                  onChange={(e) => handleChange('dayJob', e.target.value)}
+                  style={{ marginTop: 8 }}
+                />
+              )}
             </div>
 
             {editMode && (

@@ -53,6 +53,28 @@ export default function ProfileSetup() {
     }
   });
 
+  // Local flags to control "Others" input visibility in Step 4 selects
+  const [degreeOther, setDegreeOther] = useState(false);
+  const [dayJobOther, setDayJobOther] = useState(false);
+
+  useEffect(() => {
+    // Initialize flags if existing value is a custom one
+    const stdDegrees = [
+      "Doctorate","PhD","Masters","Bachelors","Associates","Trade School","High School"
+    ];
+    const stdJobs = [
+      "Doctor","Engineer","Teacher","Actor","Accountant","Archaeologist","Architect","Artist",
+      "Aviation Professional","Beautician","Chef","Nurse","IT Manager","Bank Job","Marketing Manager",
+      "Fashion Designer","Business owner","Advocate","Biomedical Engineer","Biologist","Professor"
+    ];
+    if (profileData.degree && !stdDegrees.includes(profileData.degree)) {
+      setDegreeOther(true);
+    }
+    if (profileData.dayJob && !stdJobs.includes(profileData.dayJob)) {
+      setDayJobOther(true);
+    }
+  }, []);
+
   // Height options
   const heightOptions = [];
   for (let ft = 4; ft <= 7; ft++) {
@@ -317,6 +339,40 @@ export default function ProfileSetup() {
                 "TV shows", "Gaming", "Music", "Live concerts", "Collecting items", "Volunteering", 
                 "Community service"]
   };
+
+  // Standard options for Education and Day Job (used to toggle "Others" input)
+  const degreeOptions = [
+    "Doctorate",
+    "PhD",
+    "Masters",
+    "Bachelors",
+    "Associates",
+    "Trade School",
+    "High School"
+  ];
+  const dayJobOptions = [
+    "Doctor",
+    "Engineer",
+    "Teacher",
+    "Actor",
+    "Accountant",
+    "Archaeologist",
+    "Architect",
+    "Artist",
+    "Aviation Professional",
+    "Beautician",
+    "Chef",
+    "Nurse",
+    "IT Manager",
+    "Bank Job",
+    "Marketing Manager",
+    "Fashion Designer",
+    "Business owner",
+    "Advocate",
+    "Biomedical Engineer",
+    "Biologist",
+    "Professor"
+  ];
 
   const handleChange = (field, value) => {
     setProfileData(prev => ({ ...prev, [field]: value }));
@@ -914,50 +970,73 @@ export default function ProfileSetup() {
                 <label className="form-label1">Highest Education</label>
                 <select
                   className="form-select"
-                  value={profileData.degree}
-                  onChange={(e) => handleChange('degree', e.target.value)}
+                  value={degreeOther ? 'Others' : (profileData.degree || '')}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === 'Others') {
+                      setDegreeOther(true);
+                      if (!profileData.degree || degreeOptions.includes(profileData.degree)) {
+                        handleChange('degree', '');
+                      }
+                    } else {
+                      setDegreeOther(false);
+                      handleChange('degree', v);
+                    }
+                  }}
                 >
                   <option value="">Select Degree</option>
-                  <option value="Doctorate">Doctorate</option>
-                  <option value="PhD">PhD</option>
-                  <option value="Masters">Masters</option>
-                  <option value="Bachelors">Bachelors</option>
-                  <option value="Associates">Associates</option>
-                  <option value="Trade School">Trade School</option>
-                  <option value="High School">High School</option>
+                  {degreeOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                  <option value="Others">Others</option>
                 </select>
+                {degreeOther && (
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Enter your highest education"
+                    value={profileData.degree}
+                    onChange={(e) => handleChange('degree', e.target.value)}
+                    style={{ marginTop: 8 }}
+                  />
+                )}
               </div>
 
               <div className="form-group">
                 <label className="form-label1">Day Job</label>
                 <select
                   className="form-select"
-                  value={profileData.dayJob}
-                  onChange={(e) => handleChange('dayJob', e.target.value)}
+                  value={dayJobOther ? 'Others' : (profileData.dayJob || '')}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === 'Others') {
+                      setDayJobOther(true);
+                      if (!profileData.dayJob || dayJobOptions.includes(profileData.dayJob)) {
+                        handleChange('dayJob', '');
+                      }
+                    } else {
+                      setDayJobOther(true === false); // set to false explicitly
+                      setDayJobOther(false);
+                      handleChange('dayJob', v);
+                    }
+                  }}
                 >
                   <option value="">Select Day Job</option>
-                  <option value="Doctor">Doctor</option>
-                  <option value="Engineer">Engineer</option>
-                  <option value="Teacher">Teacher</option>
-                  <option value="Actor">Actor</option>
-                  <option value="Accountant">Accountant</option>
-                  <option value="Archaeologist">Archaeologist</option>
-                  <option value="Architect">Architect</option>
-                  <option value="Artist">Artist</option>
-                  <option value="Aviation Professional">Aviation Professional</option>
-                  <option value="Beautician">Beautician</option>
-                  <option value="Chef">Chef</option>
-                  <option value="Nurse">Nurse</option>
-                  <option value="IT Manager">IT Manager</option>
-                  <option value="Bank Job">Bank Job</option>
-                  <option value="Marketing Manager">Marketing Manager</option>
-                  <option value="Fashion Designer">Fashion Designer</option>
-                  <option value="Business owner">Business owner</option>
-                  <option value="Advocate">Advocate</option>
-                  <option value="Biomedical Engineer">Biomedical Engineer</option>
-                  <option value="Biologist">Biologist</option>
-                  <option value="Professor">Professor</option>
+                  {dayJobOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                  <option value="Others">Others</option>
                 </select>
+                {dayJobOther && (
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Enter your day job"
+                    value={profileData.dayJob}
+                    onChange={(e) => handleChange('dayJob', e.target.value)}
+                    style={{ marginTop: 8 }}
+                  />
+                )}
               </div>
 
               <div className="form-group">
