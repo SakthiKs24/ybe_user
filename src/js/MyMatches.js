@@ -59,14 +59,19 @@ export default function MyMatches() {
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     }
   };
-  const shuffleArray = (arr) => {
-    const rng = mulberry32(shuffleSeedRef.current);
-    const copy = [...arr];
-    for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
+  // Stable per-load random key generator based on userId to avoid reshuffles on like
+  const stringHash32 = (str) => {
+    let h = 2166136261 >>> 0; // FNV-1a basis
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
     }
-    return copy;
+    return h >>> 0;
+  };
+  const stableRandomKeyForUser = (userId) => {
+    const seed = shuffleSeedRef.current ^ stringHash32(String(userId));
+    const rng = mulberry32(seed >>> 0);
+    return rng();
   };
 
   // Close dropdown when clicking outside
@@ -347,7 +352,6 @@ export default function MyMatches() {
         });
       };
 
-      addScore(likedPartnerId, 'liked');
       addScore(beingLikedPartnerId, 'beingLiked');
       addScore(shortListedPartnerId, 'shortlisted');
       addScore(sameProfessionPartnerId, 'sameProfession');
@@ -407,8 +411,17 @@ export default function MyMatches() {
           return bOnline - aOnline;
         });
 
-      // Randomize order to avoid seeing the same first profile every time
-      setAllMatches(shuffleArray(sortedUsers));
+      // Use stable per-load tie-break to avoid reshuffling on like toggles
+      const withStableKey = sortedUsers.map(u => ({
+        ...u,
+        _stableKey: stableRandomKeyForUser(u.userId)
+      }));
+      withStableKey.sort((a, b) => {
+        if (b._matchScore !== a._matchScore) return b._matchScore - a._matchScore;
+        // stable per-load random order within same score bucket
+        return a._stableKey - b._stableKey;
+      });
+      setAllMatches(withStableKey.map(({ _stableKey, ...rest }) => rest));
       setLoading(false);
     }, (error) => {
       console.error('Error fetching users:', error);
@@ -416,7 +429,7 @@ export default function MyMatches() {
     });
 
     return () => unsubscribe();
-  }, [userData?.userId, dataFetched, likedPartnerId, beingLikedPartnerId, shortListedPartnerId,
+  }, [userData?.userId, dataFetched, /* likedPartnerId removed to keep order stable on like/dislike */ beingLikedPartnerId, shortListedPartnerId,
       sameProfessionPartnerId, sameReligionPartnerId, sameDegreePartnerId,
       sameOriginCountryPartnerId, sameSettledCountryPartnerId, sameLocationPartnerId,
       sameMotherTonguePartnerId, sameStarPartnerId]);

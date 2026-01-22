@@ -110,8 +110,8 @@
 }
 
   .favorite-heart-btn .heart-icon {
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 35px;
     object-fit: contain;
   opacity: 0.9;
   }
@@ -349,9 +349,9 @@
   }
   
   .match-modal-title {
-    font-size: 40px;
-    margin: 8px 0 6px 0;
-    font-weight: 700;
+    font-size: 35px;
+    margin: 25px 0 6px 0;
+    font-weight: 600;
     color: #111111;
     font-family: 'Poppins';
   }
@@ -393,6 +393,7 @@
     color: #FF3716;
     font-weight: 600;
     cursor: pointer;
+    margin-top: 20px;
   }
   
   /* Responsive Design */

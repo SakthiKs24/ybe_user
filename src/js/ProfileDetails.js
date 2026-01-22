@@ -362,7 +362,7 @@ export default function ProfileDetails() {
             className="back-arrow-icon" onClick={() => navigate('/dashboard')}
           />
         </span>
-        ProfileDetails
+        Profile Details
 
         </button>
 
