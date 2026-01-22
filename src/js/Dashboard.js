@@ -297,13 +297,7 @@ export default function Dashboard() {
       if (!userData?.userId) return;
       try {
         const chatsRef = collection(db, 'chats');
-        let q;
-        try {
-          q = query(chatsRef, where('chatUserData.participants', 'array-contained-in', [userData.userId]));
-        } catch (_) {
-          // fallback for environments without array-contained-in (use array-contains and filter client-side)
-          q = query(chatsRef, where('chatUserData.participants', 'array-contains', userData.userId));
-        }
+        const q = query(chatsRef, where('chatUserData.participants', 'array-contains', userData.userId));
         const snap = await getDocs(q);
         const setIds = new Set();
         snap.forEach(docSnap => {
