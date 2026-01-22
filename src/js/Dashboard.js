@@ -338,6 +338,8 @@ export default function Dashboard() {
         
         // Map snapshot to users, exclude current user
         const users = [];
+        const currentGender = userData?.userGender;
+        const targetGender = currentGender === 'Female' ? 'Male' : currentGender === 'Male' ? 'Female' : null;
         const locationsSet = new Set();
         const languagesSet = new Set();
         const jobsSet = new Set();
@@ -348,6 +350,10 @@ export default function Dashboard() {
         querySnapshot.forEach((doc) => {
           if (doc.id !== userData.uid) {
             const userData = doc.data();
+            // Enforce opposite-gender filtering if we know current user's gender
+            if (targetGender && userData.userGender !== targetGender) {
+              return;
+            }
             users.push({
               id: doc.id,
               userId: doc.id,

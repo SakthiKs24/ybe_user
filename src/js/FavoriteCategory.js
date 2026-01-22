@@ -306,11 +306,16 @@ export default function FavoriteCategory() {
         const q = query(usersRef, where('profileDiscovery', '==', true));
         
         const unsubscribe = onSnapshot(q, (snapshot) => {
+          const currentGender = userData?.userGender;
+          const targetGender = currentGender === 'Female' ? 'Male' : currentGender === 'Male' ? 'Female' : null;
           const allDiscoverableUsers = snapshot.docs
             .filter(doc => {
               const data = doc.data();
               const blockedUsers = data.blockedUsers || [];
-              return doc.id !== userData.userId && !blockedUsers.includes(userData.userId);
+              if (doc.id === userData.userId) return false;
+              if (blockedUsers.includes(userData.userId)) return false;
+              if (targetGender && data.userGender !== targetGender) return false;
+              return true;
             })
             .map(doc => ({
               id: doc.id,
