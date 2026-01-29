@@ -113,6 +113,7 @@ const updateUserLocation = async (userId) => {
 export default function Login({ isOpen, onClose }) {
   const navigate = useNavigate();
   const [showPhoneLogin, setShowPhoneLogin] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -510,15 +511,37 @@ setLoadingEmail(true);
 
               <div className="form-group">
                 <label className="form-label">Password</label>
-                <input
-                  type="password"
-                  className="form-input"
-                  value={formData.password}
-                  onChange={(e) => handleChange('password', e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Enter your password"
-                  disabled={loadingEmail}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    className="form-input"
+                    value={formData.password}
+                    onChange={(e) => handleChange('password', e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Enter your password"
+                    disabled={loadingEmail}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(prev => !prev)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '14px',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '16px'
+                    }}
+                  >
+                    <img
+                      src={showPassword ? '/images/hidden.png' : '/images/show.png'}
+                      alt={showPassword ? 'Hide password' : 'Show password'}
+                      style={{ width: '20px', height: '20px' }}
+                    />
+                  </button>
+                </div>
               </div>
 
               <button
@@ -591,7 +614,7 @@ setLoadingEmail(true);
                     >
                       {COUNTRIES_DATA.map((c) => (
                         <option key={c.code} value={c.code}>
-                          {c.dial_code}
+                          {c.dial_code} - {c.code}
                         </option>
                       ))}
                     </select>

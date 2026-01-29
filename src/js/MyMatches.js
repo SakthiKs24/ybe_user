@@ -549,6 +549,58 @@ export default function MyMatches() {
     navigate(`/chat/${userId}`);
   };
 
+  const calculateMatchPercent = (otherUser) => {
+    if (!otherUser || !userData) return 0;
+    let matches = 0;
+    const totalCriteria = 5;
+
+    const sameReligion =
+      (userData.religion || '').toString().trim().toLowerCase() !== '' &&
+      (otherUser.religion || '').toString().trim().toLowerCase() !== '' &&
+      (userData.religion || '').toString().trim().toLowerCase() ===
+        (otherUser.religion || '').toString().trim().toLowerCase();
+    if (sameReligion) matches += 1;
+
+    const sameMotherTongue =
+      (userData.motherTongue || '').toString().trim().toLowerCase() !== '' &&
+      (otherUser.motherTongue || '').toString().trim().toLowerCase() !== '' &&
+      (userData.motherTongue || '').toString().trim().toLowerCase() ===
+        (otherUser.motherTongue || '').toString().trim().toLowerCase();
+    if (sameMotherTongue) matches += 1;
+
+    const sameDegree =
+      (userData.degree || '').toString().trim().toLowerCase() !== '' &&
+      (otherUser.degree || '').toString().trim().toLowerCase() !== '' &&
+      (userData.degree || '').toString().trim().toLowerCase() ===
+        (otherUser.degree || '').toString().trim().toLowerCase();
+    if (sameDegree) matches += 1;
+
+    const sameDayJob =
+      (userData.dayJob || '').toString().trim().toLowerCase() !== '' &&
+      (otherUser.dayJob || '').toString().trim().toLowerCase() !== '' &&
+      (userData.dayJob || '').toString().trim().toLowerCase() ===
+        (otherUser.dayJob || '').toString().trim().toLowerCase();
+    if (sameDayJob) matches += 1;
+
+    const myAge =
+      typeof userData.age === 'number'
+        ? userData.age
+        : (userData.dateOfBirth && calculateAge(userData.dateOfBirth)) ||
+          (userData.birthDate && calculateAge(userData.birthDate)) ||
+          null;
+    const theirAge =
+      typeof otherUser.age === 'number'
+        ? otherUser.age
+        : (otherUser.dateOfBirth && calculateAge(otherUser.dateOfBirth)) ||
+          (otherUser.birthDate && calculateAge(otherUser.birthDate)) ||
+          null;
+    if (myAge !== null && theirAge !== null && Math.abs(myAge - theirAge) <= 2) {
+      matches += 1;
+    }
+
+    return Math.round((matches / totalCriteria) * 100);
+  };
+
   if (loading || !dataFetched) {
     return (
       <div className="dashboard-loading">
@@ -618,7 +670,8 @@ export default function MyMatches() {
                       <div className="match-overlay-info">
                         <h3 className="match-username">{user.name || 'Anonymous'}</h3>
                         <span className="match-age">{age}</span>
-                        <span className="status-bullet">•</span>
+                        {/* <span className="status-bullet">•</span> */}
+                        {/* <span className="match-percent">{calculateMatchPercent(user)}%</span> */}
                       </div>
                     </div>
                   </div>
@@ -706,7 +759,7 @@ export default function MyMatches() {
               </div>
             </div>
             <h2 className="match-modal-title">It’s a match</h2>
-            <p className="match-modal-subtitle">you have 80% match with this profile</p>
+            <p className="match-modal-subtitle">you have {calculateMatchPercent(selectedMatchUser)}% match with this profile</p>
             <button
               className="btn-gradient"
               onClick={() => {

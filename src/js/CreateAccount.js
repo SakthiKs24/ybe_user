@@ -87,6 +87,8 @@ export default function CreateAccount() {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   
   // Require consent acceptance before accessing this page
@@ -514,16 +516,36 @@ export default function CreateAccount() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '25px' }}>
-              <div>
+              <div style={{ position: 'relative' }}>
                 <label className="form-label">Password</label>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   className="form-input"
                   value={formData.password}
                   onChange={(e) => handleChange('password', e.target.value)}
                   placeholder="Enter password"
                   disabled={loading}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(prev => !prev)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '43px',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '16px'
+                  }}
+                >
+                  <img 
+                    src={showPassword ? '/images/hidden.png' : '/images/show.png'} 
+                    alt={showPassword ? 'Hide password' : 'Show password'}
+                    style={{ width: '20px', height: '20px' }}
+                  />
+                </button>
                 {errors.password && (
                   <span style={{ color: '#FF027D', fontSize: '13px', marginTop: '5px', display: 'block' }}>
                     {errors.password}
@@ -531,16 +553,36 @@ export default function CreateAccount() {
                 )}
               </div>
 
-              <div>
+              <div style={{ position: 'relative' }}>
                 <label className="form-label">Confirm Password</label>
                 <input
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                   className="form-input"
                   value={formData.confirmPassword}
                   onChange={(e) => handleChange('confirmPassword', e.target.value)}
                   placeholder="Confirm password"
                   disabled={loading}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(prev => !prev)}
+                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '43px',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '16px'
+                  }}
+                >
+                  <img 
+                    src={showConfirmPassword ? '/images/hidden.png' : '/images/show.png'} 
+                    alt={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    style={{ width: '20px', height: '20px' }}
+                  />
+                </button>
                 {errors.confirmPassword && (
                   <span style={{ color: '#FF027D', fontSize: '13px', marginTop: '5px', display: 'block' }}>
                     {errors.confirmPassword}
