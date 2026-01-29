@@ -4,7 +4,7 @@ import { auth, db } from '../firebase';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import '../css/ProfileSetup.css';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadProfileImageWithValidation } from '../utils/profilePhotoValidation';
 
 export default function ProfileSetup() {
   const navigate = useNavigate();
@@ -456,63 +456,59 @@ export default function ProfileSetup() {
 
   const handlePhotoUpload = async (event, index) => {
     const file = event.target.files[0];
-    if (file) {
-      try {
-        setLoading(true);
-        
-        // Get current user
-        const user = auth.currentUser;
-        if (!user) {
-          toast.error('User not authenticated');
-          return;
-        }
-  
-        // Query to find the user document by email
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('email', '==', user.email));
-        const querySnapshot = await getDocs(q);
-  
-        if (querySnapshot.empty) {
-          toast.error('User profile not found');
-          return;
-        }
-  
-        // Get the actual userId from the document
-        const userDoc = querySnapshot.docs[0];
-        const userId = userDoc.id;
-  
-        // Create storage reference
-        const storage = getStorage();
-        const fileName = `${userId}_${file.name}`;
-        const storageRef = ref(storage, `profile-images/${fileName}`);
-  
-        // Upload file
-        await uploadBytes(storageRef, file);
-        
-        // Get download URL
-        const downloadURL = await getDownloadURL(storageRef);
-  
-        // Update state with the Firebase Storage URL
-        setProfileData(prev => {
-          const newUrls = [...prev.profileImageUrls];
-          newUrls[index] = downloadURL;
-          return { ...prev, profileImageUrls: newUrls };
-        });
-        
-        setUploadedPhotos(prev => {
-          const newUploaded = [...prev];
-          newUploaded[index] = true;
-          return newUploaded;
-        });
-  
-        toast.success('Photo uploaded successfully!');
-      } catch (error) {
-        console.error('Error uploading photo:', error);
-        toast.error('Failed to upload photo. Please try again.');
-      } finally {
-        setLoading(false);
-      }
+    if (!file) return;
+
+    const user = auth.currentUser;
+    if (!user) {
+      toast.error('User not authenticated');
+      event.target.value = '';
+      return;
     }
+
+    try {
+      setLoading(true);
+
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('email', '==', user.email));
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) {
+        toast.error('User profile not found');
+        event.target.value = '';
+        return;
+      }
+      const userId = querySnapshot.docs[0].id;
+
+      const result = await uploadProfileImageWithValidation(file, userId, {
+        fileNamePrefix: userId,
+      });
+
+      if (!result.success) {
+        toast.error(result.error || 'Please upload a valid person image.', {
+          position: 'top-right',
+          autoClose: 5000,
+        });
+        event.target.value = '';
+        return;
+      }
+
+      setProfileData(prev => {
+        const newUrls = [...prev.profileImageUrls];
+        newUrls[index] = result.url;
+        return { ...prev, profileImageUrls: newUrls };
+      });
+      setUploadedPhotos(prev => {
+        const newUploaded = [...prev];
+        newUploaded[index] = true;
+        return newUploaded;
+      });
+      toast.success('Photo uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      toast.error('Failed to upload photo. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+    event.target.value = '';
   };
 
   const nextStep = async () => {

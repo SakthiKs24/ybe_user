@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, getDocs, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'react-toastify';
 import Header from './Header';
 import '../css/Profile.css';
+import { uploadProfileImageWithValidation } from '../utils/profilePhotoValidation';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -428,40 +428,49 @@ export default function Profile() {
   };
   const handlePhotoUpload = async (event, index) => {
     const file = event.target.files[0];
-    if (file) {
-      try {
-        setLoading(true);
-        
-        const storage = getStorage();
-        const fileName = `${userData.docId}_${Date.now()}_${file.name}`;
-        const storageRef = ref(storage, `profile-images/${fileName}`);
-
-        await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(storageRef);
-
-        // Update profileImageUrls array
-        const newUrls = [...(userData.profileImageUrls || [])];
-        newUrls[index] = downloadURL;
-
-        const userDocRef = doc(db, 'users', userData.docId);
-        await updateDoc(userDocRef, {
-          profileImageUrls: newUrls,
-          updatedAt: new Date()
-        });
-
-        setUserData(prev => ({
-          ...prev,
-          profileImageUrls: newUrls
-        }));
-
-        toast.success('Photo uploaded successfully!');
-      } catch (error) {
-        console.error('Error uploading photo:', error);
-        toast.error('Failed to upload photo. Please try again.');
-      } finally {
-        setLoading(false);
-      }
+    if (!file) return;
+    if (!userData?.docId) {
+      toast.error('Profile not loaded');
+      event.target.value = '';
+      return;
     }
+
+    try {
+      setLoading(true);
+
+      const result = await uploadProfileImageWithValidation(file, userData.docId);
+
+      if (!result.success) {
+        toast.error(result.error || 'Please upload a valid person image.', {
+          position: 'top-right',
+          autoClose: 5000,
+        });
+        event.target.value = '';
+        return;
+      }
+
+      const newUrls = [...(userData.profileImageUrls || [])];
+      newUrls[index] = result.url;
+
+      const userDocRef = doc(db, 'users', userData.docId);
+      await updateDoc(userDocRef, {
+        profileImageUrls: newUrls,
+        updatedAt: new Date()
+      });
+
+      setUserData(prev => ({
+        ...prev,
+        profileImageUrls: newUrls
+      }));
+
+      toast.success('Photo uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      toast.error('Failed to upload photo. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+    event.target.value = '';
   };
 
   const handleLogout = async () => {
