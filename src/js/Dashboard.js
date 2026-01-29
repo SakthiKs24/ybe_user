@@ -599,6 +599,11 @@ export default function Dashboard() {
     if (!userData?.uid) return;
     
     try {
+      const planName = String(userData?.subscriptions?.planName || 'Free').toLowerCase();
+      if (planName === 'free') {
+        setShowUpgradeModal(true);
+        return;
+      }
       const isFavorite = favorites.has(userId);
       
       if (isFavorite) {
@@ -650,6 +655,11 @@ export default function Dashboard() {
     if (!userData?.uid) return;
     
     try {
+      const planName = String(userData?.subscriptions?.planName || 'Free').toLowerCase();
+      if (planName === 'free') {
+        setShowUpgradeModal(true);
+        return;
+      }
       // Check if a shortlist document already exists
       const shortlistRef = collection(db, 'shortlist');
       const q = query(
@@ -1305,6 +1315,11 @@ export default function Dashboard() {
                               className="action-btn message-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
+                                const plan = String(userData?.subscriptions?.planName || 'Free').toLowerCase();
+                                if (plan === 'free') {
+                                  setShowUpgradeModal(true);
+                                  return;
+                                }
                                 navigate(`/chat/${user.userId || user.id}`);
                               }}
                               title="Message">

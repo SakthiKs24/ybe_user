@@ -226,6 +226,29 @@
     color: #666;
     font-size: 14px;
   }
+
+.modal-content.upgrade-modal {
+  width: 95%;
+  max-width: 1100px;
+  text-align: left;
+}
+.upgrade-modal-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+.upgrade-modal-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 6px 0;
+}
+.upgrade-modal-subtitle {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
   
   .modal-buttons {
     display: flex;

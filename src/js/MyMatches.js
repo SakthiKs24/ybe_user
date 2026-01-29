@@ -11,11 +11,13 @@ import {
   updateDoc,
   addDoc,
   deleteDoc,
-  onSnapshot 
+  onSnapshot,
+  getDoc 
 } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import Header from './Header';
 import SubHeader from './SubHeader';
+import Upgrade from './Upgrade';
 import '../css/MyMatches.css';
 
 export default function MyMatches() {
@@ -29,6 +31,8 @@ export default function MyMatches() {
   const [favorites, setFavorites] = useState(new Set());
   const dropdownRef = useRef(null);
   const [nameSearch, setNameSearch] = useState('');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [profileViewLimit, setProfileViewLimit] = useState(null);
 
   // Category lists
   const [likedPartnerId, setLikedPartnerId] = useState([]);
@@ -116,6 +120,28 @@ export default function MyMatches() {
     return () => unsubscribe();
   }, [navigate]);
 
+  // Fetch global daily profile view limit
+  useEffect(() => {
+    const fetchLimit = async () => {
+      try {
+        const cfgRef = doc(db, 'users', 'RegisteredUsers');
+        const snap = await getDoc(cfgRef);
+        if (snap.exists()) {
+          const data = snap.data() || {};
+          const limit = data.dailyLimit && typeof data.dailyLimit.profileViewCount === 'number'
+            ? data.dailyLimit.profileViewCount
+            : null;
+          setProfileViewLimit(limit);
+        } else {
+          setProfileViewLimit(null);
+        }
+      } catch (e) {
+        console.error('Failed to fetch daily profile view limit', e);
+        setProfileViewLimit(null);
+      }
+    };
+    fetchLimit();
+  }, []);
   // Fetch favorites
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -535,8 +561,46 @@ export default function MyMatches() {
     return age;
   };
 
-  const handleProfileClick = (userId) => {
-    navigate(`/profile/${userId}`);
+  const handleProfileClick = async (targetUserId) => {
+    try {
+      const planName = userData?.subscriptions?.planName || 'Free';
+      if (String(planName).toLowerCase() !== 'free') {
+        navigate(`/profile/${targetUserId}`);
+        return;
+      }
+      const maxPerDay = typeof profileViewLimit === 'number' ? profileViewLimit : 5;
+      if (!userData?.userId) {
+        navigate(`/profile/${targetUserId}`);
+        return;
+      }
+      const today = new Date().toISOString().split('T')[0];
+      const currentDaily = userData.dailyLimit || {};
+      const isNewDay = currentDaily.date !== today;
+      const usedCount = isNewDay ? 0 : (currentDaily.profileViewCount || 0);
+      if (usedCount >= maxPerDay) {
+        setShowUpgradeModal(true);
+        return;
+      }
+      const newCount = usedCount + 1;
+      const userDocRef = doc(db, 'users', userData.userId);
+      await updateDoc(userDocRef, {
+        'dailyLimit.date': today,
+        'dailyLimit.profileViewCount': newCount,
+      });
+      setUserData(prev => ({
+        ...prev,
+        dailyLimit: {
+          ...prev?.dailyLimit,
+          date: today,
+          profileViewCount: newCount,
+          swipeCount: prev?.dailyLimit?.swipeCount || 0
+        }
+      }));
+      navigate(`/profile/${targetUserId}`);
+    } catch (e) {
+      console.error('Failed enforcing daily profile view limit (my matches)', e);
+      navigate(`/profile/${targetUserId}`);
+    }
   };
 
   const handleCardClick = (user) => {
@@ -805,6 +869,17 @@ export default function MyMatches() {
                 Yes, Sure
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {showUpgradeModal && (
+        <div className="modal-overlay" onClick={() => setShowUpgradeModal(false)}>
+          <div className="modal-content upgrade-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="upgrade-modal-header">
+              <h3 className="upgrade-modal-title">You’ve Reached Today’s Limit</h3>
+              <p className="upgrade-modal-subtitle">Upgrade your plan to continue viewing profiles.</p>
+            </div>
+            <Upgrade embedded />
           </div>
         </div>
       )}

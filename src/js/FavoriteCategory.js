@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, getDoc, query, where, doc, updateDoc, addDoc, deleteDoc, documentId, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, getDoc, query, where, doc, updateDoc, addDoc, deleteDoc, documentId, onSnapshot, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import Header from './Header';
 import SubHeader from './SubHeader';
@@ -18,9 +18,14 @@ export default function FavoriteCategory() {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [categoryUsers, setCategoryUsers] = useState([]);
   const [favorites, setFavorites] = useState(new Set());
+  const [blockedUsers, setBlockedUsers] = useState(new Set());
+  const [shortlistedUsers, setShortlistedUsers] = useState(new Set());
+  const [messagedUsers, setMessagedUsers] = useState(new Set());
   const dropdownRef = useRef(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [profileViewLimit, setProfileViewLimit] = useState(null);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [userToBlock, setUserToBlock] = useState(null);
   const [nameSearch, setNameSearch] = useState('');
 
   // Pagination states
@@ -155,6 +160,72 @@ export default function FavoriteCategory() {
 
     fetchFavorites();
   }, [userData?.uid]);
+
+  // Fetch blocked users
+  useEffect(() => {
+    const fetchBlocked = async () => {
+      if (!userData?.uid) return;
+      try {
+        const blockRef = collection(db, 'block');
+        const qB = query(blockRef, where(documentId(), '==', userData.uid));
+        const snap = await getDocs(qB);
+        if (!snap.empty) {
+          const data = snap.docs[0].data() || {};
+          setBlockedUsers(new Set((data.blockedBy || []).map(String)));
+        }
+      } catch (e) {
+        console.error('Error fetching blocked users:', e);
+      }
+    };
+    fetchBlocked();
+  }, [userData?.uid]);
+
+  // Fetch shortlisted users
+  useEffect(() => {
+    const fetchShortlisted = async () => {
+      if (!userData?.userId) return;
+      try {
+        const shortlistRef = collection(db, 'shortlist');
+        const qS = query(shortlistRef, where('shortlistedBy', '==', userData.userId));
+        const snap = await getDocs(qS);
+        const ids = new Set();
+        snap.forEach(d => {
+          const v = d.data()?.shortlistedUser;
+          if (v) ids.add(String(v));
+        });
+        setShortlistedUsers(ids);
+      } catch (e) {
+        console.error('Error fetching shortlisted users:', e);
+      }
+    };
+    fetchShortlisted();
+  }, [userData?.userId]);
+
+  // Fetch messaged users
+  useEffect(() => {
+    const fetchMessaged = async () => {
+      if (!userData?.userId) return;
+      try {
+        const chatsRef = collection(db, 'chats');
+        const qC = query(chatsRef, where('chatUserData.participants', 'array-contains', userData.userId));
+        const snap = await getDocs(qC);
+        const ids = new Set();
+        snap.forEach(ds => {
+          const data = ds.data() || {};
+          const parts = (data.chatUserData && data.chatUserData.participants) || data.participants || [];
+          if (Array.isArray(parts)) {
+            parts.forEach(p => {
+              if (String(p) !== String(userData.userId)) ids.add(String(p));
+            });
+          }
+        });
+        setMessagedUsers(ids);
+      } catch (e) {
+        console.error('Error fetching messaged users:', e);
+      }
+    };
+    fetchMessaged();
+  }, [userData?.userId]);
 
   // Fetch global daily profile view limit from 'users/RegisteredUsers'
   useEffect(() => {
@@ -520,7 +591,71 @@ export default function FavoriteCategory() {
 
   const handleChatClick = (e, userId) => {
     e.stopPropagation();
+    const plan = String(userData?.subscriptions?.planName || 'Free').toLowerCase();
+    if (plan === 'free') {
+      setShowUpgradeModal(true);
+      return;
+    }
     navigate(`/chat/${userId}`);
+  };
+
+  const handleShortlistToggle = async (e, userId) => {
+    e.stopPropagation();
+    if (!userData?.userId) return;
+    const plan = String(userData?.subscriptions?.planName || 'Free').toLowerCase();
+    if (plan === 'free') {
+      setShowUpgradeModal(true);
+      return;
+    }
+    try {
+      const shortlistRef = collection(db, 'shortlist');
+      const qS = query(shortlistRef, where('shortlistedBy', '==', userData.userId), where('shortlistedUser', '==', userId));
+      const snap = await getDocs(qS);
+      if (!snap.empty) {
+        snap.forEach(async (ds) => {
+          await deleteDoc(doc(db, 'shortlist', ds.id));
+        });
+        setShortlistedUsers(prev => {
+          const s = new Set(prev);
+          s.delete(String(userId));
+          return s;
+        });
+        toast.success('Shortlist removed!');
+      } else {
+        const customId = `${userData.userId}-${Math.random().toString(36).substring(2,10).toUpperCase()}`;
+        const dref = doc(collection(db, 'shortlist'), customId);
+        await setDoc(dref, { shortlistedBy: userData.userId, shortlistedUser: userId });
+        setShortlistedUsers(prev => new Set(prev).add(String(userId)));
+        toast.success('User shortlisted!');
+      }
+    } catch (e) {
+      console.error('Error toggling shortlist:', e);
+      toast.error('Failed to update shortlist');
+    }
+  };
+
+  const confirmBlock = async () => {
+    if (!userData?.uid || !userToBlock) return;
+    try {
+      const blockRef = collection(db, 'block');
+      const blockDocRef = doc(blockRef, userData.uid);
+      const qB = query(blockRef, where(documentId(), '==', userData.uid));
+      const snap = await getDocs(qB);
+      if (snap.empty) {
+        await setDoc(blockDocRef, { blockedBy: [userToBlock.userId] });
+      } else {
+        const current = snap.docs[0].data() || {};
+        const updated = [...(current.blockedBy || []), userToBlock.userId];
+        await updateDoc(blockDocRef, { blockedBy: updated });
+      }
+      setBlockedUsers(prev => new Set(prev).add(String(userToBlock.userId)));
+      setShowBlockConfirm(false);
+      setUserToBlock(null);
+      toast.success('Blocked this user');
+    } catch (e) {
+      console.error('Block failed', e);
+      toast.error('Failed to block user');
+    }
   };
 
   const getCategoryTitle = () => {
@@ -701,28 +836,62 @@ export default function FavoriteCategory() {
                     </div>
 
                     <div className="match-card-actions">
-                      <button className="action-btn reject-btn" title="Reject">
-                        <img src="/images/Reject.png" alt="Reject" className="action-icon" />
+                      <button className="action-btn reject-btn" title={blockedUsers.has(String(user.userId || user.id)) ? 'Unblock' : 'Block'}
+                        onClick={(e)=> {
+                          const isBlocked = blockedUsers.has(String(user.userId || user.id));
+                          if (isBlocked) {
+                            // Unblock
+                            (async () => {
+                              try {
+                                const blockRef = collection(db, 'block');
+                                const blockDocRef = doc(blockRef, userData.uid);
+                                const qB = query(blockRef, where(documentId(), '==', userData.uid));
+                                const snap = await getDocs(qB);
+                                if (!snap.empty) {
+                                  const current = snap.docs[0].data() || {};
+                                  const updated = (current.blockedBy || []).filter(id => String(id) !== String(user.userId || user.id));
+                                  await updateDoc(blockDocRef, { blockedBy: updated });
+                                }
+                                setBlockedUsers(prev => { const s = new Set(prev); s.delete(String(user.userId || user.id)); return s; });
+                                toast.success('User unblocked');
+                              } catch (err) {
+                                console.error('Unblock failed', err);
+                                toast.error('Failed to unblock');
+                              }
+                            })();
+                          } else {
+                            setUserToBlock({ userId: user.userId || user.id, userName: user.name || 'this user' });
+                            setShowBlockConfirm(true);
+                          }
+                        }}
+                      >
+                        <img src="/images/Reject.png" alt="Block" className={`action-icon ${blockedUsers.has(String(user.userId || user.id)) ? 'active' : 'inactive'}`} />
                       </button>
                       <button 
                         className={`action-btn favorite-btn ${isFavorited ? 'favorited' : ''}`}
-                        onClick={(e) => handleFavoriteToggle(e, user.userId || user.id)}
+                        onClick={(e) => {
+                          const plan = String(userData?.subscriptions?.planName || 'Free').toLowerCase();
+                          if (plan === 'free') { setShowUpgradeModal(true); return; }
+                          handleFavoriteToggle(e, user.userId || user.id);
+                        }}
                         title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                       >
                         <img 
                           src={isFavorited ? "/images/Heart_like.png" : "/images/Heart_unlike.png"} 
                           alt={isFavorited ? 'Liked' : 'Like'} 
-                          className="action-icon" 
+                          className={`action-icon ${isFavorited ? 'active' : 'inactive'}`} 
                         />
                       </button>
-                      <button className="action-btn superlike-btn" title="Shortlist">
-                        <img src="/images/Star.png" alt="Shortlist" className="action-icon" />
+                      <button className="action-btn superlike-btn" title="Shortlist"
+                        onClick={(e)=> handleShortlistToggle(e, user.userId || user.id)}
+                      >
+                        <img src="/images/Star.png" alt="Shortlist" className={`action-icon ${shortlistedUsers.has(String(user.userId || user.id)) ? 'active' : 'inactive'}`} />
                       </button>
                       <button 
                         className="action-btn message-btn" 
                         onClick={(e) => handleChatClick(e, user.userId || user.id)}
                         title="Message">
-                        <img src="/images/Chat.png" alt="Message" className="action-icon" />
+                        <img src="/images/Chat.png" alt="Message" className={`action-icon ${messagedUsers.has(String(user.userId || user.id)) ? 'active' : 'inactive'}`} />
                       </button>
                     </div>
                   </div>
@@ -810,6 +979,18 @@ export default function FavoriteCategory() {
               <p className="upgrade-modal-subtitle">Upgrade your plan to continue viewing profiles.</p>
             </div>
             <Upgrade embedded />
+          </div>
+        </div>
+      )}
+      {showBlockConfirm && (
+        <div className="modal-overlay" onClick={() => setShowBlockConfirm(false)}>
+          <div className="modal-content" onClick={(e)=> e.stopPropagation()}>
+            <h3>Block User</h3>
+            <p>Do you want to block {userToBlock?.userName || 'this user'}?</p>
+            <div className="modal-buttons">
+              <button className="btn-cancel" onClick={()=> { setShowBlockConfirm(false); setUserToBlock(null); }}>Cancel</button>
+              <button className="btn-confirm" onClick={confirmBlock}>Block</button>
+            </div>
           </div>
         </div>
       )}

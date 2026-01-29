@@ -443,6 +443,15 @@
     height: 28px;
     object-fit: contain;
   }
+
+.action-icon.inactive {
+  filter: grayscale(100%);
+  opacity: 0.5;
+}
+.action-icon.active {
+  filter: none;
+  opacity: 1;
+}
   
   .favorite-btn img[src*="Heart_unlike"] {
     width: 20px;

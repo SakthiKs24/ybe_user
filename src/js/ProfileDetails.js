@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebase';
-import { collection, query, where, getDocs, addDoc, deleteDoc, setDoc, updateDoc, doc, documentId } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, addDoc, deleteDoc, setDoc, updateDoc, doc, documentId } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import Header from './Header';
+import Upgrade from './Upgrade';
 import '../css/ProfileDetails.css';
 
 export default function ProfileDetails() {
@@ -21,6 +22,9 @@ export default function ProfileDetails() {
   const [userToBlock, setUserToBlock] = useState(null);
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [hasMessaged, setHasMessaged] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [profileViewLimit, setProfileViewLimit] = useState(null);
+  const [viewCounted, setViewCounted] = useState(false);
 
   // Fetch current logged-in user data for header
   useEffect(() => {
@@ -47,6 +51,29 @@ export default function ProfileDetails() {
     };
 
     fetchCurrentUserData();
+  }, []);
+
+  // Fetch global daily profile view limit
+  useEffect(() => {
+    const fetchLimit = async () => {
+      try {
+        const cfgRef = doc(db, 'users', 'RegisteredUsers');
+        const snap = await getDoc(cfgRef);
+        if (snap.exists()) {
+          const data = snap.data() || {};
+          const limit = data.dailyLimit && typeof data.dailyLimit.profileViewCount === 'number'
+            ? data.dailyLimit.profileViewCount
+            : null;
+          setProfileViewLimit(limit);
+        } else {
+          setProfileViewLimit(null);
+        }
+      } catch (e) {
+        console.error('Failed to fetch profile view limit', e);
+        setProfileViewLimit(null);
+      }
+    };
+    fetchLimit();
   }, []);
 
   // Load current user's favorites and block list
@@ -106,6 +133,52 @@ export default function ProfileDetails() {
       fetchUserData();
     }
   }, [userId, navigate]);
+
+  // Enforce daily profile view limit for Free users
+  useEffect(() => {
+    const enforceDailyView = async () => {
+      if (viewCounted) return;
+      if (!currentUserData?.userId && !currentUserData?.id) return;
+      if (!userData?.userId && !userData?.id) return;
+      if ((currentUserData.userId || currentUserData.id) === (userData.userId || userData.id)) return; // viewing own profile
+      const planName = currentUserData?.subscriptions?.planName || 'Free';
+      if (String(planName).toLowerCase() !== 'free') {
+        setViewCounted(true);
+        return;
+      }
+      const maxPerDay = typeof profileViewLimit === 'number' ? profileViewLimit : 5;
+      try {
+        const viewerDocId = currentUserData.userId || currentUserData.id;
+        const viewerRef = doc(db, 'users', viewerDocId);
+        const today = new Date().toISOString().split('T')[0];
+        const currentDaily = currentUserData?.dailyLimit || {};
+        const isNewDay = currentDaily.date !== today;
+        const usedCount = isNewDay ? 0 : (currentDaily.profileViewCount || 0);
+        if (usedCount >= maxPerDay) {
+          setShowUpgradeModal(true);
+          setViewCounted(true);
+          return;
+        }
+        await updateDoc(viewerRef, {
+          'dailyLimit.date': today,
+          'dailyLimit.profileViewCount': usedCount + 1,
+        });
+        // update local state
+        setCurrentUserData(prev => ({
+          ...prev,
+          dailyLimit: {
+            ...(prev?.dailyLimit || {}),
+            date: today,
+            profileViewCount: usedCount + 1,
+          }
+        }));
+        setViewCounted(true);
+      } catch (e) {
+        console.error('Failed to update daily profile view count', e);
+      }
+    };
+    enforceDailyView();
+  }, [currentUserData, userData, profileViewLimit, viewCounted]);
 
   // Derive shortlist and message states for this profile
   useEffect(() => {
@@ -213,6 +286,10 @@ export default function ProfileDetails() {
   const handleFavoriteToggle = async () => {
     try {
       if (!currentUserData?.userId) return;
+      if (String(currentUserData?.subscriptions?.planName || 'Free').toLowerCase() === 'free') {
+        setShowUpgradeModal(true);
+        return;
+      }
       const targetId = userData.userId || userData.id;
       const isFavorite = favorites.has(targetId);
       if (isFavorite) {
@@ -245,6 +322,10 @@ export default function ProfileDetails() {
   const handleShortlistToggle = async () => {
     try {
       if (!currentUserData?.userId) return;
+      if (String(currentUserData?.subscriptions?.planName || 'Free').toLowerCase() === 'free') {
+        setShowUpgradeModal(true);
+        return;
+      }
       const targetId = userData.userId || userData.id;
       const shortlistRef = collection(db, 'shortlist');
       const qS = query(shortlistRef, where('shortlistedBy', '==', currentUserData.userId), where('shortlistedUser', '==', targetId));
@@ -468,6 +549,10 @@ export default function ProfileDetails() {
               <button 
                 className="action-btn message-btn"
                 onClick={() => {
+                  if (String(currentUserData?.subscriptions?.planName || 'Free').toLowerCase() === 'free') {
+                    setShowUpgradeModal(true);
+                    return;
+                  }
                   setHasMessaged(true);
                   navigate(`/chat/${userData.userId || userData.id}`);
                 }}
@@ -593,6 +678,18 @@ export default function ProfileDetails() {
                 Block
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {showUpgradeModal && (
+        <div className="modal-overlay" onClick={() => setShowUpgradeModal(false)}>
+          <div className="modal-content upgrade-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="upgrade-modal-header">
+              <h3 className="upgrade-modal-title">Upgrade Required</h3>
+              <p className="upgrade-modal-subtitle">Unlock profile actions and increase daily views.</p>
+            </div>
+            <div style={{ marginBottom: '10px' }} />
+            <Upgrade embedded />
           </div>
         </div>
       )}
