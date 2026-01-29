@@ -25,6 +25,12 @@ export default function Homepage() {
     return () => unsubscribe();
   }, []);
 
+  // If already logged in, redirect to dashboard
+  useEffect(() => {
+    if (!authChecking && currentUser) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [authChecking, currentUser, navigate]);
   const openLogin = () => {
     setLoginKey(prev => prev + 1);
     setIsLoginOpen(true);
@@ -51,7 +57,7 @@ export default function Homepage() {
 
   return (
     <div className="homepage">
-      <Navbar onLoginClick={openLogin} currentUser={currentUser} />
+      <Navbar onLoginClick={openLogin} currentUser={currentUser} hideDashboard />
       {isLoginOpen && (
         <Login
           key={loginKey}     

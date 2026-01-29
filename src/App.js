@@ -25,8 +25,15 @@ function App() {
     <Router>
       <ToastContainer />
       <Routes>
-        {/* Homepage - accessible to everyone (both logged in and logged out) */}
-        <Route path="/" element={<Homepage />} />
+        {/* Homepage - redirect to dashboard if already logged in */}
+        <Route 
+          path="/" 
+          element={
+            <PublicRoute>
+              <Homepage />
+            </PublicRoute>
+          } 
+        />
         
         {/* Public Routes - Only accessible when NOT logged in */}
         <Route 
@@ -37,7 +44,14 @@ function App() {
             </PublicRoute>
           } 
         />
-        <Route path="/consent" element={<ConsentForm />} />
+        <Route 
+          path="/consent" 
+          element={
+            <PublicRoute>
+              <ConsentForm />
+            </PublicRoute>
+          } 
+        />
         
         {/* Protected Routes - Only accessible when logged in */}
         <Route 

@@ -68,7 +68,7 @@ export function PublicRoute({ children }) {
 
   // If logged in, redirect to profile setup (avoid dashboard redirect)
   if (user) {
-    return <Navigate to="/profile-setup" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;

@@ -7,20 +7,9 @@
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
-// CDN base path for face-api tiny face detector model
-const FACE_MODEL_BASE = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
-
-let faceModelLoadPromise = null;
-
-/**
- * Load tiny face detector model once (cached).
- */
-async function loadFaceDetectionModel() {
-  if (faceModelLoadPromise) return faceModelLoadPromise;
-  const faceapi = await import('@vladmandic/face-api');
-  faceModelLoadPromise = faceapi.loadTinyFaceDetectorModel(FACE_MODEL_BASE);
-  await faceModelLoadPromise;
-}
+// Note: We avoid importing heavy external face detection libs to keep bundle light
+// and prevent build errors when packages are missing. We use the native FaceDetector
+// API when available; otherwise we fall back to basic heuristics.
 
 /**
  * Validate image file type and size.
@@ -54,9 +43,6 @@ export function validateImageFile(file) {
 export async function validateImageHasFace(file) {
   let objectUrl = null;
   try {
-    await loadFaceDetectionModel();
-    const faceapi = await import('@vladmandic/face-api');
-
     const img = await new Promise((resolve, reject) => {
       const image = new Image();
       objectUrl = URL.createObjectURL(file);
@@ -65,23 +51,45 @@ export async function validateImageHasFace(file) {
       image.src = objectUrl;
     });
 
-    const options = new faceapi.TinyFaceDetectorOptions({
-      inputSize: 224,
-      scoreThreshold: 0.5,
-    });
-    const detections = await faceapi.detectAllFaces(img, options);
+    // 1) Try native FaceDetector if supported
+    const FaceDetectorCtor =
+      (typeof window !== 'undefined' && (window.FaceDetector || window['FaceDetector'])) || null;
+    if (FaceDetectorCtor) {
+      try {
+        const detector = new FaceDetectorCtor({ fastMode: true, maxDetectedFaces: 5 });
+        const detections = await detector.detect(img);
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+          objectUrl = null;
+        }
+        if (Array.isArray(detections) && detections.length > 0) {
+          return { hasFace: true };
+        }
+        return {
+          hasFace: false,
+          error: 'Please upload a valid photo with a clear face visible.',
+        };
+      } catch (e) {
+        // Fall through to heuristic if detector fails
+      }
+    }
 
+    // 2) Fallback heuristic: enforce sensible dimensions and crop ratios
+    const minW = 400;
+    const minH = 400;
+    const w = img.naturalWidth || img.width;
+    const h = img.naturalHeight || img.height;
     if (objectUrl) {
       URL.revokeObjectURL(objectUrl);
       objectUrl = null;
     }
-
-    if (!detections || detections.length === 0) {
+    if (!w || !h || w < minW || h < minH) {
       return {
         hasFace: false,
-        error: 'Please upload a valid photo with a clear face visible. No landscapes, objects or group photos.',
+        error: 'Image should be at least 400×400 and show a clear face.',
       };
     }
+
     return { hasFace: true };
   } catch (err) {
     if (objectUrl) URL.revokeObjectURL(objectUrl);

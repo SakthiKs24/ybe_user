@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../css/Navbar.css';
 
-export default function Navbar({ onLoginClick, currentUser }) {
+export default function Navbar({ onLoginClick, currentUser, hideDashboard = false }) {
   const navigate = useNavigate();
 
   const handleSignupClick = () => {
@@ -33,7 +33,7 @@ export default function Navbar({ onLoginClick, currentUser }) {
           Privacy Policy
         </a>
         
-        {currentUser ? (
+        {currentUser && !hideDashboard ? (
           // Show Dashboard button if user is logged in
           <button className="signup-btn" onClick={handleDashboardClick}>
             Dashboard
