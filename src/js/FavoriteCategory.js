@@ -21,16 +21,16 @@ export default function FavoriteCategory() {
   const dropdownRef = useRef(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [profileViewLimit, setProfileViewLimit] = useState(null);
+  const [nameSearch, setNameSearch] = useState('');
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
-
-  // Calculate pagination
-  const indexOfLastUser = currentPage * usersPerPage;
-  const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = categoryUsers.slice(indexOfFirstUser, indexOfLastUser);
-  const totalPages = Math.ceil(categoryUsers.length / usersPerPage);
+  
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [nameSearch]);
 
   // Pagination handlers
   const handlePageChange = (pageNumber) => {
@@ -46,7 +46,10 @@ export default function FavoriteCategory() {
   };
 
   const handleNextPage = () => {
-    if (currentPage < totalPages) {
+    const q = (nameSearch || '').trim().toLowerCase();
+    const filtered = q ? categoryUsers.filter(u => (u.name || '').toLowerCase().includes(q)) : categoryUsers;
+    const totalPagesLocal = Math.ceil(filtered.length / usersPerPage);
+    if (currentPage < totalPagesLocal) {
       setCurrentPage(currentPage + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -55,6 +58,9 @@ export default function FavoriteCategory() {
   const getPageNumbers = () => {
     const pageNumbers = [];
     const maxPagesToShow = 5;
+    const q = (nameSearch || '').trim().toLowerCase();
+    const filtered = q ? categoryUsers.filter(u => (u.name || '').toLowerCase().includes(q)) : categoryUsers;
+    const totalPages = Math.ceil(filtered.length / usersPerPage);
     
     if (totalPages <= maxPagesToShow) {
       for (let i = 1; i <= totalPages; i++) {
@@ -562,14 +568,40 @@ export default function FavoriteCategory() {
           <h3 className="category-title">
             {getCategoryTitle()}
           </h3>
-          <div className="pagination-info">
-            Showing {categoryUsers.length > 0 ? indexOfFirstUser + 1 : 0}-{Math.min(indexOfLastUser, categoryUsers.length)} of {categoryUsers.length}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <input
+              type="text"
+              placeholder="Search by name"
+              value={nameSearch}
+              onChange={(e) => setNameSearch(e.target.value)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '20px',
+                border: '1px solid #ddd',
+                minWidth: '220px',
+                outline: 'none'
+              }}
+            />
           </div>
         </div>
         
-        <div className="matches-grid">
-          {currentUsers.length > 0 ? (
-            currentUsers.map((user) => {
+        {(() => {
+          const q = (nameSearch || '').trim().toLowerCase();
+          const filteredCategoryUsers = q ? categoryUsers.filter(u => (u.name || '').toLowerCase().includes(q)) : categoryUsers;
+          const indexOfLastUser = currentPage * usersPerPage;
+          const indexOfFirstUser = indexOfLastUser - usersPerPage;
+          const currentUsers = filteredCategoryUsers.slice(indexOfFirstUser, indexOfLastUser);
+          const totalPagesLocal = Math.ceil(filteredCategoryUsers.length / usersPerPage);
+          return (
+            <>
+              <div className="category-header" style={{ marginTop: 8 }}>
+                <div className="pagination-info">
+                  Showing {filteredCategoryUsers.length > 0 ? indexOfFirstUser + 1 : 0}-{Math.min(indexOfLastUser, filteredCategoryUsers.length)} of {filteredCategoryUsers.length}
+                </div>
+              </div>
+              <div className="matches-grid">
+                {currentUsers.length > 0 ? (
+                  currentUsers.map((user) => {
               const age = user.age || calculateAge(user.dateOfBirth) || 'N/A';
               const height = user.height || '';
               const profileImage = user.profileImageUrls?.[0] || '/images/profile_badge.png';
@@ -696,50 +728,52 @@ export default function FavoriteCategory() {
                   </div>
                 </div>
               );
-            })
-          ) : (
-            <div className="no-matches">
-              <p>To No luck at the moment.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Pagination Controls */}
-        {categoryUsers.length > usersPerPage && (
-          <div className="pagination-container">
-            <button 
-              className="pagination-btn"
-              onClick={handlePrevPage}
-              disabled={currentPage === 1}
-            >
-              ← Previous
-            </button>
-            
-            <div className="pagination-numbers">
-              {getPageNumbers().map((pageNum, index) => (
-                pageNum === '...' ? (
-                  <span key={`ellipsis-${index}`} className="pagination-ellipsis">...</span>
+                  })
                 ) : (
-                  <button
-                    key={pageNum}
-                    className={`pagination-number ${currentPage === pageNum ? 'active' : ''}`}
-                    onClick={() => handlePageChange(pageNum)}
+                  <div className="no-matches">
+                    <p>To No luck at the moment.</p>
+                  </div>
+                )}
+              </div>
+              {/* Pagination Controls */}
+              {filteredCategoryUsers.length > usersPerPage && (
+                <div className="pagination-container">
+                  <button 
+                    className="pagination-btn"
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1}
                   >
-                    {pageNum}
+                    ← Previous
                   </button>
-                )
-              ))}
-            </div>
-            
-            <button 
-              className="pagination-btn"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-            >
-              Next →
-            </button>
-          </div>
-        )}
+                  
+                  <div className="pagination-numbers">
+                    {getPageNumbers().map((pageNum, index) => (
+                      pageNum === '...' ? (
+                        <span key={`ellipsis-${index}`} className="pagination-ellipsis">...</span>
+                      ) : (
+                        <button
+                          key={pageNum}
+                          className={`pagination-number ${currentPage === pageNum ? 'active' : ''}`}
+                          onClick={() => handlePageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </button>
+                      )
+                    ))}
+                  </div>
+                  
+                  <button 
+                    className="pagination-btn"
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPagesLocal}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+            </>
+          );
+        })()}
       </main>
 
       {/* Logout Modal */}

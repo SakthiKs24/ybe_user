@@ -63,12 +63,12 @@ export default function Homepage() {
       <main className="main-content">
         <div className="left-section">
           <h1 className="main-heading">
-            <span className="heading-part1">Where Majority of<br />NRIs </span>
-            <span className="heading-part2">date and marry</span>
+            <span className="heading-part1">For everyone looking for <br />love </span>
+            <span className="heading-part2">especially NRIs</span>
           </h1>
           <p className="subheading">
-            Join thousands of people finding their<br />
-            soulmate through our trusted platform
+          Join thousands who have found their<br />
+          perfect match with us
           </p>
 
           <button className="cta-btn" onClick={handleFindMatchClick}>
@@ -116,8 +116,8 @@ export default function Homepage() {
         <div className="process-steps">
           <div className="process-step">
             <div className="step-number">1</div>
-            <h3 className="step-heading">Research</h3>
-            <p className="step-description">We do research before we start any projects</p>
+            <h3 className="step-heading">Create Your Profile</h3>
+            <p className="step-description">Tell us about yourself, your values, and what you`re looking for in a life partner.</p>
           </div>
           
           <div className="step-arrow">
@@ -126,8 +126,8 @@ export default function Homepage() {
           
           <div className="process-step">
             <div className="step-number">2</div>
-            <h3 className="step-heading">Designing</h3>
-            <p className="step-description">Designed according to client's requirements</p>
+            <h3 className="step-heading">Smart Matchmaking</h3>
+            <p className="step-description">Our intelligent system finds matches based on compatibility, preferences, and goals.</p>
           </div>
           
           <div className="step-arrow">
@@ -136,8 +136,8 @@ export default function Homepage() {
           
           <div className="process-step">
             <div className="step-number">3</div>
-            <h3 className="step-heading">Development</h3>
-            <p className="step-description">Developed by skilled team developers</p>
+            <h3 className="step-heading">Connect & Communicate</h3>
+            <p className="step-description">Start meaningful conversations in a safe, secure, and respectful environment.</p>
           </div>
           
           <div className="step-arrow">
@@ -146,8 +146,8 @@ export default function Homepage() {
           
           <div className="process-step">
             <div className="step-number">4</div>
-            <h3 className="step-heading">Live Testing</h3>
-            <p className="step-description">After completing the work, live test is done</p>
+            <h3 className="step-heading">Meet Your Match</h3>
+            <p className="step-description">Take the next step toward a beautiful relationship and a lasting future together.</p>
           </div>
         </div>
       </footer>
@@ -159,13 +159,16 @@ export default function Homepage() {
           <div className="footer-logo-section">
             <img src="/images/logo.png" alt="Ybe" className="footer-ybe-logo" />
             <h1 className="footer-main-heading">
-                  <span className="heading-part1">Where Majority of<br />NRIs </span>
-                  <span className="heading-part2">date and marry</span>
+                  {/* <span className="heading-part1">Where Majority of<br />NRIs </span>
+                  <span className="heading-part2">date and marry</span> */}
+                  <span className="heading-part1">For everyone looking for <br />love </span>
+                  <span className="heading-part2">especially NRIs</span>
+
                 </h1>
                 
           </div>
           <div className="footer-app-buttons">
-            <a href="#" target="_blank" rel="noopener noreferrer">
+            <a href="https://play.google.com/store/apps/details?id=com.ube.social&hl=en" target="_blank" rel="noopener noreferrer">
               <img src="/images/appstore.webp" alt="Download on App Store" className="footer-store-btn" />
             </a>
             <a href="https://play.google.com/store/apps/details?id=com.ube.social&hl=en" target="_blank" rel="noopener noreferrer">

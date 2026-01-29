@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [expandedBios, setExpandedBios] = useState({});
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [profileViewLimit, setProfileViewLimit] = useState(null);
+  const [nameSearch, setNameSearch] = useState('');
   
   // Per-load shuffling utilities (new order on each page load)
   const shuffleSeedRef = useRef(Math.floor(Math.random() * 4294967295));
@@ -545,6 +546,12 @@ export default function Dashboard() {
         });
       }
 
+      // Filter by name (search)
+      if (nameSearch && nameSearch.trim() !== '') {
+        const q = nameSearch.trim().toLowerCase();
+        filtered = filtered.filter(user => (user.name || '').toLowerCase().includes(q));
+      }
+
       // Sort by
       if (filters.sortBy === 'High Match') {
         filtered.sort((a, b) => {
@@ -566,7 +573,7 @@ export default function Dashboard() {
     }, 100);
 
     return () => clearTimeout(filterTimeout);
-  }, [filters, allUsers, userData?.currentPosition]);
+  }, [filters, allUsers, userData?.currentPosition, nameSearch]);
 
   const handleFilterChange = (filterType, value) => {
     setFilters(prev => ({
@@ -896,6 +903,9 @@ export default function Dashboard() {
       <SubHeader 
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        searchQuery={nameSearch}
+        setSearchQuery={setNameSearch}
+        placeholder="Search by name"
       />
       <div className="dashboard-content">
         {/* Left Sidebar - Filters */}

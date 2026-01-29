@@ -28,6 +28,7 @@ export default function MyMatches() {
   const [allMatches, setAllMatches] = useState([]);
   const [favorites, setFavorites] = useState(new Set());
   const dropdownRef = useRef(null);
+  const [nameSearch, setNameSearch] = useState('');
 
   // Category lists
   const [likedPartnerId, setLikedPartnerId] = useState([]);
@@ -568,14 +569,20 @@ export default function MyMatches() {
       <SubHeader 
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        searchQuery={nameSearch}
+        setSearchQuery={setNameSearch}
+        placeholder="Search by name"
       />
 
       <div className="my-matches-content">
         <h2 className="my-matches-title">My Matches</h2>
         
         <div className="matches-grid-cards">
-          {allMatches.length > 0 ? (
-            allMatches
+          {(() => {
+            const q = (nameSearch || '').trim().toLowerCase();
+            const filtered = q ? allMatches.filter(u => (u.name || '').toLowerCase().includes(q)) : allMatches;
+            return filtered.length > 0 ? (
+              filtered
               .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
               .map((user, index) => {
               const age = user.age || calculateAge(user.dateOfBirth) || 'N/A';
@@ -618,15 +625,19 @@ export default function MyMatches() {
                 </div>
               );
             })
-          ) : (
-            <div className="no-matches-found">
-              <p>No matches found yet. Keep exploring!</p>
-            </div>
-          )}
+            ) : (
+              <div className="no-matches-found">
+                <p>No matches found yet. Keep exploring!</p>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Pagination */}
-        {allMatches.length > 0 && (
+        {(() => {
+          const q = (nameSearch || '').trim().toLowerCase();
+          const total = q ? allMatches.filter(u => (u.name || '').toLowerCase().includes(q)).length : allMatches.length;
+          return total > 0 && (
           <div className="pagination-container">
             <button
               className="pagination-btn"
@@ -637,7 +648,7 @@ export default function MyMatches() {
             </button>
             <div className="pagination-numbers">
               {(() => {
-                const totalPages = Math.ceil(allMatches.length / ITEMS_PER_PAGE);
+                const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
                 const pages = [];
                 if (totalPages <= 7) {
                   for (let i = 1; i <= totalPages; i++) pages.push(i);
@@ -665,13 +676,14 @@ export default function MyMatches() {
             </div>
             <button
               className="pagination-btn"
-              onClick={() => setCurrentPage((p) => Math.min(Math.ceil(allMatches.length / ITEMS_PER_PAGE), p + 1))}
-              disabled={currentPage === Math.ceil(allMatches.length / ITEMS_PER_PAGE)}
+              onClick={() => setCurrentPage((p) => Math.min(Math.ceil(total / ITEMS_PER_PAGE), p + 1))}
+              disabled={currentPage === Math.ceil(total / ITEMS_PER_PAGE)}
             >
               Next
             </button>
           </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* Match Modal */}
