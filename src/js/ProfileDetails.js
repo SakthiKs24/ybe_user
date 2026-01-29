@@ -198,6 +198,16 @@ export default function ProfileDetails() {
     }
   };
 
+  const getRelativePosition = (index) => {
+    const total = (userData?.profileImageUrls || []).length;
+    if (total === 0) return 0;
+    let diff = index - currentImageIndex;
+    // Wrap around shortest direction
+    if (diff > total / 2) diff -= total;
+    if (diff < -total / 2) diff += total;
+    return diff; // negative = left, positive = right
+  };
+
   const generateRandomId = () => Math.random().toString(36).substring(2, 10).toUpperCase();
 
   const handleFavoriteToggle = async () => {
@@ -370,12 +380,25 @@ export default function ProfileDetails() {
           {/* Left Side - Image Gallery */}
           <div className="profile-left">
             <div className="image-gallery">
-              <div className="main-image-container">
-                <img 
-                  src={profileImages[currentImageIndex]} 
-                  alt={userData.name || 'User'} 
-                  className="main-profile-image" 
-                />
+              <div className="coverflow">
+                {profileImages.map((img, idx) => {
+                  const pos = getRelativePosition(idx);
+                  let cls = 'cf-hidden';
+                  if (pos === 0) cls = 'cf-current';
+                  else if (pos === -1) cls = 'cf-left';
+                  else if (pos === -2) cls = 'cf-left2';
+                  else if (pos === 1) cls = 'cf-right';
+                  else if (pos === 2) cls = 'cf-right2';
+                  return (
+                    <img
+                      key={idx}
+                      src={img}
+                      alt={`${userData.name || 'User'} ${idx + 1}`}
+                      className={`coverflow-item ${cls}`}
+                      onClick={() => setCurrentImageIndex(idx)}
+                    />
+                  );
+                })}
                 {profileImages.length > 1 && (
                   <>
                     <button className="image-nav-btn prev-btn" onClick={prevImage}>‹</button>
@@ -383,7 +406,6 @@ export default function ProfileDetails() {
                   </>
                 )}
               </div>
-              
               {/* Thumbnail Gallery */}
               {profileImages.length > 1 && (
                 <div className="thumbnail-gallery">
