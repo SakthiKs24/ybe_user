@@ -453,23 +453,27 @@ export default function ProfileDetails() {
                 <img src="/images/Chat.png" alt="Message" className={`action-icon ${hasMessaged ? 'active' : 'inactive'}`} />
               </button>
             </div>
+            {/* About Me */}
+            <section className="info-section">
+              <h2 className="section-title">About Me</h2>
+              <div className="info-grid">
+                <InfoRow label="About Me" value={userData.aboutMe || 'Not Specified'} />
+              </div>
+            </section>
+
             {/* Basic Info */}
             <section className="info-section">
               <h2 className="section-title">Basic Info</h2>
               <div className="info-grid">
-                <InfoRow label="Age/Height" value={`${age} Yrs /${height}`} icon="✕" />
-                <InfoRow label="Date of Birth" value={formatDate(userData.dateOfBirth)} />
-                <InfoRow label="Gender" value={userData.userGender === 'Female' ? 'Female' : userData.userGender === 'male' ? 'Male' : 'Not Specified'} icon="✕" />
-                <InfoRow label="Marital Status" value={userData.status === 'single' ? 'Never Married' : userData.status || 'Not Specified'} icon="❤" />
-                <InfoRow label="Have Children" value={userData.hasChildren || 'No information Available'} icon="⭐" />
-                <InfoRow label="Religion" value={userData.religion || 'Not Specified'} icon="✓" />
-                <InfoRow label="Caste" value={userData.community || 'Not Specified'} />
-                <InfoRow label="Sub Caste" value={userData.subCaste || 'Not Specified'} />
-                <InfoRow label="Gothra" value={userData.gothra || 'Not Specified'} />
+                <InfoRow label="Name" value={userData.name || 'Not Specified'} />
+                <InfoRow label="Gender" value={userData.userGender || 'Not Specified'} />
+                <InfoRow label="Interested In" value={userData.genderPreference || 'Not Specified'} />
+                <InfoRow label="Looking For" value={userData.lookingFor || 'Not Specified'} />
+                <InfoRow label="Status" value={userData.status || 'Not Specified'} />
+                <InfoRow label="Age/Height" value={`${age} Yrs / ${height}`} />
                 <InfoRow label="Mother Tongue" value={userData.motherTongue || 'Not Specified'} />
-                <InfoRow label="Features" value={userData.bodyBuild || 'Not Specified'} />
-                <InfoRow label="Complexion" value={userData.complexion || 'Not Specified'} />
-                <InfoRow label="Special Cases" value={userData.specialCases || 'None'} />
+                <InfoRow label="Community" value={userData.community || 'Not Specified'} />
+                <InfoRow label="Body Type" value={userData.bodyBuild || 'Not Specified'} />
               </div>
             </section>
 
@@ -477,9 +481,9 @@ export default function ProfileDetails() {
             <section className="info-section">
               <h2 className="section-title">Background and Religion Details</h2>
               <div className="info-grid">
-                <InfoRow label="Birth Time" value={userData.birthTime || 'Not Specified'} />
-                <InfoRow label="Country of Birth" value={userData.countryOfBirth || 'Not Specified'} />
-                <InfoRow label="Star" value={userData.selectedPersonalityTraitsMap?.starSign || "Don't Know"} />
+                <InfoRow label="Birthday" value={formatDate(userData.dateOfBirth)} />
+                <InfoRow label="Religion" value={userData.religion || 'Not Specified'} />
+                <InfoRow label="Star Sign" value={userData.selectedPersonalityTraitsMap?.starSign || "Don't Know"} />
              
               </div>
             </section>
@@ -488,11 +492,9 @@ export default function ProfileDetails() {
             <section className="info-section">
               <h2 className="section-title">Location</h2>
               <div className="info-grid">
-                <InfoRow label="Address" value={userData?.currentPosition?.address || 'Not Specified'} />
-                <InfoRow label="City"  value={userData?.currentPosition?.city || 'Not Specified'} />
-                <InfoRow label="Settled Country" value={userData.settledCountry || 'Not Specified'} />
+                <InfoRow label="Citizenship" value={userData.growUpCountry || 'Not Specified'} />
                 <InfoRow label="Origin Country" value={userData.originCountry || 'Not Specified'} />
-                <InfoRow label="GrowUp Country" value={userData.growUpCountry || 'Not Specified'} />
+                <InfoRow label="Settled City" value={userData.settledCountry || 'Not Specified'} />
 
               </div>
             </section>
@@ -501,8 +503,35 @@ export default function ProfileDetails() {
             <section className="info-section">
               <h2 className="section-title">Education and Profession</h2>
               <div className="info-grid">
-                <InfoRow label="Degree" value={userData.degree || 'Not Specified'} />
+                <InfoRow label="Last Degree" value={userData.degree || 'Not Specified'} />
                 <InfoRow label="Day Job" value={userData.dayJob || 'Not Specified'} />
+              </div>
+            </section>
+
+            {/* Personality and Behaviour */}
+            <section className="info-section">
+              <h2 className="section-title">Personality and Behaviour</h2>
+              <div className="info-grid">
+                <InfoRow label="Smoking Habits" value={userData.selectedPersonalityTraitsMap?.smoke || 'Not Specified'} />
+                <InfoRow label="Drinking Habits" value={userData.selectedPersonalityTraitsMap?.drink || 'Not Specified'} />
+                <InfoRow label="Exercise" value={userData.selectedPersonalityTraitsMap?.exercise || 'Not Specified'} />
+                <InfoRow label="Personality Type" value={userData.selectedPersonalityTraitsMap?.personalityType || 'Not Specified'} />
+              </div>
+            </section>
+
+            {/* Passions */}
+            <section className="info-section">
+              <h2 className="section-title">Passions</h2>
+              <div className="info-grid">
+                <InfoRow
+                  label="Passions"
+                  value={
+                    Array.isArray(userData.selectedPersonalityTraitsMap?.passions) &&
+                    userData.selectedPersonalityTraitsMap.passions.length > 0
+                      ? userData.selectedPersonalityTraitsMap.passions.join(', ')
+                      : 'Not Specified'
+                  }
+                />
               </div>
             </section>
           </div>
