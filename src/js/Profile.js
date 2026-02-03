@@ -552,9 +552,12 @@ export default function Profile() {
   const calculateProfileCompleteness = () => {
     if (!userData) return { percentage: 0, completed: 0, total: 0 };
     
-    // Count completed onboarding steps
-    const completedSteps = onboardingSteps.filter(step => step.completed).length;
-    const totalSteps = onboardingSteps.length;
+    // Only count the 10 core profile sections toward progress (exclude utility items)
+    const progressSections = onboardingSteps.filter(
+      (step) => step.key !== 'logout' && step.key !== 'deleteAccount'
+    );
+    const completedSteps = progressSections.filter(step => step.completed).length;
+    const totalSteps = progressSections.length || 10; // ensure divisor is 10
     
     return {
       percentage: (completedSteps / totalSteps) * 100,
@@ -1392,14 +1395,14 @@ case 'personalityTraits':
             
             <div className="profile-completeness">
               <p className="completeness-label">Profile Completeness</p>
-              <div className="progress-bar">
+              <div className="progress-bar1">
               <div 
                 className="progress-fill" 
-                style={{ width: `${profileCompletenessData.percentage}%` }}
+                style={{ width: `${Math.min(100, Math.round(profileCompletenessData.percentage))}%` }}
               ></div>
             </div>
               <p className="completeness-message">
-                {profileCompletenessData === 100 
+                {Math.round(profileCompletenessData.percentage) === 100 
                   ? 'Your profile is complete! 🎉' 
                   : 'Complete your profile to get a perfect match'}
               </p>
