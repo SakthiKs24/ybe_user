@@ -1395,7 +1395,7 @@ case 'personalityTraits':
             
             <div className="profile-completeness">
               <p className="completeness-label">Profile Completeness</p>
-              <div className="progress-bar1">
+              <div className="progress-bar2">
               <div 
                 className="progress-fill" 
                 style={{ width: `${Math.min(100, Math.round(profileCompletenessData.percentage))}%` }}
