@@ -91,38 +91,73 @@ export default function Profile() {
     "తెలుగు", "ತುಳು", "اردو", "ગુજરાતી"
   ];
 
-  // Standard options for Degree and Day Job (to support "Others" input)
+  // Degree and Day Job options (to support "Other"/"Others" custom input)
   const degreeOptions = [
-    "Doctorate",
-    "PhD",
-    "Masters",
-    "Bachelors",
-    "Associates",
-    "Trade School",
-    "High School"
+    "B.A.",
+    "B.Sc.",
+    "B.Com.",
+    "B.B.A.",
+    "B.C.A.",
+    "B.E./B.Tech",
+    "B.Arch.",
+    "B.Pharm.",
+    "BHM (Hotel Management)",
+    "B.Ed.",
+    "LLB/BA LLB",
+    "M.B.B.S.",
+    "B.D.S",
+    "B.A.M.S.",
+    "B.H.M.S.",
+    "B.P.T.",
+    "B.Sc.Nursing",
+    "Diploma (Engineering)",
+    "Diploma (Polytechnic)",
+    "ITI",
+    "Certificate Course",
+    "M.A.",
+    "M.Sc.",
+    "M.Com",
+    "M.B.A",
+    "M.Tech/M.E.",
+    "M.C.A",
+    "LLM",
+    "M.Phil.",
+    "Ph.D.",
+    "M.D./M.S.",
+    "DM/MCh",
+    "CA",
+    "CS",
+    "ICWA/CMA",
+    "CFA",
+    "Prefer not to say"
   ];
   const dayJobOptions = [
+    "Administration",
+    "Agricultural",
+    "Airline",
+    "Architecture & Design",
+    "Banking & Finance",
+    "Beauty & Fashion",
+    "BPO & Customer Service",
+    "Business",
+    "Civil Service",
+    "Corporate Professionals",
+    "Defense",
     "Doctor",
-    "Engineer",
-    "Teacher",
-    "Actor",
-    "Accountant",
-    "Archaeologist",
-    "Architect",
-    "Artist",
-    "Aviation Professional",
-    "Beautician",
-    "Chef",
-    "Nurse",
-    "IT Manager",
-    "Bank Job",
-    "Marketing Manager",
-    "Fashion Designer",
-    "Business owner",
-    "Advocate",
-    "Biomedical Engineer",
-    "Biologist",
-    "Professor"
+    "Education & Training",
+    "Engineering",
+    "Government",
+    "Hospitality",
+    "IT & Software",
+    "Legal",
+    "Media & Entertainment",
+    "Medical & Healthcare",
+    "Merchant Navy",
+    "Police / Law Enforcement",
+    "Private",
+    "Scientist",
+    "Self Employed",
+    "Senior Management",
   ];
 
   // Countries
@@ -135,6 +170,18 @@ export default function Profile() {
     "Montreal", "Munich", "New York", "Ottawa", "Paris", "Pune", "Riyadh", 
     "Rome", "San Francisco", "Seoul", "Shanghai", "Singapore", "Sydney", 
     "Tokyo", "Toronto", "Trivandrum", "Vancouver", "Zurich"
+  ];
+
+  // Country of origin options (used for Country of origin dropdown only)
+  const countryOfOriginList = [
+    "Abu Dhabi", "Ahmedabad", "Auckland", "Bangkok", "Barcelona", "Berlin",
+    "Bengaluru", "Cape Town", "Calicut", "Chennai", "Chicago", "Cochin",
+    "Delhi", "Doha", "Dubai", "Frankfurt", "Hong Kong", "Houston", "Jeddah",
+    "Jaipur", "Johannesburg", "Kuala Lumpur", "Kuwait City", "Lisbon",
+    "London", "Los Angeles", "Lucknow", "Madrid", "Melbourne", "Milan",
+    "Montreal", "Munich", "New York", "Ottawa", "Paris", "Pune", "Riyadh",
+    "Rome", "San Francisco", "Seoul", "Shanghai", "Singapore", "Sydney",
+    "Tokyo", "Toronto", "Trivandrum", "Vancouver", "Zurich",
   ];
 
   // Personality Traits Options
@@ -787,13 +834,13 @@ export default function Profile() {
               <select
                 value={
                   editMode
-                    ? (degreeOptions.includes(formData.degree) ? formData.degree : (formData.degree ? 'Others' : ''))
-                    : (degreeOptions.includes(userData?.degree || '') ? (userData?.degree || '') : 'Others')
+                    ? (degreeOptions.includes(formData.degree) ? formData.degree : (formData.degree ? 'Other' : ''))
+                    : (degreeOptions.includes(userData?.degree || '') ? (userData?.degree || '') : 'Other')
                 }
                 onChange={(e) => {
                   const v = e.target.value;
                   if (!editMode) return;
-                  if (v === 'Others') {
+                  if (v === 'Other') {
                     setFormData(prev => ({ ...prev, degree: '' }));
                   } else {
                     setFormData(prev => ({ ...prev, degree: v }));
@@ -806,7 +853,7 @@ export default function Profile() {
                 {degreeOptions.map(opt => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
-                <option value="Others">Others</option>
+                <option value="Other">Other (please specify)</option>
               </select>
               {editMode && (!degreeOptions.includes(formData.degree)) && (
                 <input
@@ -888,15 +935,15 @@ export default function Profile() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Origin Country</label>
+              <label className="form-label">Country of origin</label>
               <select
                 value={editMode ? formData.originCountry : userData?.originCountry || ''}
                 onChange={(e) => handleChange('originCountry', e.target.value)}
                 className="form-input"
                 disabled={!editMode}
               >
-                <option value="">Select Origin Country</option>
-                {countries.map(country => (
+                <option value="">Select Country of origin</option>
+                {countryOfOriginList.map(country => (
                   <option key={country} value={country}>{country}</option>
                 ))}
               </select>
@@ -918,14 +965,14 @@ export default function Profile() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Grow Up Country</label>
+              <label className="form-label">Nationality</label>
               <select
                 value={editMode ? formData.growUpCountry : userData?.growUpCountry || ''}
                 onChange={(e) => handleChange('growUpCountry', e.target.value)}
                 className="form-input"
                 disabled={!editMode}
               >
-                <option value="">Select Grow Up Country</option>
+                <option value="">Select Nationality</option>
                 <option value="USA">USA</option>
                 <option value="Canada">Canada</option>
                 <option value="Australia">Australia</option>

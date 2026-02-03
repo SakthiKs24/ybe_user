@@ -4,9 +4,20 @@ import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, getDocs, query, where, doc, updateDoc, onSnapshot, orderBy, getDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+import { isMandatoryComplete, MANDATORY_INCOMPLETE_MESSAGE } from '../utils/mandatoryFields';
 
 const Header = ({ userData, showProfileDropdown = false, setShowProfileDropdown = () => {}, dropdownRef = null, currentPage = '' }) => {
   const navigate = useNavigate();
+  const mandatoryComplete = userData ? isMandatoryComplete(userData) : true;
+
+  const handleNavClick = (path) => {
+    if (userData && !mandatoryComplete && path !== '/profile') {
+      toast.error(MANDATORY_INCOMPLETE_MESSAGE, { position: 'top-right', autoClose: 5000 });
+      navigate('/profile');
+      return;
+    }
+    navigate(path);
+  };
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
@@ -202,19 +213,19 @@ const Header = ({ userData, showProfileDropdown = false, setShowProfileDropdown 
 
   // Handle notification click
   const handleNotificationClick = async (notification) => {
-    // Mark as read if not already read
+    if (userData && !mandatoryComplete) {
+      toast.error(MANDATORY_INCOMPLETE_MESSAGE, { position: 'top-right', autoClose: 5000 });
+      navigate('/profile');
+      setShowNotificationDropdown(false);
+      return;
+    }
     if (notification.isRead !== true) {
       await markNotificationAsRead(notification.id);
     }
-    
-    // You can add navigation logic here based on notification type
-    // For example, navigate to profile or chat
     if (notification.userId || notification.senderId) {
       const userId = notification.userId || notification.senderId;
       navigate(`/profile/${userId}`);
     }
-    
-    // Close dropdown after clicking
     setShowNotificationDropdown(false);
   };
 
@@ -226,17 +237,17 @@ const Header = ({ userData, showProfileDropdown = false, setShowProfileDropdown 
       {/* Header */}
       <header className="dashboard-header">
         <div className="header-left">
-          <img src="/images/logo.png" alt="Ybe Logo" className="header-logo" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }} />
+          <img src="/images/logo.png" alt="Ybe Logo" className="header-logo" onClick={() => handleNavClick('/dashboard')} style={{ cursor: 'pointer' }} />
           {!isPublicPage && (
             <nav className="header-nav">
-              <a href="#" className={`nav-link ${currentPage === 'dashboard' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>Matches</a>
-              <a href="/chat" className={`nav-link ${currentPage === 'chat' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); navigate('/chat'); }}>Messages</a>
+              <a href="#" className={`nav-link ${currentPage === 'dashboard' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleNavClick('/dashboard'); }}>Matches</a>
+              <a href="/chat" className={`nav-link ${currentPage === 'chat' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleNavClick('/chat'); }}>Messages</a>
             </nav>
           )}
         </div>
         <div className="header-right">
           {!isPublicPage && (
-            <button className="upgrade-btn" onClick={() => navigate('/upgrade')}>Upgrade now</button>
+            <button className="upgrade-btn" onClick={() => handleNavClick('/upgrade')}>Upgrade now</button>
           )}
           {userData ? (
             <>
@@ -371,7 +382,7 @@ const Header = ({ userData, showProfileDropdown = false, setShowProfileDropdown 
               </div>
               <button 
                 className="icon-btn profile-icon-btn" 
-                onClick={() => navigate('/profile')}
+                onClick={() => handleNavClick('/profile')}
                 title="Profile"
               >
                 <img 

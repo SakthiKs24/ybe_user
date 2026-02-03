@@ -599,8 +599,8 @@ export default function ProfileDetails() {
             <section className="info-section">
               <h2 className="section-title">Location</h2>
               <div className="info-grid">
-                <InfoRow label="Citizenship" value={userData.growUpCountry || 'Not Specified'} />
-                <InfoRow label="Origin Country" value={userData.originCountry || 'Not Specified'} />
+                <InfoRow label="Nationality" value={userData.growUpCountry || 'Not Specified'} />
+                <InfoRow label="Country of origin" value={userData.originCountry || 'Not Specified'} />
                 <InfoRow label="Settled City" value={userData.settledCountry || 'Not Specified'} />
 
               </div>

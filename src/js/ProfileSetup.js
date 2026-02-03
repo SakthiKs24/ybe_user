@@ -58,19 +58,11 @@ export default function ProfileSetup() {
   const [dayJobOther, setDayJobOther] = useState(false);
 
   useEffect(() => {
-    // Initialize flags if existing value is a custom one
-    const stdDegrees = [
-      "Doctorate","PhD","Masters","Bachelors","Associates","Trade School","High School"
-    ];
-    const stdJobs = [
-      "Doctor","Engineer","Teacher","Actor","Accountant","Archaeologist","Architect","Artist",
-      "Aviation Professional","Beautician","Chef","Nurse","IT Manager","Bank Job","Marketing Manager",
-      "Fashion Designer","Business owner","Advocate","Biomedical Engineer","Biologist","Professor"
-    ];
-    if (profileData.degree && !stdDegrees.includes(profileData.degree)) {
+    // Initialize flags if existing value is a custom one (not in the standard lists)
+    if (profileData.degree && !degreeOptions.includes(profileData.degree)) {
       setDegreeOther(true);
     }
-    if (profileData.dayJob && !stdJobs.includes(profileData.dayJob)) {
+    if (profileData.dayJob && !dayJobOptions.includes(profileData.dayJob)) {
       setDayJobOther(true);
     }
   }, []);
@@ -103,6 +95,18 @@ export default function ProfileSetup() {
     "Montreal", "Munich", "New York", "Ottawa", "Paris", "Pune", "Riyadh", 
     "Rome", "San Francisco", "Seoul", "Shanghai", "Singapore", "Sydney", 
     "Tokyo", "Toronto", "Trivandrum", "Vancouver", "Zurich"
+  ];
+
+  // Country of origin options (used for Country of origin dropdown only)
+  const countryOfOriginList = [
+    "Abu Dhabi", "Ahmedabad", "Auckland", "Bangkok", "Barcelona", "Berlin",
+    "Bengaluru", "Cape Town", "Calicut", "Chennai", "Chicago", "Cochin",
+    "Delhi", "Doha", "Dubai", "Frankfurt", "Hong Kong", "Houston", "Jeddah",
+    "Jaipur", "Johannesburg", "Kuala Lumpur", "Kuwait City", "Lisbon",
+    "London", "Los Angeles", "Lucknow", "Madrid", "Melbourne", "Milan",
+    "Montreal", "Munich", "New York", "Ottawa", "Paris", "Pune", "Riyadh",
+    "Rome", "San Francisco", "Seoul", "Shanghai", "Singapore", "Sydney",
+    "Tokyo", "Toronto", "Trivandrum", "Vancouver", "Zurich",
   ];
 
   // Physical Build Type options
@@ -340,38 +344,73 @@ export default function ProfileSetup() {
                 "Community service"]
   };
 
-  // Standard options for Education and Day Job (used to toggle "Others" input)
+  // Degree and Day Job options (used to toggle "Other"/"Others" custom input)
   const degreeOptions = [
-    "Doctorate",
-    "PhD",
-    "Masters",
-    "Bachelors",
-    "Associates",
-    "Trade School",
-    "High School"
+    "B.A.",
+    "B.Sc.",
+    "B.Com.",
+    "B.B.A.",
+    "B.C.A.",
+    "B.E./B.Tech",
+    "B.Arch.",
+    "B.Pharm.",
+    "BHM (Hotel Management)",
+    "B.Ed.",
+    "LLB/BA LLB",
+    "M.B.B.S.",
+    "B.D.S",
+    "B.A.M.S.",
+    "B.H.M.S.",
+    "B.P.T.",
+    "B.Sc.Nursing",
+    "Diploma (Engineering)",
+    "Diploma (Polytechnic)",
+    "ITI",
+    "Certificate Course",
+    "M.A.",
+    "M.Sc.",
+    "M.Com",
+    "M.B.A",
+    "M.Tech/M.E.",
+    "M.C.A",
+    "LLM",
+    "M.Phil.",
+    "Ph.D.",
+    "M.D./M.S.",
+    "DM/MCh",
+    "CA",
+    "CS",
+    "ICWA/CMA",
+    "CFA",
+    "Prefer not to say"
   ];
   const dayJobOptions = [
+    "Administration",
+    "Agricultural",
+    "Airline",
+    "Architecture & Design",
+    "Banking & Finance",
+    "Beauty & Fashion",
+    "BPO & Customer Service",
+    "Business",
+    "Civil Service",
+    "Corporate Professionals",
+    "Defense",
     "Doctor",
-    "Engineer",
-    "Teacher",
-    "Actor",
-    "Accountant",
-    "Archaeologist",
-    "Architect",
-    "Artist",
-    "Aviation Professional",
-    "Beautician",
-    "Chef",
-    "Nurse",
-    "IT Manager",
-    "Bank Job",
-    "Marketing Manager",
-    "Fashion Designer",
-    "Business owner",
-    "Advocate",
-    "Biomedical Engineer",
-    "Biologist",
-    "Professor"
+    "Education & Training",
+    "Engineering",
+    "Government",
+    "Hospitality",
+    "IT & Software",
+    "Legal",
+    "Media & Entertainment",
+    "Medical & Healthcare",
+    "Merchant Navy",
+    "Police / Law Enforcement",
+    "Private",
+    "Scientist",
+    "Self Employed",
+    "Senior Management",
   ];
 
   const handleChange = (field, value) => {
@@ -906,14 +945,14 @@ export default function ProfileSetup() {
               <h2 className="section-title"> Location</h2>
 
               <div className="form-group">
-                <label className="form-label1">Origin Country</label>
+                <label className="form-label1">Country of origin</label>
                 <select
                   className="form-select"
                   value={profileData.originCountry}
                   onChange={(e) => handleChange('originCountry', e.target.value)}
                 >
-                  <option value="">Select Origin Country</option>
-                  {countries.map(country => (
+                  <option value="">Select Country of origin</option>
+                  {countryOfOriginList.map(country => (
                     <option key={country} value={country}>{country}</option>
                   ))}
                 </select>
@@ -934,13 +973,13 @@ export default function ProfileSetup() {
               </div>
 
               <div className="form-group">
-                <label className="form-label1">Grow Up Country</label>
+                <label className="form-label1">Nationality</label>
                 <select
                   className="form-select"
                   value={profileData.growUpCountry}
                   onChange={(e) => handleChange('growUpCountry', e.target.value)}
                 >
-                  <option value="">Select Grow Up Country</option>
+                  <option value="">Select Nationality</option>
                   <option value="USA">USA</option>
                   <option value="Canada">Canada</option>
                   <option value="Australia">Australia</option>
@@ -966,10 +1005,10 @@ export default function ProfileSetup() {
                 <label className="form-label1">Highest Education</label>
                 <select
                   className="form-select"
-                  value={degreeOther ? 'Others' : (profileData.degree || '')}
+                  value={degreeOther ? 'Other' : (profileData.degree || '')}
                   onChange={(e) => {
                     const v = e.target.value;
-                    if (v === 'Others') {
+                    if (v === 'Other') {
                       setDegreeOther(true);
                       if (!profileData.degree || degreeOptions.includes(profileData.degree)) {
                         handleChange('degree', '');
@@ -984,7 +1023,7 @@ export default function ProfileSetup() {
                   {degreeOptions.map(opt => (
                     <option key={opt} value={opt}>{opt}</option>
                   ))}
-                  <option value="Others">Others</option>
+                  <option value="Other">Other (please specify)</option>
                 </select>
                 {degreeOther && (
                   <input
