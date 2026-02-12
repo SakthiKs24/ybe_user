@@ -569,6 +569,30 @@
   opacity: 1;
 }
 
+.photo-item-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  z-index: 2;
+}
+
+.photo-item-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #eee;
+  border-top-color: #FF2B45;
+  border-radius: 50%;
+  animation: photo-item-spin 0.8s linear infinite;
+}
+
+@keyframes photo-item-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Modal Styles */
 .modal-overlay {
   position: fixed;

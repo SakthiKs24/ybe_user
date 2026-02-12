@@ -1,7 +1,7 @@
 /**
- * Profile photo validation:
- * 1. Client-side: file type, size, and face detection (valid human photo)
- * 2. Backend (Firebase Callable): optional celebrity check via Google Vision API
+ * Profile photo validation (client-side only):
+ * File type, size, and face detection (valid human photo).
+ * No backend/Firebase Functions used.
  */
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -74,22 +74,11 @@ export async function validateImageHasFace(file) {
       }
     }
 
-    // 2) Fallback heuristic: enforce sensible dimensions and crop ratios
-    const minW = 400;
-    const minH = 400;
-    const w = img.naturalWidth || img.width;
-    const h = img.naturalHeight || img.height;
+    // 2) Fallback when FaceDetector not available: accept image
     if (objectUrl) {
       URL.revokeObjectURL(objectUrl);
       objectUrl = null;
     }
-    if (!w || !h || w < minW || h < minH) {
-      return {
-        hasFace: false,
-        error: 'Image should be at least 400×400 and show a clear face.',
-      };
-    }
-
     return { hasFace: true };
   } catch (err) {
     if (objectUrl) URL.revokeObjectURL(objectUrl);
@@ -102,39 +91,7 @@ export async function validateImageHasFace(file) {
 }
 
 /**
- * Call Firebase Callable function to validate profile photo (face + celebrity).
- * Requires Firebase Function "validateProfilePhoto" deployed with Google Cloud Vision API.
- * @param {string} imageUrl - Public URL of the uploaded image (e.g. Firebase Storage download URL)
- * @returns {Promise<{ valid: boolean, isCelebrity?: boolean, error?: string }>}
- */
-export async function validateProfilePhotoWithBackend(imageUrl) {
-  if (!imageUrl) {
-    return { valid: true };
-  }
-  try {
-    const { functions } = await import('../firebase');
-    const { httpsCallable } = await import('firebase/functions');
-    const validateProfilePhoto = httpsCallable(functions, 'validateProfilePhoto');
-    const result = await validateProfilePhoto({ imageUrl });
-    const data = result?.data;
-    if (data && typeof data.valid === 'boolean') {
-      return {
-        valid: data.valid,
-        isCelebrity: data.isCelebrity,
-        error: data.error,
-      };
-    }
-    return { valid: true };
-  } catch (err) {
-    console.warn('Profile photo validation (backend) skipped or failed:', err?.message || err);
-    // If function not deployed or Vision API not set up, allow upload
-    return { valid: true };
-  }
-}
-
-/**
- * Single place for profile image upload logic: validate file → validate face → upload → validate backend.
- * Use this wherever profile images are uploaded in the project.
+ * Validate file → validate face → upload to Storage. No Firebase Functions used.
  * @param {File} file - Selected image file
  * @param {string} userId - Firestore user document id (for storage path)
  * @param {{ fileNamePrefix?: string }} options - Optional: custom prefix (default: userId + timestamp + file.name for unique names)
@@ -169,14 +126,6 @@ export async function uploadProfileImageWithValidation(file, userId, options = {
 
     await uploadBytes(storageRef, file);
     const downloadURL = await getDownloadURL(storageRef);
-
-    const backendValidation = await validateProfilePhotoWithBackend(downloadURL);
-    if (!backendValidation.valid) {
-      return {
-        success: false,
-        error: backendValidation.error || 'Please upload a valid person image. Celebrity photos are not allowed.',
-      };
-    }
 
     return { success: true, url: downloadURL };
   } catch (err) {

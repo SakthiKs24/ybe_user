@@ -11,6 +11,7 @@ export default function ProfileSetup() {
   const [currentStep, setCurrentStep] = useState(1);
   const [uploadedPhotos, setUploadedPhotos] = useState([false, false, false, false, false, false]);
   const [loading, setLoading] = useState(false);
+  const [uploadingPhotoIndex, setUploadingPhotoIndex] = useState(null);
   const totalSteps = 8;
 
   const [profileData, setProfileData] = useState({
@@ -505,7 +506,7 @@ export default function ProfileSetup() {
     }
 
     try {
-      setLoading(true);
+      setUploadingPhotoIndex(index);
 
       const usersRef = collection(db, 'users');
       const q = query(usersRef, where('email', '==', user.email));
@@ -513,6 +514,7 @@ export default function ProfileSetup() {
       if (querySnapshot.empty) {
         toast.error('User profile not found');
         event.target.value = '';
+        setUploadingPhotoIndex(null);
         return;
       }
       const userId = querySnapshot.docs[0].id;
@@ -527,6 +529,7 @@ export default function ProfileSetup() {
           autoClose: 5000,
         });
         event.target.value = '';
+        setUploadingPhotoIndex(null);
         return;
       }
 
@@ -545,7 +548,7 @@ export default function ProfileSetup() {
       console.error('Error uploading photo:', error);
       toast.error('Failed to upload photo. Please try again.');
     } finally {
-      setLoading(false);
+      setUploadingPhotoIndex(null);
     }
     event.target.value = '';
   };
@@ -1233,7 +1236,7 @@ export default function ProfileSetup() {
       <div className="photo-main-section">
         <div
           className={`photo-box-main ${profileData.profileImageUrls[0] ? 'has-image' : ''}`}
-          onClick={() => document.getElementById('photo0').click()}
+          onClick={() => uploadingPhotoIndex === null && document.getElementById('photo0').click()}
         >
           <input
             type="file"
@@ -1241,6 +1244,7 @@ export default function ProfileSetup() {
             accept="image/*"
             style={{ display: 'none' }}
             onChange={(e) => handlePhotoUpload(e, 0)}
+            disabled={uploadingPhotoIndex !== null}
           />
           {profileData.profileImageUrls[0] ? (
             <>
@@ -1255,6 +1259,11 @@ export default function ProfileSetup() {
               <div className="photo-icon-large">+</div>
             </div>
           )}
+          {uploadingPhotoIndex === 0 && (
+            <div className="photo-box-loading-overlay">
+              <div className="photo-box-spinner" />
+            </div>
+          )}
         </div>
       </div>
 
@@ -1264,7 +1273,7 @@ export default function ProfileSetup() {
           <div
             key={index}
             className={`photo-box-small ${profileData.profileImageUrls[index] ? 'has-image' : ''}`}
-            onClick={() => document.getElementById(`photo${index}`).click()}
+            onClick={() => uploadingPhotoIndex === null && document.getElementById(`photo${index}`).click()}
           >
             <input
               type="file"
@@ -1272,11 +1281,17 @@ export default function ProfileSetup() {
               accept="image/*"
               style={{ display: 'none' }}
               onChange={(e) => handlePhotoUpload(e, index)}
+              disabled={uploadingPhotoIndex !== null}
             />
             {profileData.profileImageUrls[index] ? (
               <img src={profileData.profileImageUrls[index]} alt={`Upload ${index + 1}`} />
             ) : (
               <div className="photo-icon-small">+</div>
+            )}
+            {uploadingPhotoIndex === index && (
+              <div className="photo-box-loading-overlay">
+                <div className="photo-box-spinner" />
+              </div>
             )}
           </div>
         ))}
@@ -1289,7 +1304,7 @@ export default function ProfileSetup() {
         <div
           key={index}
           className={`photo-box-bottom ${profileData.profileImageUrls[index] ? 'has-image' : ''}`}
-          onClick={() => document.getElementById(`photo${index}`).click()}
+          onClick={() => uploadingPhotoIndex === null && document.getElementById(`photo${index}`).click()}
         >
           <input
             type="file"
@@ -1297,11 +1312,17 @@ export default function ProfileSetup() {
             accept="image/*"
             style={{ display: 'none' }}
             onChange={(e) => handlePhotoUpload(e, index)}
+            disabled={uploadingPhotoIndex !== null}
           />
           {profileData.profileImageUrls[index] ? (
             <img src={profileData.profileImageUrls[index]} alt={`Upload ${index + 1}`} />
           ) : (
             <div className="photo-icon-small">+</div>
+          )}
+          {uploadingPhotoIndex === index && (
+            <div className="photo-box-loading-overlay">
+              <div className="photo-box-spinner" />
+            </div>
           )}
         </div>
       ))}

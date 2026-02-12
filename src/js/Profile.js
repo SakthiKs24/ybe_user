@@ -19,6 +19,7 @@ export default function Profile() {
   const [saveLoading, setSaveLoading] = useState(false);
   const dropdownRef = useRef(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [uploadingPhotoIndex, setUploadingPhotoIndex] = useState(null);
 
   // Form data state for editing
   const [formData, setFormData] = useState({
@@ -483,7 +484,7 @@ export default function Profile() {
     }
 
     try {
-      setLoading(true);
+      setUploadingPhotoIndex(index);
 
       const result = await uploadProfileImageWithValidation(file, userData.docId);
 
@@ -515,7 +516,7 @@ export default function Profile() {
       console.error('Error uploading photo:', error);
       toast.error('Failed to upload photo. Please try again.');
     } finally {
-      setLoading(false);
+      setUploadingPhotoIndex(null);
     }
     event.target.value = '';
   };
@@ -677,7 +678,7 @@ export default function Profile() {
                 <div className="current-photos">
                   {[0, 1, 2, 3, 4, 5].map((index) => {
                     const imageUrl = userData?.profileImageUrls?.[index];
-                    
+                    const isUploading = uploadingPhotoIndex === index;
                     return (
                       <div key={index} className="photo-item">
                         {imageUrl ? (
@@ -685,16 +686,23 @@ export default function Profile() {
                         ) : (
                           <div className="photo-placeholder">+</div>
                         )}
+                        {isUploading && (
+                          <div className="photo-item-loading-overlay">
+                            <div className="photo-item-spinner" />
+                          </div>
+                        )}
                         <input
                           type="file"
                           id={`photo-${index}`}
                           accept="image/*"
                           style={{ display: 'none' }}
                           onChange={(e) => handlePhotoUpload(e, index)}
+                          disabled={uploadingPhotoIndex !== null}
                         />
                         <button
                           className="upload-btn-small"
                           onClick={() => document.getElementById(`photo-${index}`).click()}
+                          disabled={uploadingPhotoIndex !== null}
                         >
                           {imageUrl ? 'Change' : 'Upload'}
                         </button>
