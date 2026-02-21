@@ -1,135 +1,107 @@
-/**
- * Profile photo validation (client-side only):
- * File type, size, and face detection (valid human photo).
- * No backend/Firebase Functions used.
- */
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import * as faceapi from '@vladmandic/face-api';
 
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+const storage = getStorage();
+let modelsLoaded = false;
 
-// Note: We avoid importing heavy external face detection libs to keep bundle light
-// and prevent build errors when packages are missing. We use the native FaceDetector
-// API when available; otherwise we fall back to basic heuristics.
 
-/**
- * Validate image file type and size.
- * @param {File} file
- * @returns {{ valid: boolean, error?: string }}
- */
-export function validateImageFile(file) {
-  if (!file || !file.type) {
-    return { valid: false, error: 'Please select a valid image file.' };
+const loadModels = async () => {
+  if (modelsLoaded) return;
+
+  const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model';
+
+  await Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+    faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
+  ]);
+
+  modelsLoaded = true;
+};
+
+
+const fileToImage = (file) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed')); };
+    img.src = url;
+  });
+};
+
+
+const basicFileValidation = (file) => {
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    return { valid: false, error: 'Only JPEG, PNG, or WebP images are allowed.' };
   }
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    return {
-      valid: false,
-      error: 'Please upload a valid image (JPEG, PNG or WebP only).',
-    };
-  }
-  if (file.size > MAX_SIZE_BYTES) {
-    return {
-      valid: false,
-      error: 'Image must be 5MB or smaller. Please choose a smaller file.',
-    };
+  if (file.size > 10 * 1024 * 1024) {
+    return { valid: false, error: 'Image size must be less than 10MB.' };
   }
   return { valid: true };
-}
+};
+
+
+const uploadToFirebase = async (file, userId) => {
+  const timestamp = Date.now();
+  const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const storageRef = ref(storage, `profile_images/${userId}/${userId}_${timestamp}_${safeFileName}`);
+  await uploadBytes(storageRef, file);
+  return await getDownloadURL(storageRef);
+};
 
 /**
- * Check that the image contains at least one detectable human face (client-side).
- * @param {File} file - Image file (JPEG/PNG/WebP)
- * @returns {Promise<{ hasFace: boolean, error?: string }>}
+ *
+ * @param {File} file
+ * @param {string} userId - Firestore document ID
+ * @returns {Promise<{success: boolean, url?: string, error?: string}>}
  */
-export async function validateImageHasFace(file) {
-  let objectUrl = null;
+export const uploadProfileImageWithValidation = async (file, userId) => {
   try {
-    const img = await new Promise((resolve, reject) => {
-      const image = new Image();
-      objectUrl = URL.createObjectURL(file);
-      image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error('Failed to load image'));
-      image.src = objectUrl;
-    });
-
-    // 1) Try native FaceDetector if supported
-    const FaceDetectorCtor =
-      (typeof window !== 'undefined' && (window.FaceDetector || window['FaceDetector'])) || null;
-    if (FaceDetectorCtor) {
-      try {
-        const detector = new FaceDetectorCtor({ fastMode: true, maxDetectedFaces: 5 });
-        const detections = await detector.detect(img);
-        if (objectUrl) {
-          URL.revokeObjectURL(objectUrl);
-          objectUrl = null;
-        }
-        if (Array.isArray(detections) && detections.length > 0) {
-          return { hasFace: true };
-        }
-        return {
-          hasFace: false,
-          error: 'Please upload a valid photo with a clear face visible.',
-        };
-      } catch (e) {
-        // Fall through to heuristic if detector fails
-      }
+    // Step 1: Basic validation
+    const basicCheck = basicFileValidation(file);
+    if (!basicCheck.valid) {
+      return { success: false, error: basicCheck.error };
     }
 
-    // 2) Fallback when FaceDetector not available: accept image
-    if (objectUrl) {
-      URL.revokeObjectURL(objectUrl);
-      objectUrl = null;
+    // Step 2: Load face detection models
+    await loadModels();
+
+    // Step 3: Convert file to image element
+    const img = await fileToImage(file);
+
+    // Step 4: Detect faces
+    const detections = await faceapi
+      .detectAllFaces(img, new faceapi.TinyFaceDetectorOptions({
+        inputSize: 416,
+        scoreThreshold: 0.4  
+      }))
+      .withFaceLandmarks(true);
+
+    const faceCount = detections.length;
+
+    if (faceCount === 0) {
+      return {
+        success: false,
+        error: 'No human face detected. Please upload a clear photo showing your face.'
+      };
     }
-    return { hasFace: true };
-  } catch (err) {
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
-    console.warn('Face detection error:', err?.message || err);
-    return {
-      hasFace: false,
-      error: 'Could not verify face in photo. Please upload a clear photo of your face.',
-    };
-  }
-}
 
-/**
- * Validate file → validate face → upload to Storage. No Firebase Functions used.
- * @param {File} file - Selected image file
- * @param {string} userId - Firestore user document id (for storage path)
- * @param {{ fileNamePrefix?: string }} options - Optional: custom prefix (default: userId + timestamp + file.name for unique names)
- * @returns {Promise<{ success: true, url: string } | { success: false, error: string }>}
- */
-export async function uploadProfileImageWithValidation(file, userId, options = {}) {
-  if (!file || !userId) {
-    return { success: false, error: 'Please select a valid image file.' };
-  }
+    if (faceCount > 1) {
+      return {
+        success: false,
+        error: `${faceCount} faces found. Please upload a solo photo with only your face.`
+      };
+    }
 
-  const fileValidation = validateImageFile(file);
-  if (!fileValidation.valid) {
-    return { success: false, error: fileValidation.error || 'Please upload a valid image.' };
-  }
+    const downloadURL = await uploadToFirebase(file, userId);
+    return { success: true, url: downloadURL };
 
-  const faceValidation = await validateImageHasFace(file);
-  if (!faceValidation.hasFace) {
+  } catch (error) {
+    console.error('Upload error:', error);
     return {
       success: false,
-      error: faceValidation.error || 'Please upload a valid photo with a clear face visible.',
+      error: 'Failed to process image. Please try again.'
     };
   }
-
-  try {
-    const { getStorage, ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-    const storage = getStorage();
-    const fileName =
-      options.fileNamePrefix != null
-        ? `${options.fileNamePrefix}_${file.name}`
-        : `${userId}_${Date.now()}_${file.name}`;
-    const storageRef = ref(storage, `profile-images/${fileName}`);
-
-    await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(storageRef);
-
-    return { success: true, url: downloadURL };
-  } catch (err) {
-    console.error('Profile image upload error:', err?.message || err);
-    return { success: false, error: 'Failed to upload photo. Please try again.' };
-  }
-}
+};
