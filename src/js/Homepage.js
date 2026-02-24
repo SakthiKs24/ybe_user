@@ -116,8 +116,8 @@ export default function Homepage() {
 
       {/* Footer - Standard Work Process */}
       <footer className="homepage-footer">
-        <h2 className="footer-title">We always follow the standard work process</h2>
-        <p className="footer-subtitle">We solve clients' projects in a simple & efficient way</p>
+        {/* <h2 className="footer-title">We always follow the standard work process</h2> */}
+        <p className="footer-title">Because the right match can be anywhere.</p>
         
         <div className="process-steps">
           <div className="process-step">

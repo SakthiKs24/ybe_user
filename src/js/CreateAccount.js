@@ -6,7 +6,7 @@ import { doc, setDoc, getDoc, collection, query, where, getDocs, runTransaction 
 import { toast } from 'react-toastify';
 import '../css/CreateAccount.css';
 import Navbar from './Navbar';
-import { COUNTRIES_DATA } from '../js/countriesData';
+// import { COUNTRIES_DATA } from '../js/countriesData'; // Commented out - phone number field removed
 
 // Helper function to get current location
 const getCurrentLocation = () => {
@@ -19,18 +19,18 @@ const getCurrentLocation = () => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        
+
         // Try to reverse geocode to get address details
         try {
           const response = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
           );
           const data = await response.json();
-          
+
           const address = data.display_name || '';
           const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || '';
           const countryCode = data.address?.country_code?.toUpperCase() || '';
-          
+
           resolve({
             address: address,
             city: city,
@@ -77,8 +77,8 @@ export default function CreateAccount() {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    countryCode: '+91',
-    mobile: '',
+    // countryCode: '+91', // Commented out - phone number field removed
+    // mobile: '', // Commented out - phone number field removed
     password: '',
     confirmPassword: '',
     dateOfBirth: '',
@@ -89,8 +89,9 @@ export default function CreateAccount() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  
+  const [signupSuccess, setSignupSuccess] = useState(false);
+
+
   // Require consent acceptance before accessing this page
   React.useEffect(() => {
     const accepted = sessionStorage.getItem('consentAccepted') === 'true';
@@ -123,11 +124,12 @@ export default function CreateAccount() {
       newErrors.email = 'Invalid email format';
     }
 
-    if (!formData.mobile.trim()) {
-      newErrors.mobile = 'Mobile number is required';
-    } else if (!/^\d{7,15}$/.test(formData.mobile.replace(/\D/g, ''))) {
-      newErrors.mobile = 'Mobile number must be 7-15 digits';
-    }
+    // Phone number validation - commented out
+    // if (!formData.mobile.trim()) {
+    //   newErrors.mobile = 'Mobile number is required';
+    // } else if (!/^\d{7,15}$/.test(formData.mobile.replace(/\D/g, ''))) {
+    //   newErrors.mobile = 'Mobile number must be 7-15 digits';
+    // }
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
@@ -165,8 +167,8 @@ export default function CreateAccount() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Check if email or phone already exists
-  const checkExistingUser = async (email, phoneNumber) => {
+  // Check if email already exists (phone check commented out)
+  const checkExistingUser = async (email) => {
     try {
       // Check email
       const emailQuery = query(
@@ -179,16 +181,15 @@ export default function CreateAccount() {
         return { exists: true, type: 'email' };
       }
 
-      // Check phone number
-      const phoneQuery = query(
-        collection(db, 'users'),
-        where('phoneNumber', '==', phoneNumber)
-      );
-      const phoneSnapshot = await getDocs(phoneQuery);
-
-      if (!phoneSnapshot.empty) {
-        return { exists: true, type: 'phone' };
-      }
+      // Phone number check - commented out
+      // const phoneQuery = query(
+      //   collection(db, 'users'),
+      //   where('phoneNumber', '==', phoneNumber)
+      // );
+      // const phoneSnapshot = await getDocs(phoneQuery);
+      // if (!phoneSnapshot.empty) {
+      //   return { exists: true, type: 'phone' };
+      // }
 
       return { exists: false };
     } catch (error) {
@@ -246,11 +247,12 @@ export default function CreateAccount() {
     setLoading(true);
 
     try {
-      // Combine country code with mobile number
-      const fullPhoneNumber = `${formData.countryCode}${formData.mobile.trim()}`;
+      // Combine country code with mobile number - commented out
+      // const fullPhoneNumber = `${formData.countryCode}${formData.mobile.trim()}`;
 
       // Check if user already exists
-      const existingUser = await checkExistingUser(formData.email, fullPhoneNumber);
+      const existingUser = await checkExistingUser(formData.email);
+      // const existingUser = await checkExistingUser(formData.email, fullPhoneNumber); // With phone check
 
       if (existingUser.exists) {
         if (existingUser.type === 'email') {
@@ -259,13 +261,15 @@ export default function CreateAccount() {
             position: "top-right",
             autoClose: 4000,
           });
-        } else if (existingUser.type === 'phone') {
-          setErrors({ mobile: 'This mobile number is already registered' });
-          toast.error('This mobile number is already registered. Please use a different number or sign in.', {
-            position: "top-right",
-            autoClose: 4000,
-          });
         }
+        // Phone error handling - commented out
+        // else if (existingUser.type === 'phone') {
+        //   setErrors({ mobile: 'This mobile number is already registered' });
+        //   toast.error('This mobile number is already registered. Please use a different number or sign in.', {
+        //     position: "top-right",
+        //     autoClose: 4000,
+        //   });
+        // }
         setLoading(false);
         return;
       }
@@ -291,7 +295,7 @@ export default function CreateAccount() {
         latitude: "",
         longitude: ""
       };
-      
+
       try {
         currentPosition = await getCurrentLocation();
         console.log('Location retrieved:', currentPosition);
@@ -305,7 +309,7 @@ export default function CreateAccount() {
       await setDoc(userDocRef, {
         name: formData.fullName.trim(),
         email: formData.email.trim().toLowerCase(),
-        phoneNumber: fullPhoneNumber,
+        // phoneNumber: fullPhoneNumber, // Commented out - phone number field removed
         dateOfBirth: formData.dateOfBirth,
         userGender: formData.gender,
         userId: userId,
@@ -384,13 +388,36 @@ export default function CreateAccount() {
 
       console.log('User account created successfully:', userId);
 
+      // Set success state to show loading overlay immediately
+      // setSignupSuccess(true);
+      // setLoading(true);
+
+      // // Show success message
+      // toast.success('Account created successfully!', {
+      //   position: "top-right",
+      //   autoClose: 2000,
+      // });
+      // Stop button loading
+      setLoading(false);
+
+      // Show full screen success loader
+      setSignupSuccess(true);
+
       toast.success('Account created successfully!', {
         position: "top-right",
-        autoClose: 2000,
+        autoClose: 1500,
       });
 
+      // Navigate after short delay
       setTimeout(() => {
-        navigate('/profile-setup');
+        navigate('/profile-setup', { replace: true });
+      }, 1500);
+
+
+      // Navigate to profile-setup after showing success message
+      // Delay allows success message to be visible before navigation
+      setTimeout(() => {
+        navigate('/profile-setup', { replace: true });
       }, 2000);
 
     } catch (error) {
@@ -426,6 +453,54 @@ export default function CreateAccount() {
 
   return (
     <div className="create-account-page">
+      {/* Success overlay with loading */}
+      {signupSuccess && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          color: '#fff'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            padding: '30px'
+          }}>
+            <div style={{
+              fontSize: '48px',
+              color: '#4CAF50',
+              marginBottom: '20px'
+            }}>✓</div>
+            <h2 style={{ marginBottom: '15px', fontSize: '24px' }}>Account Created Successfully!</h2>
+            <p style={{ marginBottom: '30px', fontSize: '16px', opacity: 0.9 }}>
+              Setting up your profile...
+            </p>
+            <div style={{
+              width: '50px',
+              height: '50px',
+              border: '4px solid rgba(255, 255, 255, 0.3)',
+              borderTop: '4px solid #fff',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto'
+            }}></div>
+            <style>{`
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}</style>
+          </div>
+        </div>
+      )}
+
       <header className="ca-header">
         <div className="logo">
           <img src="/images/logo.png" alt="Ibe Logo" className="logo-img" />
@@ -478,6 +553,7 @@ export default function CreateAccount() {
               </div>
             </div>
 
+            {/* Phone Number Field - Commented out
             <div className="form-group">
               <div>
                 <label className="form-label">Mobile Number</label>
@@ -514,6 +590,7 @@ export default function CreateAccount() {
                 )}
               </div>
             </div>
+            */}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '25px' }}>
               <div style={{ position: 'relative' }}>
@@ -540,8 +617,8 @@ export default function CreateAccount() {
                     fontSize: '16px'
                   }}
                 >
-                  <img 
-                    src={showPassword ? '/images/hidden.png' : '/images/show.png'} 
+                  <img
+                    src={showPassword ? '/images/hidden.png' : '/images/show.png'}
                     alt={showPassword ? 'Hide password' : 'Show password'}
                     style={{ width: '20px', height: '20px' }}
                   />
@@ -577,8 +654,8 @@ export default function CreateAccount() {
                     fontSize: '16px'
                   }}
                 >
-                  <img 
-                    src={showConfirmPassword ? '/images/hidden.png' : '/images/show.png'} 
+                  <img
+                    src={showConfirmPassword ? '/images/hidden.png' : '/images/show.png'}
                     alt={showConfirmPassword ? 'Hide password' : 'Show password'}
                     style={{ width: '20px', height: '20px' }}
                   />
@@ -601,7 +678,7 @@ export default function CreateAccount() {
                   onChange={(e) => handleChange('dateOfBirth', e.target.value)}
                   disabled={loading}
                   max={getMaxDate()}
-                  />
+                />
                 {errors.dateOfBirth && (
                   <span style={{ color: '#FF027D', fontSize: '13px', marginTop: '5px', display: 'block' }}>
                     {errors.dateOfBirth}

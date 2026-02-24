@@ -85,10 +85,10 @@ export default function Profile() {
 
   // Mother tongue options
   const motherTongues = [
-    "العربية", "বাংলা", "中文", "Dansk", "Deutsch", "English", "Español", "Français", 
-    "Gaeilge", "Italiano", "日本語", "कश्मीरी/ كشميري", "ಕನ್ನಡ", "कोंकणी", 
-    "মৈতৈলোন্/ মণিপুরী", "मराठी", "Magyar", "മലയാളം", "नेपाली", "Nederlands", 
-    "ଓଡିଆ", "ਪੰਜਾਬੀ", "Português", "Русский", "سنڌي", "Svenska", "தமிழ்", 
+    "العربية", "বাংলা", "中文", "Dansk", "Deutsch", "English", "Español", "Français",
+    "Gaeilge", "Italiano", "日本語", "कश्मीरी/ كشميري", "ಕನ್ನಡ", "कोंकणी",
+    "মৈতৈলোন্/ মণিপুরী", "मराठी", "Magyar", "മലയാളം", "नेपाली", "Nederlands",
+    "ଓଡିଆ", "ਪੰਜਾਬੀ", "Português", "Русский", "سنڌي", "Svenska", "தமிழ்",
     "తెలుగు", "ತುಳು", "اردو", "ગુજરાતી"
   ];
 
@@ -163,26 +163,69 @@ export default function Profile() {
 
   // Countries
   const countries = [
-    "Abu Dhabi", "Ahmedabad", "Auckland", "Bangkok", "Barcelona", "Berlin", 
-    "Bengaluru", "Cape Town", "Calicut", "Chennai", "Chicago", "Cochin", 
-    "Delhi", "Doha", "Dubai", "Frankfurt", "Hong Kong", "Houston", "Jedah", 
-    "Jaipur", "Johannesburg", "India", "Kuala Lumpur", "Kuwait City", "Lisbon", 
-    "London", "Los Angeles", "Lucknow", "Madrid", "Melbourne", "Milan", 
-    "Montreal", "Munich", "New York", "Ottawa", "Paris", "Pune", "Riyadh", 
-    "Rome", "San Francisco", "Seoul", "Shanghai", "Singapore", "Sydney", 
+    "Abu Dhabi", "Ahmedabad", "Auckland", "Bangkok", "Barcelona", "Berlin",
+    "Bengaluru", "Cape Town", "Calicut", "Chennai", "Chicago", "Cochin",
+    "Delhi", "Doha", "Dubai", "Frankfurt", "Hong Kong", "Houston", "Jedah",
+    "Jaipur", "Johannesburg", "India", "Kuala Lumpur", "Kuwait City", "Lisbon",
+    "London", "Los Angeles", "Lucknow", "Madrid", "Melbourne", "Milan",
+    "Montreal", "Munich", "New York", "Ottawa", "Paris", "Pune", "Riyadh",
+    "Rome", "San Francisco", "Seoul", "Shanghai", "Singapore", "Sydney",
     "Tokyo", "Toronto", "Trivandrum", "Vancouver", "Zurich"
   ];
 
   // Country of origin options (used for Country of origin dropdown only)
   const countryOfOriginList = [
-    "Abu Dhabi", "Ahmedabad", "Auckland", "Bangkok", "Barcelona", "Berlin",
-    "Bengaluru", "Cape Town", "Calicut", "Chennai", "Chicago", "Cochin",
-    "Delhi", "Doha", "Dubai", "Frankfurt", "Hong Kong", "Houston", "Jeddah",
-    "Jaipur", "Johannesburg", "Kuala Lumpur", "Kuwait City", "Lisbon",
-    "London", "Los Angeles", "Lucknow", "Madrid", "Melbourne", "Milan",
-    "Montreal", "Munich", "New York", "Ottawa", "Paris", "Pune", "Riyadh",
-    "Rome", "San Francisco", "Seoul", "Shanghai", "Singapore", "Sydney",
-    "Tokyo", "Toronto", "Trivandrum", "Vancouver", "Zurich",
+    "Afghanistan",
+    "Armenia",
+    "Azerbaijan",
+    "Bahrain",
+    "Bangladesh",
+    "Bhutan",
+    "Brunei",
+    "Cambodia",
+    "China",
+    "Cyprus",
+    "Georgia",
+    "India",
+    "Indonesia",
+    "Iran",
+    "Iraq",
+    "Israel",
+    "Japan",
+    "Jordan",
+    "Kazakhstan",
+    "Kuwait",
+    "Kyrgyzstan",
+    "Laos",
+    "Lebanon",
+    "Malaysia",
+    "Maldives",
+    "Mongolia",
+    "Myanmar (Burma)",
+    "Nepal",
+    "North Korea",
+    "Oman",
+    "Pakistan",
+    "Palestine",
+    "Philippines",
+    "Qatar",
+    "Saudi Arabia",
+    "Singapore",
+    "South Korea",
+    "Sri Lanka",
+    "Syria",
+    "Taiwan",
+    "Tajikistan",
+    "Thailand",
+    "Timor-Leste",
+    "Turkey",
+    "Turkmenistan",
+    "United Arab Emirates",
+    "Uzbekistan",
+    "Vietnam",
+    "Yemen",
+    "Other",
+    "A non-Asian country",
   ];
 
   // Personality Traits Options
@@ -237,7 +280,7 @@ export default function Profile() {
           const usersRef = collection(db, 'users');
           const q = query(usersRef, where('email', '==', user.email));
           const querySnapshot = await getDocs(q);
-          
+
           if (!querySnapshot.empty) {
             const userDoc = querySnapshot.docs[0];
             const data = {
@@ -247,7 +290,7 @@ export default function Profile() {
               ...userDoc.data()
             };
             setUserData(data);
-            
+
             // Set form data for editing
             setFormData({
               name: data.name || '',
@@ -322,7 +365,7 @@ export default function Profile() {
   const handlePersonalityTraitChange = (field, value) => {
     // Check if it's single-select or multi-select
     const singleSelectFields = ['personalityType', 'starSign', 'drink', 'smoke', 'exercise'];
-    
+
     if (singleSelectFields.includes(field)) {
       // Single select
       setFormData(prev => ({
@@ -337,7 +380,7 @@ export default function Profile() {
       setFormData(prev => {
         const currentSelections = prev.selectedPersonalityTraitsMap[field] || [];
         const isSelected = currentSelections.includes(value);
-        
+
         return {
           ...prev,
           selectedPersonalityTraitsMap: {
@@ -354,13 +397,13 @@ export default function Profile() {
   const handleLikesInvolvesToggle = (category, option) => {
     // Single-select categories
     const singleSelectCategories = ['relaxWay', 'sleepingHabit', 'childrenView'];
-    
+
     if (singleSelectCategories.includes(category)) {
       // Single select
       setFormData(prev => {
         const currentSelection = prev.selectedLikesInvolvesMap[category] || [];
         const isSelected = currentSelection.includes(option);
-        
+
         return {
           ...prev,
           selectedLikesInvolvesMap: {
@@ -374,7 +417,7 @@ export default function Profile() {
       setFormData(prev => {
         const currentSelections = prev.selectedLikesInvolvesMap[category] || [];
         const isSelected = currentSelections.includes(option);
-        
+
         return {
           ...prev,
           selectedLikesInvolvesMap: {
@@ -392,9 +435,9 @@ export default function Profile() {
     setSaveLoading(true);
     try {
       const userDocRef = doc(db, 'users', userData.docId);
-      
+
       const updateData = {};
-      
+
       // Only update fields based on active section
       if (activeSection === 'profileInformation') {
         updateData.name = formData.name;
@@ -433,12 +476,12 @@ export default function Profile() {
 
       // Update local state
       setUserData(prev => ({ ...prev, ...updateData }));
-      
+
       toast.success('Profile updated successfully!', {
         position: "top-right",
         autoClose: 2000,
       });
-      
+
       setEditMode(false);
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -453,18 +496,18 @@ export default function Profile() {
         // Delete user document from Firestore
         const userDocRef = doc(db, 'users', userData.docId);
         await deleteDoc(userDocRef);
-        
+
         // Sign out the user
         await signOut(auth);
-        
+
         // Clear localStorage
         localStorage.removeItem('userDetails');
-        
+
         toast.success('Account deleted successfully!', {
           position: "top-right",
           autoClose: 2000,
         });
-        
+
         setTimeout(() => {
           navigate('/');
         }, 1000);
@@ -552,21 +595,21 @@ export default function Profile() {
 
   const calculateProfileCompleteness = () => {
     if (!userData) return { percentage: 0, completed: 0, total: 0 };
-    
+
     // Only count the 10 core profile sections toward progress (exclude utility items)
     const progressSections = onboardingSteps.filter(
       (step) => step.key !== 'logout' && step.key !== 'deleteAccount'
     );
     const completedSteps = progressSections.filter(step => step.completed).length;
     const totalSteps = progressSections.length || 10; // ensure divisor is 10
-    
+
     return {
       percentage: (completedSteps / totalSteps) * 100,
       completed: completedSteps,
       total: totalSteps
     };
   };
-  
+
 
   const onboardingSteps = [
     { key: 'profileInformation', label: 'Profile Information', completed: !!(userData?.name && userData?.dateOfBirth) },
@@ -580,7 +623,7 @@ export default function Profile() {
     { key: 'personalityTraits', label: 'Personality Traits', completed: !!(userData?.selectedPersonalityTraitsMap?.personalityType) },
     { key: 'likesInvolves', label: 'Likes & Involves', completed: !!(userData?.selectedLikesInvolvesMap?.movies?.length > 0) },
     { key: 'deleteAccount', label: 'Delete Account', completed: true }, // NEW LINE
-    { key: 'logout', label: 'Logout', completed: true }, 
+    { key: 'logout', label: 'Logout', completed: true },
 
   ];
 
@@ -667,53 +710,53 @@ export default function Profile() {
             )}
           </div>
         );
-      
-        case 'profilePhoto':
-          return (
-            <div className="section-content">
-              <h2>Profile Photos</h2>
-              <p className="subtitle">Upload at least 3 photos to complete your profile</p>
-              
-              <div className="photo-upload-section">
-                <div className="current-photos">
-                  {[0, 1, 2, 3, 4, 5].map((index) => {
-                    const imageUrl = userData?.profileImageUrls?.[index];
-                    const isUploading = uploadingPhotoIndex === index;
-                    return (
-                      <div key={index} className="photo-item">
-                        {imageUrl ? (
-                          <img src={imageUrl} alt={`Profile ${index + 1}`} />
-                        ) : (
-                          <div className="photo-placeholder">+</div>
-                        )}
-                        {isUploading && (
-                          <div className="photo-item-loading-overlay">
-                            <div className="photo-item-spinner" />
-                          </div>
-                        )}
-                        <input
-                          type="file"
-                          id={`photo-${index}`}
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          onChange={(e) => handlePhotoUpload(e, index)}
-                          disabled={uploadingPhotoIndex !== null}
-                        />
-                        <button
-                          className="upload-btn-small"
-                          onClick={() => document.getElementById(`photo-${index}`).click()}
-                          disabled={uploadingPhotoIndex !== null}
-                        >
-                          {imageUrl ? 'Change' : 'Upload'}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
+
+      case 'profilePhoto':
+        return (
+          <div className="section-content">
+            <h2>Profile Photos</h2>
+            <p className="subtitle">Upload at least 3 photos to complete your profile</p>
+
+            <div className="photo-upload-section">
+              <div className="current-photos">
+                {[0, 1, 2, 3, 4, 5].map((index) => {
+                  const imageUrl = userData?.profileImageUrls?.[index];
+                  const isUploading = uploadingPhotoIndex === index;
+                  return (
+                    <div key={index} className="photo-item">
+                      {imageUrl ? (
+                        <img src={imageUrl} alt={`Profile ${index + 1}`} />
+                      ) : (
+                        <div className="photo-placeholder">+</div>
+                      )}
+                      {isUploading && (
+                        <div className="photo-item-loading-overlay">
+                          <div className="photo-item-spinner" />
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        id={`photo-${index}`}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => handlePhotoUpload(e, index)}
+                        disabled={uploadingPhotoIndex !== null}
+                      />
+                      <button
+                        className="upload-btn-small"
+                        onClick={() => document.getElementById(`photo-${index}`).click()}
+                        disabled={uploadingPhotoIndex !== null}
+                      >
+                        {imageUrl ? 'Change' : 'Upload'}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          );
-      
+          </div>
+        );
+
       case 'personalDetails':
         return (
           <div className="section-content">
@@ -785,14 +828,33 @@ export default function Profile() {
                 disabled={!editMode}
               >
                 <option value="">Select Community</option>
-                <option value="Malayali">Malayali</option>
-                <option value="Tamil">Tamil</option>
-                <option value="Telugu">Telugu</option>
-                <option value="Kannada">Kannada</option>
-                <option value="Punjabi">Punjabi</option>
-                <option value="Bengali">Bengali</option>
-                <option value="Gujarati">Gujarati</option>
-                <option value="Marathi">Marathi</option>
+                <option value="Arab">Arab</option>
+                <option value="Armenian / Georgian (Caucasus)">Armenian / Georgian (Caucasus)</option>
+                <option value="Azerbaijani">Azerbaijani</option>
+                <option value="Bangladeshi">Bangladeshi</option>
+                <option value="Central Asian">Central Asian</option>
+                <option value="Chinese">Chinese</option>
+                <option value="Filipino">Filipino</option>
+                <option value="Indonesian">Indonesian</option>
+                <option value="Japanese">Japanese</option>
+                <option value="Jewish">Jewish</option>
+                <option value="Korean">Korean</option>
+                <option value="Malay / Singaporean">Malay / Singaporean</option>
+                <option value="Mongolian">Mongolian</option>
+                <option value="Nepalese">Nepalese</option>
+                <option value="North Indian">North Indian</option>
+                <option value="North West Indian">North West Indian</option>
+                <option value="Pakistani">Pakistani</option>
+                <option value="Persian / Iranian">Persian / Iranian</option>
+                <option value="South Indian">South Indian</option>
+                <option value="Southeast Asian (Thai, Burmese, Khmer, Lao, etc.)">
+                  Southeast Asian (Thai, Burmese, Khmer, Lao, etc.)
+                </option>
+                <option value="Sri Lankan">Sri Lankan</option>
+                <option value="Tibetan">Tibetan</option>
+                <option value="Turkic">Turkic</option>
+                <option value="Uyghur">Uyghur</option>
+                <option value="Vietnamese">Vietnamese</option>
               </select>
             </div>
 
@@ -961,14 +1023,14 @@ export default function Profile() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Settled Country</label>
+              <label className="form-label">Settled City</label>
               <select
                 value={editMode ? formData.settledCountry : userData?.settledCountry || ''}
                 onChange={(e) => handleChange('settledCountry', e.target.value)}
                 className="form-input"
                 disabled={!editMode}
               >
-                <option value="">Select Settled Country</option>
+                <option value="">Select Settled City</option>
                 {countries.map(country => (
                   <option key={country} value={country}>{country}</option>
                 ))}
@@ -984,13 +1046,39 @@ export default function Profile() {
                 disabled={!editMode}
               >
                 <option value="">Select Nationality</option>
-                <option value="USA">USA</option>
-                <option value="Canada">Canada</option>
                 <option value="Australia">Australia</option>
-                <option value="India">India</option>
-                <option value="France">France</option>
+                <option value="Austria">Austria</option>
+                <option value="Bahrain">Bahrain</option>
+                <option value="Belgium">Belgium</option>
                 <option value="Bulgaria">Bulgaria</option>
-                <option value="Prefer Not to say">Prefer Not to say</option>
+                <option value="Canada">Canada</option>
+                <option value="China">China</option>
+                <option value="Denmark">Denmark</option>
+                <option value="Fiji">Fiji</option>
+                <option value="France">France</option>
+                <option value="Germany">Germany</option>
+                <option value="India">India</option>
+                <option value="Ireland">Ireland</option>
+                <option value="Italy">Italy</option>
+                <option value="Japan">Japan</option>
+                <option value="Kuwait">Kuwait</option>
+                <option value="Malaysia">Malaysia</option>
+                <option value="Mauritius">Mauritius</option>
+                <option value="Netherlands">Netherlands</option>
+                <option value="New Zealand">New Zealand</option>
+                <option value="Norway">Norway</option>
+                <option value="Oman">Oman</option>
+                <option value="Qatar">Qatar</option>
+                <option value="Saudi Arabia">Saudi Arabia</option>
+                <option value="Singapore">Singapore</option>
+                <option value="South Africa">South Africa</option>
+                <option value="Spain">Spain</option>
+                <option value="Sweden">Sweden</option>
+                <option value="Switzerland">Switzerland</option>
+                <option value="United Arab Emirates (UAE)">United Arab Emirates (UAE)</option>
+                <option value="United Kingdom (UK)">United Kingdom (UK)</option>
+                <option value="United States of America (USA)">United States of America (USA)</option>
+                <option value="Other">Other</option>
               </select>
             </div>
 
@@ -1175,182 +1263,182 @@ export default function Profile() {
         );
 
 
-// 1. In the personalityTraits section, update the rendering to handle multi-select properly:
+      // 1. In the personalityTraits section, update the rendering to handle multi-select properly:
 
-case 'personalityTraits':
-  return (
-    <div className="section-content">
-      <div className="section-header">
-        <h2>Personality Traits & Passions</h2>
-        {!editMode && (
-          <button className="edit-btn" onClick={() => setEditMode(true)}>
-            ✏️ Edit
-          </button>
-        )}
-      </div>
-
-      <div className="lifestyle-container1">
-        {Object.entries(personalityTraitsMap).map(([key, options]) => {
-          // Single-select fields use radio buttons
-          const singleSelectFields = ['personalityType', 'starSign', 'drink', 'smoke', 'exercise'];
-          const isSingleSelect = singleSelectFields.includes(key);
-          
-          const currentValue = editMode 
-            ? formData.selectedPersonalityTraitsMap[key]
-            : userData?.selectedPersonalityTraitsMap?.[key] || (isSingleSelect ? '' : []);
-          
-          return (
-            <div className="lifestyle-category" key={key}>
-              <label className="form-label">
-                {key === 'personalityType' ? 'Personality Type' :
-                 key === 'starSign' ? 'Star Sign' :
-                 key === 'drink' ? 'Do you drink?' :
-                 key === 'smoke' ? 'Do you smoke?' :
-                 key === 'exercise' ? 'Exercise' :
-                 key === 'weatherType' ? 'Weather Type' :
-                 key === 'poison' ? 'Poison' :
-                 key === 'tripsType' ? 'Trip Type' :
-                 key === 'pets' ? 'Pets' :
-                 key === 'weekendNight' ? 'Weekend Night' :
-                 key === 'weekendActivities' ? 'Weekend Activities' :
-                 key === 'eveningRoutine' ? 'Evening Routine' :
-                 key === 'passions' ? 'Passions' : key}
-              </label>
-              
-              {isSingleSelect ? (
-                <div className="radio-group">
-                  {options.map(option => (
-                    <div className="radio-option" key={option}>
-                      <input
-                        type="radio"
-                        name={key}
-                        id={`${key}-${option}`}
-                        checked={currentValue === option}
-                        onChange={() => editMode && handlePersonalityTraitChange(key, option)}
-                        disabled={!editMode}
-                      />
-                      <label htmlFor={`${key}-${option}`}>{option}</label>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="checkbox-group">
-                  {options.map(option => {
-                    const isSelected = Array.isArray(currentValue) && currentValue.includes(option);
-                    
-                    return (
-                      <div className="checkbox-option" key={option}>
-                        <input
-                          type="checkbox"
-                          id={`${key}-${option}`}
-                          checked={isSelected}
-                          onChange={() => editMode && handlePersonalityTraitChange(key, option)}
-                          disabled={!editMode}
-                        />
-                        <label htmlFor={`${key}-${option}`}>{option}</label>
-                      </div>
-                    );
-                  })}
-                </div>
+      case 'personalityTraits':
+        return (
+          <div className="section-content">
+            <div className="section-header">
+              <h2>Personality Traits & Passions</h2>
+              {!editMode && (
+                <button className="edit-btn" onClick={() => setEditMode(true)}>
+                  ✏️ Edit
+                </button>
               )}
             </div>
-          );
-        })}
-      </div>
 
-      {editMode && (
-        <div className="btn-group">
-          <button className="btn-cancel" onClick={() => setEditMode(false)}>
-            Cancel
-          </button>
-          <button
-            className="save-btn"
-            onClick={handleSaveChanges}
-            disabled={saveLoading}
-          >
-            {saveLoading ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
-      )}
-    </div>
-  );
+            <div className="lifestyle-container1">
+              {Object.entries(personalityTraitsMap).map(([key, options]) => {
+                // Single-select fields use radio buttons
+                const singleSelectFields = ['personalityType', 'starSign', 'drink', 'smoke', 'exercise'];
+                const isSingleSelect = singleSelectFields.includes(key);
 
+                const currentValue = editMode
+                  ? formData.selectedPersonalityTraitsMap[key]
+                  : userData?.selectedPersonalityTraitsMap?.[key] || (isSingleSelect ? '' : []);
 
-    case 'likesInvolves':
-  return (
-    <div className="section-content">
-      <div className="section-header">
-        <h2>Likes & Involves</h2>
-        {!editMode && (
-          <button className="edit-btn" onClick={() => setEditMode(true)}>
-            ✏️ Edit
-          </button>
-        )}
-      </div>
+                return (
+                  <div className="lifestyle-category" key={key}>
+                    <label className="form-label">
+                      {key === 'personalityType' ? 'Personality Type' :
+                        key === 'starSign' ? 'Star Sign' :
+                          key === 'drink' ? 'Do you drink?' :
+                            key === 'smoke' ? 'Do you smoke?' :
+                              key === 'exercise' ? 'Exercise' :
+                                key === 'weatherType' ? 'Weather Type' :
+                                  key === 'poison' ? 'Poison' :
+                                    key === 'tripsType' ? 'Trip Type' :
+                                      key === 'pets' ? 'Pets' :
+                                        key === 'weekendNight' ? 'Weekend Night' :
+                                          key === 'weekendActivities' ? 'Weekend Activities' :
+                                            key === 'eveningRoutine' ? 'Evening Routine' :
+                                              key === 'passions' ? 'Passions' : key}
+                    </label>
 
-      <div className="lifestyle-container1">
-        {Object.entries(lifestyleCategories).map(([key, options]) => {  // Changed from likesInvolvesMap
-          const currentSelections = editMode
-            ? formData.selectedLikesInvolvesMap[key] || []
-            : userData?.selectedLikesInvolvesMap?.[key] || [];
-          
-          return (
-            <div className="lifestyle-category" key={key}>
-              <label className="form-label">
-                {key === 'movies' ? 'Movies' :
-                 key === 'music' ? 'Music' :
-                 key === 'foods' ? 'Foods' :
-                 key === 'books' ? 'Books' :
-                 key === 'vacations' ? 'Vacations' :
-                 key === 'tvShows' ? 'TV Shows' :
-                 key === 'hobbies' ? 'Hobbies' :
-                 key === 'sports' ? 'Sports' :
-                 key === 'relaxWay' ? 'Relax Way' :
-                 key === 'sleepingHabit' ? 'Sleeping Habit' :
-                 key === 'childrenView' ? 'Children View' :
-                 key === 'interests' ? 'Interests' : key}
-              </label>
-              <div className="checkbox-group">
-                {options.map(option => {
-                  const isSelected = currentSelections.includes(option);
-                  
-                  return (
-                    <div className="checkbox-option" key={option}>
-                      <input
-                        type="checkbox"
-                        id={`${key}-${option}`}
-                        checked={isSelected}
-                        onChange={() => editMode && handleLikesInvolvesToggle(key, option)}
-                        disabled={!editMode}
-                      />
-                      <label htmlFor={`${key}-${option}`}>{option}</label>
-                    </div>
-                  );
-                })}
-              </div>
+                    {isSingleSelect ? (
+                      <div className="radio-group">
+                        {options.map(option => (
+                          <div className="radio-option" key={option}>
+                            <input
+                              type="radio"
+                              name={key}
+                              id={`${key}-${option}`}
+                              checked={currentValue === option}
+                              onChange={() => editMode && handlePersonalityTraitChange(key, option)}
+                              disabled={!editMode}
+                            />
+                            <label htmlFor={`${key}-${option}`}>{option}</label>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="checkbox-group">
+                        {options.map(option => {
+                          const isSelected = Array.isArray(currentValue) && currentValue.includes(option);
+
+                          return (
+                            <div className="checkbox-option" key={option}>
+                              <input
+                                type="checkbox"
+                                id={`${key}-${option}`}
+                                checked={isSelected}
+                                onChange={() => editMode && handlePersonalityTraitChange(key, option)}
+                                disabled={!editMode}
+                              />
+                              <label htmlFor={`${key}-${option}`}>{option}</label>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
 
-      {editMode && (
-        <div className="btn-group">
-          <button className="btn-cancel" onClick={() => setEditMode(false)}>
-            Cancel
-          </button>
-          <button
-            className="save-btn"
-            onClick={handleSaveChanges}
-            disabled={saveLoading}
-          >
-            {saveLoading ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-      
-      
+            {editMode && (
+              <div className="btn-group">
+                <button className="btn-cancel" onClick={() => setEditMode(false)}>
+                  Cancel
+                </button>
+                <button
+                  className="save-btn"
+                  onClick={handleSaveChanges}
+                  disabled={saveLoading}
+                >
+                  {saveLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            )}
+          </div>
+        );
+
+
+      case 'likesInvolves':
+        return (
+          <div className="section-content">
+            <div className="section-header">
+              <h2>Likes & Involves</h2>
+              {!editMode && (
+                <button className="edit-btn" onClick={() => setEditMode(true)}>
+                  ✏️ Edit
+                </button>
+              )}
+            </div>
+
+            <div className="lifestyle-container1">
+              {Object.entries(lifestyleCategories).map(([key, options]) => {  // Changed from likesInvolvesMap
+                const currentSelections = editMode
+                  ? formData.selectedLikesInvolvesMap[key] || []
+                  : userData?.selectedLikesInvolvesMap?.[key] || [];
+
+                return (
+                  <div className="lifestyle-category" key={key}>
+                    <label className="form-label">
+                      {key === 'movies' ? 'Movies' :
+                        key === 'music' ? 'Music' :
+                          key === 'foods' ? 'Foods' :
+                            key === 'books' ? 'Books' :
+                              key === 'vacations' ? 'Vacations' :
+                                key === 'tvShows' ? 'TV Shows' :
+                                  key === 'hobbies' ? 'Hobbies' :
+                                    key === 'sports' ? 'Sports' :
+                                      key === 'relaxWay' ? 'Relax Way' :
+                                        key === 'sleepingHabit' ? 'Sleeping Habit' :
+                                          key === 'childrenView' ? 'Children View' :
+                                            key === 'interests' ? 'Interests' : key}
+                    </label>
+                    <div className="checkbox-group">
+                      {options.map(option => {
+                        const isSelected = currentSelections.includes(option);
+
+                        return (
+                          <div className="checkbox-option" key={option}>
+                            <input
+                              type="checkbox"
+                              id={`${key}-${option}`}
+                              checked={isSelected}
+                              onChange={() => editMode && handleLikesInvolvesToggle(key, option)}
+                              disabled={!editMode}
+                            />
+                            <label htmlFor={`${key}-${option}`}>{option}</label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {editMode && (
+              <div className="btn-group">
+                <button className="btn-cancel" onClick={() => setEditMode(false)}>
+                  Cancel
+                </button>
+                <button
+                  className="save-btn"
+                  onClick={handleSaveChanges}
+                  disabled={saveLoading}
+                >
+                  {saveLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            )}
+          </div>
+        );
+
+
       default:
         return (
           <div className="section-content">
@@ -1373,7 +1461,7 @@ case 'personalityTraits':
 
   return (
     <div className="profile-container">
-      <Header 
+      <Header
         userData={userData}
         showProfileDropdown={showProfileDropdown}
         setShowProfileDropdown={setShowProfileDropdown}
@@ -1385,13 +1473,13 @@ case 'personalityTraits':
         {/* Left Sidebar */}
         <aside className="profile-sidebar">
           <h3 className="sidebar-title">Profile settings</h3>
-          
+
           {/* Profile Card */}
           <div className="profile-card">
             <div className="profile-header-info">
-              <img 
-                src={userData?.profileImageUrls?.[0] || '/images/profile_badge.png'} 
-                alt="Profile" 
+              <img
+                src={userData?.profileImageUrls?.[0] || '/images/profile_badge.png'}
+                alt="Profile"
                 className="profile-avatar"
               />
               <div className="profile-welcome">
@@ -1400,18 +1488,18 @@ case 'personalityTraits':
                 <p className="profile-id">{userData?.userId || ''}</p>
               </div>
             </div>
-            
+
             <div className="profile-completeness">
               <p className="completeness-label">Profile Completeness</p>
               <div className="progress-bar2">
-              <div 
-                className="progress-fill" 
-                style={{ width: `${Math.min(100, Math.round(profileCompletenessData.percentage))}%` }}
-              ></div>
-            </div>
+                <div
+                  className="progress-fill"
+                  style={{ width: `${Math.min(100, Math.round(profileCompletenessData.percentage))}%` }}
+                ></div>
+              </div>
               <p className="completeness-message">
-                {Math.round(profileCompletenessData.percentage) === 100 
-                  ? 'Your profile is complete! 🎉' 
+                {Math.round(profileCompletenessData.percentage) === 100
+                  ? 'Your profile is complete! 🎉'
                   : 'Complete your profile to get a perfect match'}
               </p>
             </div>
@@ -1422,49 +1510,49 @@ case 'personalityTraits':
             <h3 className="onboarding-title">Profile Sections</h3>
             <div className="onboarding-steps">
               {onboardingSteps.map((step) => (
-               <div 
-               key={step.key}
-               className={`onboarding-step ${activeSection === step.key ? 'active' : ''} ${step.key === 'logout' || step.key === 'deleteAccount' ? 'logout-step' : ''}`}
-               onClick={() => {
-                 if (step.key === 'logout') {
-                   setShowLogoutModal(true);
-                 } else if (step.key === 'deleteAccount') {
-                   setShowDeleteModal(true);
-                 } else {
-                   setActiveSection(step.key);
-                   setEditMode(false);
-                 }
-               }}
-             >
-               <div className={`step-checkbox ${step.completed ? 'completed' : 'pending'}`}>
-                 {step.key === 'logout' ? (
-                   <img
-                     src="/images/logout.jpeg"
-                     alt="Logout"
-                     className="step-status-img"
-                   />
-                 ) : step.key === 'deleteAccount' ? (
-                   <img
-                     src="/images/delete.png"
-                     alt="Delete Account"
-                     className="step-status-img"
-                   />
-                 ) : (
-                   <img
-                     src={
-                       step.completed
-                         ? '/images/step-tick.png'
-                         : '/images/step-untick.png'
-                     }
-                     alt={step.completed ? 'Completed' : 'Not Completed'}
-                     className="step-status-img"
-                   />
-                 )}
-               </div>
-               <span className="step-label">{step.label}</span>
-               <span className="step-arrow">›</span>
-             </div>
-             
+                <div
+                  key={step.key}
+                  className={`onboarding-step ${activeSection === step.key ? 'active' : ''} ${step.key === 'logout' || step.key === 'deleteAccount' ? 'logout-step' : ''}`}
+                  onClick={() => {
+                    if (step.key === 'logout') {
+                      setShowLogoutModal(true);
+                    } else if (step.key === 'deleteAccount') {
+                      setShowDeleteModal(true);
+                    } else {
+                      setActiveSection(step.key);
+                      setEditMode(false);
+                    }
+                  }}
+                >
+                  <div className={`step-checkbox ${step.completed ? 'completed' : 'pending'}`}>
+                    {step.key === 'logout' ? (
+                      <img
+                        src="/images/logout.jpeg"
+                        alt="Logout"
+                        className="step-status-img"
+                      />
+                    ) : step.key === 'deleteAccount' ? (
+                      <img
+                        src="/images/delete.png"
+                        alt="Delete Account"
+                        className="step-status-img"
+                      />
+                    ) : (
+                      <img
+                        src={
+                          step.completed
+                            ? '/images/step-tick.png'
+                            : '/images/step-untick.png'
+                        }
+                        alt={step.completed ? 'Completed' : 'Not Completed'}
+                        className="step-status-img"
+                      />
+                    )}
+                  </div>
+                  <span className="step-label">{step.label}</span>
+                  <span className="step-arrow">›</span>
+                </div>
+
               ))}
             </div>
           </div>
@@ -1503,34 +1591,34 @@ case 'personalityTraits':
             </div>
           </div>
         </div>
-        
+
       )}
       {showDeleteModal && (
-  <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-      <h3>Delete Account</h3>
-      <p>Do you want to delete your account? This action cannot be undone.</p>
-      <div className="modal-buttons">
-        <button
-          onClick={() => setShowDeleteModal(false)}
-          className="btn-cancel"
-        >
-          No, Keep it
-        </button>
-        <button
-          onClick={() => {
-            setShowDeleteModal(false);
-            handleDeleteAccount();
-          }}
-          className="btn-confirm"
-          style={{ backgroundColor: '#FF2B45' }}
-        >
-          Delete Account
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete Account</h3>
+            <p>Do you want to delete your account? This action cannot be undone.</p>
+            <div className="modal-buttons">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="btn-cancel"
+              >
+                No, Keep it
+              </button>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  handleDeleteAccount();
+                }}
+                className="btn-confirm"
+                style={{ backgroundColor: '#FF2B45' }}
+              >
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,12 +1,14 @@
 /**
  * Firebase Callable: validateProfilePhoto
- * Uses AWS Rekognition: DetectFaces (valid human face) + RecognizeCelebrities.
+ * Uses AWS Rekognition: DetectFaces (valid human face check only).
+ * Celebrity check (RecognizeCelebrities) is commented out - uncomment to enable.
  *
- * AWS credentials (deployed function does NOT read your project .env file):
- * - Local/emulator: copy .env into functions/.env or use root .env
- * - Deployed: REQUIRED - run:
- *     firebase functions:config:set aws.access_key_id="YOUR_KEY" aws.secret_access_key="YOUR_SECRET"
- *   then: firebase deploy --only functions
+ * AWS credentials (checked in order):
+ * 1. process.env.AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (from functions/.env when deployed)
+ * 2. functions.config().aws (deprecated March 2026+; use .env or params to migrate)
+ *
+ * Recommended: create functions/.env with AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY,
+ * add functions/.env to .gitignore, then deploy. No config:set needed.
  */
 
 const path = require('path');
@@ -19,7 +21,7 @@ const admin = require('firebase-admin');
 const {
   RekognitionClient,
   DetectFacesCommand,
-  RecognizeCelebritiesCommand,
+  // RecognizeCelebritiesCommand, // Commented out - celebrity check disabled
 } = require('@aws-sdk/client-rekognition');
 
 if (!admin.apps.length) {
@@ -37,8 +39,20 @@ function getAwsCredentials() {
     const secretKey =
       process.env.AWS_SECRET_ACCESS_KEY ||
       (cfg.aws && (cfg.aws.secret_access_key || cfg.aws.secretAccessKey));
+    
+    // Log for debugging (don't log actual secret)
+    if (!accessKey || !secretKey) {
+      console.warn('AWS credentials check:', {
+        hasEnvAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+        hasEnvSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
+        hasConfigAws: !!cfg.aws,
+        configKeys: cfg.aws ? Object.keys(cfg.aws) : [],
+      });
+    }
+    
     return { accessKey: accessKey || null, secretKey: secretKey || null };
   } catch (e) {
+    console.error('Error getting AWS credentials:', e.message);
     return { accessKey: null, secretKey: null };
   }
 }
@@ -88,9 +102,26 @@ async function getImageBytes(imageUrl) {
  * Validate profile photo: must have a face, must not be celebrity.
  */
 exports.validateProfilePhoto = functions.https.onCall(async (data, context) => {
-  const imageUrl = data?.imageUrl;
-  if (!imageUrl || typeof imageUrl !== 'string') {
-    return { valid: false, error: 'Please upload a valid image.' };
+  // Accept URL as direct string (data = "https://...") or as object (data = { imageUrl: "..." })
+  let imageUrl = null;
+  if (typeof data === 'string' && data.length > 0) {
+    imageUrl = data;
+  } else if (data && typeof data === 'object') {
+    imageUrl =
+      data.imageUrl ||
+      data.url ||
+      (data.data && (data.data.imageUrl || data.data.url)) ||
+      null;
+  }
+  if (!imageUrl || typeof imageUrl !== 'string' || !imageUrl.startsWith('http')) {
+    console.warn('validateProfilePhoto: missing or invalid imageUrl', {
+      dataType: typeof data,
+      keys: data && typeof data === 'object' ? Object.keys(data) : [],
+    });
+    return {
+      valid: false,
+      error: 'Could not read image. Please try uploading again.',
+    };
   }
 
   const { accessKey, secretKey } = getAwsCredentials();
@@ -146,23 +177,23 @@ exports.validateProfilePhoto = functions.https.onCall(async (data, context) => {
       };
     }
 
-    const celebResult = await client.send(
-      new RecognizeCelebritiesCommand({ Image: imagePayload })
-    );
-
-    const celebrityFaces = celebResult.CelebrityFaces || [];
-    if (celebrityFaces.length > 0) {
-      const first = celebrityFaces[0];
-      const name = first.Name || 'Unknown';
-      const confidence = first.MatchConfidence != null ? first.MatchConfidence : 0;
-      console.log(`Celebrity detected: ${name} (${confidence.toFixed(1)}%)`);
-      return {
-        valid: false,
-        isCelebrity: true,
-        error:
-          'Celebrity or stock photos are not allowed. Please upload your own photo.',
-      };
-    }
+    // Celebrity check - COMMENTED OUT (only face detection active for now)
+    // const celebResult = await client.send(
+    //   new RecognizeCelebritiesCommand({ Image: imagePayload })
+    // );
+    // const celebrityFaces = celebResult.CelebrityFaces || [];
+    // if (celebrityFaces.length > 0) {
+    //   const first = celebrityFaces[0];
+    //   const name = first.Name || 'Unknown';
+    //   const confidence = first.MatchConfidence != null ? first.MatchConfidence : 0;
+    //   console.log(`Celebrity detected: ${name} (${confidence.toFixed(1)}%)`);
+    //   return {
+    //     valid: false,
+    //     isCelebrity: true,
+    //     error:
+    //       'Celebrity or stock photos are not allowed. Please upload your own photo.',
+    //   };
+    // }
 
     return { valid: true };
   } catch (err) {

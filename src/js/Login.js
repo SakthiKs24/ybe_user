@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db, googleProvider, facebookProvider } from '../firebase';
 import {
@@ -11,6 +11,7 @@ import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } fro
 import { toast } from 'react-toastify';
 import '../css/Login.css';
 import { COUNTRIES_DATA } from "../js/countriesData.js";
+import { isMandatoryComplete } from '../utils/mandatoryFields';
 
 // Helper function to get current location
 const getCurrentLocation = () => {
@@ -127,6 +128,28 @@ export default function Login({ isOpen, onClose }) {
 const [loadingEmail, setLoadingEmail] = useState(false);
 const [loadingSocial, setLoadingSocial] = useState(false);
 
+  // Clean up reCAPTCHA when phone login section is closed
+  // Must be before early return to follow React Hooks rules
+  useEffect(() => {
+    if (!showPhoneLogin) {
+      // Clean up verifier when phone login is closed
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+        } catch (e) {
+          console.warn("Error clearing verifier:", e);
+        }
+        window.recaptchaVerifier = null;
+      }
+      
+      // Clear the container element
+      const container = document.getElementById("recaptcha-container");
+      if (container) {
+        container.innerHTML = '';
+      }
+    }
+  }, [showPhoneLogin]);
+
   if (!isOpen) return null;
 
   const handleChange = (field, value) => {
@@ -170,7 +193,10 @@ setLoadingEmail(true);
           onlineStatus: true
         });
 
-        toast.success('Login successful! Redirecting to dashboard...', {
+        // Check if mandatory fields are complete
+        const mandatoryComplete = isMandatoryComplete(userData);
+
+        toast.success('Login successful!', {
           position: "top-right",
           autoClose: 2000,
           hideProgressBar: false,
@@ -179,10 +205,14 @@ setLoadingEmail(true);
           draggable: true,
         });
 
-        // Close modal and navigate using React Router
+        // Close modal and navigate based on mandatory fields completion
         setTimeout(() => {
           onClose();
-          navigate('/dashboard');
+          if (mandatoryComplete) {
+            navigate('/dashboard');
+          } else {
+            navigate('/profile');
+          }
         }, 1500);
       } else {
         // Try to find user by email
@@ -192,13 +222,25 @@ setLoadingEmail(true);
         
         if (!querySnapshot.empty) {
           const foundDoc = querySnapshot.docs[0];
+          const userData = foundDoc.data();
+          
           // Update user location
           await updateUserLocation(foundDoc.id);
+          
+          // Check mandatory fields
+          const mandatoryComplete = isMandatoryComplete(userData);
+          
+          onClose();
+          if (mandatoryComplete) {
+            navigate('/dashboard');
+          } else {
+            navigate('/profile');
+          }
+        } else {
+          console.log('No user document found in Firestore');
+          onClose();
+          navigate('/profile');
         }
-        
-        console.log('No user document found in Firestore');
-        onClose();
-        navigate('/dashboard');
       }
 
     } catch (error) {
@@ -245,6 +287,8 @@ setLoadingEmail(true);
 
       // ✅ IF USER EXISTS → LOGIN
       if (userDoc.exists()) {
+        const userData = userDoc.data();
+        
         // Update user location
         await updateUserLocation(user.uid);
 
@@ -253,6 +297,9 @@ setLoadingEmail(true);
           onlineStatus: true
         });
 
+        // Check if mandatory fields are complete
+        const mandatoryComplete = isMandatoryComplete(userData);
+
         toast.success("Login successful!", {
           position: "top-right",
           autoClose: 2000,
@@ -260,7 +307,12 @@ setLoadingEmail(true);
 
         setTimeout(() => {
           onClose();
-          navigate("/dashboard");
+          // Navigate based on mandatory fields completion
+          if (mandatoryComplete) {
+            navigate("/dashboard");
+          } else {
+            navigate("/profile");
+          }
         }, 1500);
       }
       // IF USER DOES NOT EXIST → REDIRECT TO SIGNUP
@@ -288,7 +340,18 @@ setLoadingEmail(true);
 
     } catch (error) {
       console.error("Google login error:", error);
-      setError("Google sign-in failed. Please try again.");
+      
+      // Handle specific Firebase Auth errors
+      if (error.code === 'auth/invalid-app-credential') {
+        setError("Google sign-in configuration error. Please contact support.");
+        toast.error("Authentication configuration issue. Please check Firebase Console settings.");
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        setError("Sign-in popup was closed. Please try again.");
+      } else if (error.code === 'auth/popup-blocked') {
+        setError("Popup was blocked. Please allow popups for this site.");
+      } else {
+        setError(error.message || "Google sign-in failed. Please try again.");
+      }
     } finally {
       setLoadingSocial(false);
     }
@@ -299,8 +362,31 @@ setLoadingEmail(true);
   const fullPhoneNumber = `${country.dial_code}${phone}`;
 
   const setupRecaptcha = () => {
-    if (!window.recaptchaVerifier) {
+    // Ensure the container exists
+    const container = document.getElementById("recaptcha-container");
+    if (!container) {
+      const errorMsg = "reCAPTCHA container not found. Please ensure phone login form is visible.";
+      console.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    // Clear existing verifier if it exists
+    if (window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier.clear();
+      } catch (e) {
+        console.warn("Error clearing existing verifier:", e);
+      }
+      window.recaptchaVerifier = null;
+    }
+
+    // Clear the container to remove any existing reCAPTCHA widgets
+    container.innerHTML = '';
+
+    try {
+      // Firebase v9+ RecaptchaVerifier signature: (auth, containerId, options)
       window.recaptchaVerifier = new RecaptchaVerifier(
+        auth, // ✅ First argument is auth
         "recaptcha-container", // container ID or element
         {
           size: "invisible",
@@ -309,13 +395,26 @@ setLoadingEmail(true);
           },
           "expired-callback": () => {
             console.log("reCAPTCHA expired");
+            // Reset verifier on expiry
+            if (window.recaptchaVerifier) {
+              try {
+                window.recaptchaVerifier.clear();
+              } catch (e) {
+                console.warn("Error clearing expired verifier:", e);
+              }
+            }
+            window.recaptchaVerifier = null;
           },
-        },
-        auth // ✅ third argument is auth
+        }
       );
+      console.log("RecaptchaVerifier initialized successfully");
+    } catch (error) {
+      console.error("Error setting up RecaptchaVerifier:", error);
+      // Clean up on error
+      window.recaptchaVerifier = null;
+      throw error;
     }
   };
-
 
   const sendOtp = async () => {
     if (!phone) {
@@ -327,22 +426,13 @@ setLoadingEmail(true);
     setError("");
 
     try {
-      // if (!window.recaptchaVerifier) {
-      //   window.recaptchaVerifier = new RecaptchaVerifier(
-      //     auth,
-      //     "recaptcha-container",
-      //     {
-      //       size: "invisible",
-      //       callback: () => {
-      //         console.log("reCAPTCHA solved");
-      //       },
-      //       "expired-callback": () => {
-      //         console.log("reCAPTCHA expired");
-      //       },
-      //     }
-      //   );
-      // }
+      // Setup reCAPTCHA verifier
       setupRecaptcha();
+
+      // Verify verifier was created successfully
+      if (!window.recaptchaVerifier) {
+        throw new Error("Failed to initialize reCAPTCHA. Please refresh the page and try again.");
+      }
 
       console.log("FULL PHONE:", fullPhoneNumber);
       console.log("AUTH OBJECT:", auth);
@@ -363,7 +453,25 @@ setLoadingEmail(true);
       console.error("OTP ERROR CODE:", err.code);
       console.error("OTP ERROR MESSAGE:", err.message);
 
-      setError(err.message || "Failed to send OTP");
+      // Reset verifier on error so it can be recreated
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+        } catch (clearError) {
+          console.warn("Error clearing recaptcha verifier:", clearError);
+        }
+        window.recaptchaVerifier = null;
+      }
+      
+      // Clear the container element to allow re-initialization
+      const container = document.getElementById("recaptcha-container");
+      if (container) {
+        container.innerHTML = '';
+      }
+
+      const errorMessage = err.message || err.code || "Failed to send OTP. Please try again.";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoadingSocial(false);
     }
@@ -379,35 +487,95 @@ setLoadingEmail(true);
     try {
       const result = await confirmationResult.confirm(otp);
       const user = result.user;
+      const phoneNumber = user.phoneNumber || fullPhoneNumber;
 
-      const userDoc = await getDoc(doc(db, "users", user.uid));
+      // First, check if user document exists by Firebase Auth UID
+      let userDoc = await getDoc(doc(db, "users", user.uid));
+      let userId = user.uid;
 
+      // If not found by UID, check if phone number exists in Firestore
+      if (!userDoc.exists() && phoneNumber) {
+        console.log("User not found by UID, checking by phone number:", phoneNumber);
+        const usersRef = collection(db, "users");
+        const phoneQuery = query(usersRef, where("phoneNumber", "==", phoneNumber));
+        const phoneSnapshot = await getDocs(phoneQuery);
+
+        if (!phoneSnapshot.empty) {
+          // Found user by phone number - use that document
+          const foundDoc = phoneSnapshot.docs[0];
+          userDoc = { exists: () => true, data: () => foundDoc.data(), id: foundDoc.id };
+          userId = foundDoc.id;
+          console.log("Found existing user by phone number:", userId);
+
+          // Optionally link the Firebase Auth UID to the existing document
+          // This allows future logins to work by UID
+          try {
+            await updateDoc(doc(db, "users", userId), {
+              authUid: user.uid, // Store auth UID for future reference
+              updatedAt: new Date()
+            });
+          } catch (updateError) {
+            console.warn("Could not update user document with auth UID:", updateError);
+            // Continue anyway - login will still work
+          }
+        }
+      }
+
+      // ✅ IF USER EXISTS → LOGIN
       if (userDoc.exists()) {
+        const userData = userDoc.data();
+        
         // Update user location
-        await updateUserLocation(user.uid);
+        await updateUserLocation(userId);
 
         // Set onlineStatus to true
-        const userDocRef = doc(db, "users", user.uid);
+        const userDocRef = doc(db, "users", userId);
         await updateDoc(userDocRef, {
           onlineStatus: true
         });
 
-        toast.success("Login successful!");
-        onClose();
-        navigate("/dashboard");
-      } else {
-        toast.info("Complete signup");
-        onClose();
-        navigate("/create-account", {
-          state: {
-            phone: user.phoneNumber,
-            uid: user.uid,
-            provider: "phone",
-          },
+        // Check if mandatory fields are complete
+        const mandatoryComplete = isMandatoryComplete(userData);
+
+        toast.success("Login successful!", {
+          position: "top-right",
+          autoClose: 2000,
         });
+
+        setTimeout(() => {
+          onClose();
+          // Navigate based on mandatory fields completion
+          if (mandatoryComplete) {
+            navigate("/dashboard");
+          } else {
+            navigate("/profile");
+          }
+        }, 1500);
       }
-    } catch {
-      setError("Invalid OTP");
+      // IF USER DOES NOT EXIST → REDIRECT TO SIGNUP
+      else {
+        console.log("User not found. Redirecting to signup.");
+
+        toast.info("Please complete signup to continue", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+
+        setTimeout(() => {
+          onClose();
+          navigate("/create-account", {
+            state: {
+              phone: phoneNumber,
+              uid: user.uid,
+              provider: "phone",
+            },
+          });
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Phone login error:", error);
+      setError(error.message || "Phone login failed. Please try again.");
+      toast.error(error.message || "Phone login failed. Please try again.");
     } finally {
       setLoadingSocial(false);
     }
@@ -457,7 +625,18 @@ setLoadingEmail(true);
       }
     } catch (error) {
       console.error("Facebook login error:", error);
-      setError("Facebook sign-in failed. Please try again.");
+      
+      // Handle specific Firebase Auth errors
+      if (error.code === 'auth/invalid-app-credential') {
+        setError("Facebook sign-in configuration error. Please contact support.");
+        toast.error("Authentication configuration issue. Please check Firebase Console settings.");
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        setError("Sign-in popup was closed. Please try again.");
+      } else if (error.code === 'auth/popup-blocked') {
+        setError("Popup was blocked. Please allow popups for this site.");
+      } else {
+        setError(error.message || "Facebook sign-in failed. Please try again.");
+      }
     } finally {
       setLoadingSocial(false);
     }
@@ -588,7 +767,6 @@ setLoadingEmail(true);
                     className="social-icon"
                   />
                 </button>
-                <div id="recaptcha-container"></div>
               </div>
               <p className="signup-link">
                 New to Platform? <a href="/create-account">Sign up</a>
@@ -598,6 +776,8 @@ setLoadingEmail(true);
           {/* PHONE LOGIN */}
           {showPhoneLogin && (
             <>
+              {/* reCAPTCHA container - must be rendered when phone login is shown */}
+              <div id="recaptcha-container"></div>
               {!confirmationResult ? (
                 <div className="form-group">
                   <label className="form-label">Phone Number</label>

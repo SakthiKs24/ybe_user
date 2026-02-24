@@ -79,36 +79,90 @@ export default function ProfileSetup() {
 
   // Mother tongue options
   const motherTongues = [
-    "العربية", "বাংলা", "中文", "Dansk", "Deutsch", "English", "Español", "Français", 
-    "Gaeilge", "Italiano", "日本語", "कश्मीरी/ كشميري", "ಕನ್ನಡ", "कोंकणी", 
-    "মৈতৈলোন্/ মণিপুরী", "मराठी", "Magyar", "മലയാളം", "नेपाली", "Nederlands", 
-    "ଓଡିଆ", "ਪੰਜਾਬੀ", "Português", "Русский", "سنڌي", "Svenska", "தமிழ்", 
+    "العربية", "বাংলা", "中文", "Dansk", "Deutsch", "English", "Español", "Français",
+    "Gaeilge", "Italiano", "日本語", "कश्मीरी/ كشميري", "ಕನ್ನಡ", "कोंकणी",
+    "মৈতৈলোন্/ মণিপুরী", "मराठी", "Magyar", "മലയാളം", "नेपाली", "Nederlands",
+    "ଓଡିଆ", "ਪੰਜਾਬੀ", "Português", "Русский", "سنڌي", "Svenska", "தமிழ்",
     "తెలుగు", "ತುಳು", "اردو", "ગુજરાતી"
   ];
 
   // Countries
   const countries = [
-    "Abu Dhabi", "Ahmedabad", "Auckland", "Bangkok", "Barcelona", "Berlin", 
-    "Bengaluru", "Cape Town", "Calicut", "Chennai", "Chicago", "Cochin", 
-    "Delhi", "Doha", "Dubai", "Frankfurt", "Hong Kong", "Houston", "Jedah", 
-    "Jaipur", "Johannesburg", "India", "Kuala Lumpur", "Kuwait City", "Lisbon", 
-    "London", "Los Angeles", "Lucknow", "Madrid", "Melbourne", "Milan", 
-    "Montreal", "Munich", "New York", "Ottawa", "Paris", "Pune", "Riyadh", 
-    "Rome", "San Francisco", "Seoul", "Shanghai", "Singapore", "Sydney", 
+    "Abu Dhabi", "Ahmedabad", "Auckland", "Bangkok", "Barcelona", "Berlin",
+    "Bengaluru", "Cape Town", "Calicut", "Chennai", "Chicago", "Cochin",
+    "Delhi", "Doha", "Dubai", "Frankfurt", "Hong Kong", "Houston", "Jedah",
+    "Jaipur", "Johannesburg", "India", "Kuala Lumpur", "Kuwait City", "Lisbon",
+    "London", "Los Angeles", "Lucknow", "Madrid", "Melbourne", "Milan",
+    "Montreal", "Munich", "New York", "Ottawa", "Paris", "Pune", "Riyadh",
+    "Rome", "San Francisco", "Seoul", "Shanghai", "Singapore", "Sydney",
     "Tokyo", "Toronto", "Trivandrum", "Vancouver", "Zurich"
   ];
 
   // Country of origin options (used for Country of origin dropdown only)
+  // const countryOfOriginList = [
+  //   "Abu Dhabi", "Ahmedabad", "Auckland", "Bangkok", "Barcelona", "Berlin",
+  //   "Bengaluru", "Cape Town", "Calicut", "Chennai", "Chicago", "Cochin",
+  //   "Delhi", "Doha", "Dubai", "Frankfurt", "Hong Kong", "Houston", "Jeddah",
+  //   "Jaipur", "Johannesburg", "Kuala Lumpur", "Kuwait City", "Lisbon",
+  //   "London", "Los Angeles", "Lucknow", "Madrid", "Melbourne", "Milan",
+  //   "Montreal", "Munich", "New York", "Ottawa", "Paris", "Pune", "Riyadh",
+  //   "Rome", "San Francisco", "Seoul", "Shanghai", "Singapore", "Sydney",
+  //   "Tokyo", "Toronto", "Trivandrum", "Vancouver", "Zurich",
+  // ];
   const countryOfOriginList = [
-    "Abu Dhabi", "Ahmedabad", "Auckland", "Bangkok", "Barcelona", "Berlin",
-    "Bengaluru", "Cape Town", "Calicut", "Chennai", "Chicago", "Cochin",
-    "Delhi", "Doha", "Dubai", "Frankfurt", "Hong Kong", "Houston", "Jeddah",
-    "Jaipur", "Johannesburg", "Kuala Lumpur", "Kuwait City", "Lisbon",
-    "London", "Los Angeles", "Lucknow", "Madrid", "Melbourne", "Milan",
-    "Montreal", "Munich", "New York", "Ottawa", "Paris", "Pune", "Riyadh",
-    "Rome", "San Francisco", "Seoul", "Shanghai", "Singapore", "Sydney",
-    "Tokyo", "Toronto", "Trivandrum", "Vancouver", "Zurich",
+    "Afghanistan",
+    "Armenia",
+    "Azerbaijan",
+    "Bahrain",
+    "Bangladesh",
+    "Bhutan",
+    "Brunei",
+    "Cambodia",
+    "China",
+    "Cyprus",
+    "Georgia",
+    "India",
+    "Indonesia",
+    "Iran",
+    "Iraq",
+    "Israel",
+    "Japan",
+    "Jordan",
+    "Kazakhstan",
+    "Kuwait",
+    "Kyrgyzstan",
+    "Laos",
+    "Lebanon",
+    "Malaysia",
+    "Maldives",
+    "Mongolia",
+    "Myanmar (Burma)",
+    "Nepal",
+    "North Korea",
+    "Oman",
+    "Pakistan",
+    "Palestine",
+    "Philippines",
+    "Qatar",
+    "Saudi Arabia",
+    "Singapore",
+    "South Korea",
+    "Sri Lanka",
+    "Syria",
+    "Taiwan",
+    "Tajikistan",
+    "Thailand",
+    "Timor-Leste",
+    "Turkey",
+    "Turkmenistan",
+    "United Arab Emirates",
+    "Uzbekistan",
+    "Vietnam",
+    "Yemen",
+    "Other",
+    "A non-Asian country",
   ];
+
 
   // Physical Build Type options
   const physicalBuildType = [
@@ -309,40 +363,40 @@ export default function ProfileSetup() {
 
   // Lifestyle data
   const lifestyleCategories = {
-    movies: ["Action", "Adventure", "Romantic", "Comedies", "Thrillers", "Mysteries", 
-             "Documentaries", "Fantasy", "Science fiction", "Horror", "supernatural"],
-    music: ["Pop", "mainstream hits", "Rock", "Classical", "Instrumental", "Hip-hop", 
-            "Rap", "R&B", "Jazz", "Blues", "EDM"],
+    movies: ["Action", "Adventure", "Romantic", "Comedies", "Thrillers", "Mysteries",
+      "Documentaries", "Fantasy", "Science fiction", "Horror", "supernatural"],
+    music: ["Pop", "mainstream hits", "Rock", "Classical", "Instrumental", "Hip-hop",
+      "Rap", "R&B", "Jazz", "Blues", "EDM"],
     foods: ["Italian", "Mexican", "Asian", "Indian", "Mediterranean", "American"],
-    books: ["Fiction", "Fantasy", "Adventure", "Romance", "Non-fiction", "Self-help", 
-            "Biographies", "Mysteries", "Crime novels", "Science fiction", "Futuristic stories", 
-            "Poetry", "Short stories", "I don't usually read books"],
-    vacations: ["Beach vacations", "Hiking", "Outdoor adventures", "Exploring big cities and their culture", 
-                "Exploring remote villages", "Historic buildings", "Museum", "Camping", "Theme parks", 
-                "Cruising on a ship", "Staying at home for a staycation"],
-    tvShows: ["Sitcoms", "Comedy shows", "Reality shows", "Competitions", "Crime dramas", 
-              "Mysteries", "Sci-fi", "fantasy series", "News", "Current affairs", "Nature", 
-              "Wildlife documentaries"],
-    hobbies: ["Cooking", "Baking", "Painting", "Drawing", "Crafting", "Playing video games, Board games", 
-              "Gardening", "Planting", "Musical instrument", "Writing stories", "Journaling"],
-    sports: ["Football", "Basketball", "Tennis", "Baseball", "American Football", "Cricket", 
-             "Rugby", "Hockey", "Golf", "Swimming", "Athletics ,Karate", "Judo", "Boxing", 
-             "Volleyball", "Cycling", "Skateboarding", "Snowboarding", "Wrestling", "Table Tennis", 
-             "Badminton", "Archery", "Gymnastics", "Sailing", "Windsurfing", "Rock Climbing", 
-             "Mountaineering"],
-    relaxWay: ["Reading a book", "Reading a magazine", "Watching movies", "watching TV", 
-               "Long walk", "Exercising", "Meditating, Yoga", "Napping or sleeping", 
-               "Talking to friends or family"],
+    books: ["Fiction", "Fantasy", "Adventure", "Romance", "Non-fiction", "Self-help",
+      "Biographies", "Mysteries", "Crime novels", "Science fiction", "Futuristic stories",
+      "Poetry", "Short stories", "I don't usually read books"],
+    vacations: ["Beach vacations", "Hiking", "Outdoor adventures", "Exploring big cities and their culture",
+      "Exploring remote villages", "Historic buildings", "Museum", "Camping", "Theme parks",
+      "Cruising on a ship", "Staying at home for a staycation"],
+    tvShows: ["Sitcoms", "Comedy shows", "Reality shows", "Competitions", "Crime dramas",
+      "Mysteries", "Sci-fi", "fantasy series", "News", "Current affairs", "Nature",
+      "Wildlife documentaries"],
+    hobbies: ["Cooking", "Baking", "Painting", "Drawing", "Crafting", "Playing video games, Board games",
+      "Gardening", "Planting", "Musical instrument", "Writing stories", "Journaling"],
+    sports: ["Football", "Basketball", "Tennis", "Baseball", "American Football", "Cricket",
+      "Rugby", "Hockey", "Golf", "Swimming", "Athletics ,Karate", "Judo", "Boxing",
+      "Volleyball", "Cycling", "Skateboarding", "Snowboarding", "Wrestling", "Table Tennis",
+      "Badminton", "Archery", "Gymnastics", "Sailing", "Windsurfing", "Rock Climbing",
+      "Mountaineering"],
+    relaxWay: ["Reading a book", "Reading a magazine", "Watching movies", "watching TV",
+      "Long walk", "Exercising", "Meditating, Yoga", "Napping or sleeping",
+      "Talking to friends or family"],
     sleepingHabit: ["Early bed & Early wake up", "Late bed & Late Wake up", "Night owl", "It depends"],
     childrenView: ["Very much interested", "Not more than one", "No interest at all"],
-    interests: ["Learning", "Investing", "Reading", "Meditation", "Mindfulness practices", 
-                "Painting", "Drawing", "Sketching", "Writing poetry", "Writing stories", "Journaling", 
-                "Photography", "Acting", "Theater", "Space exploration", "Astronomy", 
-                "Artificial intelligence and robotics", "Environmental science and sustainability", 
-                "Medical research", "Hiking", "Camping", "Nature exploration", "Yoga", "Pilates", 
-                "Wellness exercises", "Sports", "Rock climbing", "Surfing", "Food", "Movies", 
-                "TV shows", "Gaming", "Music", "Live concerts", "Collecting items", "Volunteering", 
-                "Community service"]
+    interests: ["Learning", "Investing", "Reading", "Meditation", "Mindfulness practices",
+      "Painting", "Drawing", "Sketching", "Writing poetry", "Writing stories", "Journaling",
+      "Photography", "Acting", "Theater", "Space exploration", "Astronomy",
+      "Artificial intelligence and robotics", "Environmental science and sustainability",
+      "Medical research", "Hiking", "Camping", "Nature exploration", "Yoga", "Pilates",
+      "Wellness exercises", "Sports", "Rock climbing", "Surfing", "Food", "Movies",
+      "TV shows", "Gaming", "Music", "Live concerts", "Collecting items", "Volunteering",
+      "Community service"]
   };
 
   // Degree and Day Job options (used to toggle "Other"/"Others" custom input)
@@ -433,11 +487,11 @@ export default function ProfileSetup() {
           }
         };
       }
-      
+
       // Multi-select fields
       const currentSelections = prev.selectedLikesInvolvesMap[category] || [];
       const isSelected = currentSelections.includes(option);
-      
+
       return {
         ...prev,
         selectedLikesInvolvesMap: {
@@ -454,7 +508,7 @@ export default function ProfileSetup() {
     setProfileData(prev => {
       const currentSelection = prev.selectedLikesInvolvesMap[category] || [];
       const isSelected = currentSelection.includes(option);
-      
+
       return {
         ...prev,
         selectedLikesInvolvesMap: {
@@ -481,7 +535,7 @@ export default function ProfileSetup() {
     setProfileData(prev => {
       const currentSelections = prev.selectedPersonalityTraitsMap[field] || [];
       const isSelected = currentSelections.includes(option);
-      
+
       return {
         ...prev,
         selectedPersonalityTraitsMap: {
@@ -686,11 +740,11 @@ export default function ProfileSetup() {
       // Get the actual userId from the document
       const userDoc = querySnapshot.docs[0];
       const userId = userDoc.id;
-      
+
       // Update user document with profile data
       const userDocRef = doc(db, 'users', userId);
       await updateDoc(userDocRef, {
-        createdFor: profileData.createdFor, 
+        createdFor: profileData.createdFor,
         height: profileData.height,
         religion: profileData.religion,
         community: profileData.community,
@@ -731,7 +785,7 @@ export default function ProfileSetup() {
   // Render progress bar based on current step
   const renderProgressBar = () => {
     if (currentStep === 1 || currentStep >= 8) return null;
-    
+
     const getStepStatus = (stepNumber) => {
       if (currentStep === stepNumber) return 'active';
       if (currentStep > stepNumber) return 'completed';
@@ -783,7 +837,7 @@ export default function ProfileSetup() {
   return (
     <div className="profile-setup-page">
       <header className="ps-header">
-      <img src="/images/logo.png" alt="Ibe Logo" className="logo-img" />
+        <img src="/images/logo.png" alt="Ibe Logo" className="logo-img" />
       </header>
 
       <div className="ps-container">
@@ -917,22 +971,33 @@ export default function ProfileSetup() {
                   onChange={(e) => handleChange('community', e.target.value)}
                 >
                   <option value="">Select Community</option>
-                  <option value="Malayali">Malayali</option>
-                  <option value="Punjabi">Punjabi</option>
-                  <option value="Gujarati">Gujarati</option>
-                  <option value="Telugu">Telugu</option>
-                  <option value="Sunni">Sunni</option>
-                  <option value="Shia">Shia</option>
-                  <option value="Tamil">Tamil</option>
-                  <option value="Bengali">Bengali</option>
-                  <option value="Marathi">Marathi</option>
-                  <option value="Urdu">Urdu</option>
-                  <option value="Kannada">Kannada</option>
-                  <option value="Marwari">Marwari</option>
-                  <option value="Sindhi">Sindhi</option>
-                  <option value="Kashmiri">Kashmiri</option>
-                  <option value="Rajasthani">Rajasthani</option>
-                  <option value="Jatt">Jatt</option>
+                  <option value="Arab">Arab</option>
+                  <option value="Armenian / Georgian (Caucasus)">Armenian / Georgian (Caucasus)</option>
+                  <option value="Azerbaijani">Azerbaijani</option>
+                  <option value="Bangladeshi">Bangladeshi</option>
+                  <option value="Central Asian">Central Asian</option>
+                  <option value="Chinese">Chinese</option>
+                  <option value="Filipino">Filipino</option>
+                  <option value="Indonesian">Indonesian</option>
+                  <option value="Japanese">Japanese</option>
+                  <option value="Jewish">Jewish</option>
+                  <option value="Korean">Korean</option>
+                  <option value="Malay / Singaporean">Malay / Singaporean</option>
+                  <option value="Mongolian">Mongolian</option>
+                  <option value="Nepalese">Nepalese</option>
+                  <option value="North Indian">North Indian</option>
+                  <option value="North West Indian">North West Indian</option>
+                  <option value="Pakistani">Pakistani</option>
+                  <option value="Persian / Iranian">Persian / Iranian</option>
+                  <option value="South Indian">South Indian</option>
+                  <option value="Southeast Asian (Thai, Burmese, Khmer, Lao, etc.)">
+                    Southeast Asian (Thai, Burmese, Khmer, Lao, etc.)
+                  </option>
+                  <option value="Sri Lankan">Sri Lankan</option>
+                  <option value="Tibetan">Tibetan</option>
+                  <option value="Turkic">Turkic</option>
+                  <option value="Uyghur">Uyghur</option>
+                  <option value="Vietnamese">Vietnamese</option>
                 </select>
               </div>
 
@@ -983,13 +1048,39 @@ export default function ProfileSetup() {
                   onChange={(e) => handleChange('growUpCountry', e.target.value)}
                 >
                   <option value="">Select Nationality</option>
-                  <option value="USA">USA</option>
-                  <option value="Canada">Canada</option>
                   <option value="Australia">Australia</option>
-                  <option value="India">India</option>
-                  <option value="France">France</option>
+                  <option value="Austria">Austria</option>
+                  <option value="Bahrain">Bahrain</option>
+                  <option value="Belgium">Belgium</option>
                   <option value="Bulgaria">Bulgaria</option>
-                  <option value="Prefer Not to say">Prefer Not to say</option>
+                  <option value="Canada">Canada</option>
+                  <option value="China">China</option>
+                  <option value="Denmark">Denmark</option>
+                  <option value="Fiji">Fiji</option>
+                  <option value="France">France</option>
+                  <option value="Germany">Germany</option>
+                  <option value="India">India</option>
+                  <option value="Ireland">Ireland</option>
+                  <option value="Italy">Italy</option>
+                  <option value="Japan">Japan</option>
+                  <option value="Kuwait">Kuwait</option>
+                  <option value="Malaysia">Malaysia</option>
+                  <option value="Mauritius">Mauritius</option>
+                  <option value="Netherlands">Netherlands</option>
+                  <option value="New Zealand">New Zealand</option>
+                  <option value="Norway">Norway</option>
+                  <option value="Oman">Oman</option>
+                  <option value="Qatar">Qatar</option>
+                  <option value="Saudi Arabia">Saudi Arabia</option>
+                  <option value="Singapore">Singapore</option>
+                  <option value="South Africa">South Africa</option>
+                  <option value="Spain">Spain</option>
+                  <option value="Sweden">Sweden</option>
+                  <option value="Switzerland">Switzerland</option>
+                  <option value="United Arab Emirates (UAE)">United Arab Emirates (UAE)</option>
+                  <option value="United Kingdom (UK)">United Kingdom (UK)</option>
+                  <option value="United States of America (USA)">United States of America (USA)</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
 
@@ -1126,7 +1217,7 @@ export default function ProfileSetup() {
                 </div>
 
                 {/* Personality Traits - Single Select Fields */}
-                {Object.entries(personalityTraitsMap).filter(([key]) => 
+                {Object.entries(personalityTraitsMap).filter(([key]) =>
                   ['personalityType', 'starSign', 'drink', 'smoke', 'exercise'].includes(key)
                 ).map(([key, options]) => (
                   <div className="lifestyle-category" key={key}>
@@ -1151,7 +1242,7 @@ export default function ProfileSetup() {
                 ))}
 
                 {/* Personality Traits - Multi Select Fields */}
-                {Object.entries(personalityTraitsMap).filter(([key]) => 
+                {Object.entries(personalityTraitsMap).filter(([key]) =>
                   ['weatherType', 'poison', 'tripsType', 'pets', 'weekendNight', 'weekendActivities', 'eveningRoutine', 'passions'].includes(key)
                 ).map(([key, options]) => (
                   <div className="lifestyle-category" key={key}>
@@ -1162,7 +1253,7 @@ export default function ProfileSetup() {
                       {options.map(option => {
                         const currentSelections = profileData.selectedPersonalityTraitsMap[key] || [];
                         const isSelected = currentSelections.includes(option);
-                        
+
                         return (
                           <div className="checkbox-option" key={option}>
                             <input
@@ -1181,17 +1272,17 @@ export default function ProfileSetup() {
 
                 {Object.entries(lifestyleCategories).map(([key, options]) => {
                   const isSingleSelect = ['relaxWay', 'sleepingHabit', 'childrenView'].includes(key);
-                  
+
                   return (
                     <div className="lifestyle-category" key={key}>
                       <label className="form-label1">{key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}</label>
                       <div className={isSingleSelect ? "radio-group" : "checkbox-group"}>
                         {options.map(option => {
                           const currentValue = profileData.selectedLikesInvolvesMap[key] || [];
-                          const isSelected = isSingleSelect 
+                          const isSelected = isSingleSelect
                             ? currentValue.includes(option)
                             : currentValue.includes(option) || false;
-                          
+
                           return (
                             <div className={isSingleSelect ? "radio-option" : "checkbox-option"} key={option}>
                               <input
@@ -1199,7 +1290,7 @@ export default function ProfileSetup() {
                                 name={isSingleSelect ? key : undefined}
                                 id={`${key}-${option}`}
                                 checked={isSelected}
-                                onChange={() => isSingleSelect 
+                                onChange={() => isSingleSelect
                                   ? handleLifestyleSingleSelect(key, option)
                                   : handleLifestyleToggle(key, option)
                                 }
@@ -1226,119 +1317,119 @@ export default function ProfileSetup() {
           )}
 
           {/* Step 6: Photo Upload */}
-{currentStep === 6 && (
-  <div className="step">
-    <h2 className="section-title">Upload Your Photo</h2>
-    <p className="subtitle">We'd love to see you. Upload a photo for your dating journey.</p>
+          {currentStep === 6 && (
+            <div className="step">
+              <h2 className="section-title">Upload Your Photo</h2>
+              <p className="subtitle">We'd love to see you. Upload a photo for your dating journey.</p>
 
-    <div className="photo-upload-container">
-      {/* Main large photo */}
-      <div className="photo-main-section">
-        <div
-          className={`photo-box-main ${profileData.profileImageUrls[0] ? 'has-image' : ''}`}
-          onClick={() => uploadingPhotoIndex === null && document.getElementById('photo0').click()}
-        >
-          <input
-            type="file"
-            id="photo0"
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={(e) => handlePhotoUpload(e, 0)}
-            disabled={uploadingPhotoIndex !== null}
-          />
-          {profileData.profileImageUrls[0] ? (
-            <>
-              <img src={profileData.profileImageUrls[0]} alt="Upload 1" />
-              <div className="photo-change-overlay">
-                <span className="camera-icon">📷</span>
-                <span>Change Photo</span>
+              <div className="photo-upload-container">
+                {/* Main large photo */}
+                <div className="photo-main-section">
+                  <div
+                    className={`photo-box-main ${profileData.profileImageUrls[0] ? 'has-image' : ''}`}
+                    onClick={() => uploadingPhotoIndex === null && document.getElementById('photo0').click()}
+                  >
+                    <input
+                      type="file"
+                      id="photo0"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handlePhotoUpload(e, 0)}
+                      disabled={uploadingPhotoIndex !== null}
+                    />
+                    {profileData.profileImageUrls[0] ? (
+                      <>
+                        <img src={profileData.profileImageUrls[0]} alt="Upload 1" />
+                        <div className="photo-change-overlay">
+                          <span className="camera-icon">📷</span>
+                          <span>Change Photo</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="photo-placeholder">
+                        <div className="photo-icon-large">+</div>
+                      </div>
+                    )}
+                    {uploadingPhotoIndex === 0 && (
+                      <div className="photo-box-loading-overlay">
+                        <div className="photo-box-spinner" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right side - 2 small photos */}
+                <div className="photo-right-section">
+                  {[1, 2].map(index => (
+                    <div
+                      key={index}
+                      className={`photo-box-small ${profileData.profileImageUrls[index] ? 'has-image' : ''}`}
+                      onClick={() => uploadingPhotoIndex === null && document.getElementById(`photo${index}`).click()}
+                    >
+                      <input
+                        type="file"
+                        id={`photo${index}`}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => handlePhotoUpload(e, index)}
+                        disabled={uploadingPhotoIndex !== null}
+                      />
+                      {profileData.profileImageUrls[index] ? (
+                        <img src={profileData.profileImageUrls[index]} alt={`Upload ${index + 1}`} />
+                      ) : (
+                        <div className="photo-icon-small">+</div>
+                      )}
+                      {uploadingPhotoIndex === index && (
+                        <div className="photo-box-loading-overlay">
+                          <div className="photo-box-spinner" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </>
-          ) : (
-            <div className="photo-placeholder">
-              <div className="photo-icon-large">+</div>
-            </div>
-          )}
-          {uploadingPhotoIndex === 0 && (
-            <div className="photo-box-loading-overlay">
-              <div className="photo-box-spinner" />
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Right side - 2 small photos */}
-      <div className="photo-right-section">
-        {[1, 2].map(index => (
-          <div
-            key={index}
-            className={`photo-box-small ${profileData.profileImageUrls[index] ? 'has-image' : ''}`}
-            onClick={() => uploadingPhotoIndex === null && document.getElementById(`photo${index}`).click()}
-          >
-            <input
-              type="file"
-              id={`photo${index}`}
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={(e) => handlePhotoUpload(e, index)}
-              disabled={uploadingPhotoIndex !== null}
-            />
-            {profileData.profileImageUrls[index] ? (
-              <img src={profileData.profileImageUrls[index]} alt={`Upload ${index + 1}`} />
-            ) : (
-              <div className="photo-icon-small">+</div>
-            )}
-            {uploadingPhotoIndex === index && (
-              <div className="photo-box-loading-overlay">
-                <div className="photo-box-spinner" />
+              {/* Bottom row - 3 small photos */}
+              <div className="photo-bottom-row">
+                {[3, 4, 5].map(index => (
+                  <div
+                    key={index}
+                    className={`photo-box-bottom ${profileData.profileImageUrls[index] ? 'has-image' : ''}`}
+                    onClick={() => uploadingPhotoIndex === null && document.getElementById(`photo${index}`).click()}
+                  >
+                    <input
+                      type="file"
+                      id={`photo${index}`}
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handlePhotoUpload(e, index)}
+                      disabled={uploadingPhotoIndex !== null}
+                    />
+                    {profileData.profileImageUrls[index] ? (
+                      <img src={profileData.profileImageUrls[index]} alt={`Upload ${index + 1}`} />
+                    ) : (
+                      <div className="photo-icon-small">+</div>
+                    )}
+                    {uploadingPhotoIndex === index && (
+                      <div className="photo-box-loading-overlay">
+                        <div className="photo-box-spinner" />
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
 
-    {/* Bottom row - 3 small photos */}
-    <div className="photo-bottom-row">
-      {[3, 4, 5].map(index => (
-        <div
-          key={index}
-          className={`photo-box-bottom ${profileData.profileImageUrls[index] ? 'has-image' : ''}`}
-          onClick={() => uploadingPhotoIndex === null && document.getElementById(`photo${index}`).click()}
-        >
-          <input
-            type="file"
-            id={`photo${index}`}
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={(e) => handlePhotoUpload(e, index)}
-            disabled={uploadingPhotoIndex !== null}
-          />
-          {profileData.profileImageUrls[index] ? (
-            <img src={profileData.profileImageUrls[index]} alt={`Upload ${index + 1}`} />
-          ) : (
-            <div className="photo-icon-small">+</div>
-          )}
-          {uploadingPhotoIndex === index && (
-            <div className="photo-box-loading-overlay">
-              <div className="photo-box-spinner" />
+              <div className="btn-group" style={{ marginTop: '30px' }}>
+                <button
+                  className="btn btn-primary1"
+                  onClick={nextStep}
+                  disabled={uploadedPhotos.filter(p => p).length < 3}
+                >
+                  Continue
+                </button>
+              </div>
             </div>
           )}
-        </div>
-      ))}
-    </div>
-
-    <div className="btn-group" style={{ marginTop: '30px' }}>
-      <button
-        className="btn btn-primary1"
-        onClick={nextStep}
-        disabled={uploadedPhotos.filter(p => p).length < 3}
-      >
-        Continue
-      </button>
-    </div>
-  </div>
-)}
 
           {/* Step 7: About Me */}
           {currentStep === 7 && (
