@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db, googleProvider, facebookProvider } from '../firebase';
 import {
@@ -6,6 +6,7 @@ import {
   signInWithPopup,
   RecaptchaVerifier,
   signInWithPhoneNumber,
+  signOut,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { toast } from 'react-toastify';
@@ -125,30 +126,43 @@ export default function Login({ isOpen, onClose }) {
   const [otp, setOtp] = useState("");
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [error, setError] = useState('');
-const [loadingEmail, setLoadingEmail] = useState(false);
-const [loadingSocial, setLoadingSocial] = useState(false);
+  const [loadingEmail, setLoadingEmail] = useState(false);
+  const [loadingSocial, setLoadingSocial] = useState(false);
+  const [loadingRecaptcha, setLoadingRecaptcha] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const recaptchaContainerRef = useRef(null);
+  const isBusy = loadingEmail || loadingSocial || loadingRecaptcha || verifyingOtp;
+
+  const clearRecaptchaVerifier = () => {
+    if (window.recaptchaVerifier) {
+      try {
+        // Avoid clearing against a detached container; this can trigger reCAPTCHA internal null-style errors.
+        if (recaptchaContainerRef.current && recaptchaContainerRef.current.isConnected) {
+          window.recaptchaVerifier.clear();
+        }
+      } catch (e) {
+        console.warn("Error clearing verifier:", e);
+      }
+      window.recaptchaVerifier = null;
+    }
+  };
 
   // Clean up reCAPTCHA when phone login section is closed
   // Must be before early return to follow React Hooks rules
   useEffect(() => {
     if (!showPhoneLogin) {
-      // Clean up verifier when phone login is closed
-      if (window.recaptchaVerifier) {
-        try {
-          window.recaptchaVerifier.clear();
-        } catch (e) {
-          console.warn("Error clearing verifier:", e);
-        }
-        window.recaptchaVerifier = null;
-      }
-      
-      // Clear the container element
-      const container = document.getElementById("recaptcha-container");
-      if (container) {
-        container.innerHTML = '';
-      }
+      clearRecaptchaVerifier();
+      setLoadingRecaptcha(false);
+      setConfirmationResult(null);
+      setOtp("");
     }
   }, [showPhoneLogin]);
+
+  useEffect(() => {
+    return () => {
+      clearRecaptchaVerifier();
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -325,16 +339,25 @@ setLoadingEmail(true);
         });
 
         setTimeout(() => {
-          onClose();
-          navigate("/create-account", {
-            state: {
-              email: user.email,
-              name: user.displayName,
-              photoURL: user.photoURL,
-              provider: "google",
-              uid: user.uid,
-            },
-          });
+          (async () => {
+            try {
+              // /create-account is a public route; sign out temp social auth session first.
+              await signOut(auth);
+            } catch (signOutError) {
+              console.warn("Failed to sign out before redirecting to create account:", signOutError);
+            } finally {
+              onClose();
+              navigate("/create-account", {
+                state: {
+                  email: user.email,
+                  name: user.displayName,
+                  photoURL: user.photoURL,
+                  provider: "google",
+                  uid: user.uid,
+                },
+              });
+            }
+          })();
         }, 1500);
       }
 
@@ -361,9 +384,9 @@ setLoadingEmail(true);
 
   const fullPhoneNumber = `${country.dial_code}${phone}`;
 
-  const setupRecaptcha = () => {
+  const setupRecaptcha = async () => {
     // Ensure the container exists
-    const container = document.getElementById("recaptcha-container");
+    const container = recaptchaContainerRef.current || document.getElementById("recaptcha-container");
     if (!container) {
       const errorMsg = "reCAPTCHA container not found. Please ensure phone login form is visible.";
       console.error(errorMsg);
@@ -371,23 +394,13 @@ setLoadingEmail(true);
     }
 
     // Clear existing verifier if it exists
-    if (window.recaptchaVerifier) {
-      try {
-        window.recaptchaVerifier.clear();
-      } catch (e) {
-        console.warn("Error clearing existing verifier:", e);
-      }
-      window.recaptchaVerifier = null;
-    }
-
-    // Clear the container to remove any existing reCAPTCHA widgets
-    container.innerHTML = '';
+    clearRecaptchaVerifier();
 
     try {
       // Firebase v9+ RecaptchaVerifier signature: (auth, containerId, options)
       window.recaptchaVerifier = new RecaptchaVerifier(
         auth, // ✅ First argument is auth
-        "recaptcha-container", // container ID or element
+        container, // keep a stable element reference
         {
           size: "invisible",
           callback: () => {
@@ -396,22 +409,16 @@ setLoadingEmail(true);
           "expired-callback": () => {
             console.log("reCAPTCHA expired");
             // Reset verifier on expiry
-            if (window.recaptchaVerifier) {
-              try {
-                window.recaptchaVerifier.clear();
-              } catch (e) {
-                console.warn("Error clearing expired verifier:", e);
-              }
-            }
-            window.recaptchaVerifier = null;
+            clearRecaptchaVerifier();
           },
         }
       );
+      await window.recaptchaVerifier.render();
       console.log("RecaptchaVerifier initialized successfully");
     } catch (error) {
       console.error("Error setting up RecaptchaVerifier:", error);
       // Clean up on error
-      window.recaptchaVerifier = null;
+      clearRecaptchaVerifier();
       throw error;
     }
   };
@@ -423,11 +430,12 @@ setLoadingEmail(true);
     }
 
     setLoadingSocial(true);
+    setLoadingRecaptcha(true);
     setError("");
 
     try {
       // Setup reCAPTCHA verifier
-      setupRecaptcha();
+      await setupRecaptcha();
 
       // Verify verifier was created successfully
       if (!window.recaptchaVerifier) {
@@ -454,25 +462,13 @@ setLoadingEmail(true);
       console.error("OTP ERROR MESSAGE:", err.message);
 
       // Reset verifier on error so it can be recreated
-      if (window.recaptchaVerifier) {
-        try {
-          window.recaptchaVerifier.clear();
-        } catch (clearError) {
-          console.warn("Error clearing recaptcha verifier:", clearError);
-        }
-        window.recaptchaVerifier = null;
-      }
-      
-      // Clear the container element to allow re-initialization
-      const container = document.getElementById("recaptcha-container");
-      if (container) {
-        container.innerHTML = '';
-      }
+      clearRecaptchaVerifier();
 
       const errorMessage = err.message || err.code || "Failed to send OTP. Please try again.";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
+      setLoadingRecaptcha(false);
       setLoadingSocial(false);
     }
   };
@@ -482,6 +478,7 @@ setLoadingEmail(true);
     if (!otp || !confirmationResult) return;
 
     setLoadingSocial(true);
+    setVerifyingOtp(true);
     setError("");
 
     try {
@@ -562,14 +559,23 @@ setLoadingEmail(true);
         });
 
         setTimeout(() => {
-          onClose();
-          navigate("/create-account", {
-            state: {
-              phone: phoneNumber,
-              uid: user.uid,
-              provider: "phone",
-            },
-          });
+          (async () => {
+            try {
+              // /create-account is a public route, so sign out the temporary phone-auth session.
+              await signOut(auth);
+            } catch (signOutError) {
+              console.warn("Failed to sign out before redirecting to create account:", signOutError);
+            } finally {
+              onClose();
+              navigate("/create-account", {
+                state: {
+                  phone: phoneNumber,
+                  uid: user.uid,
+                  provider: "phone",
+                },
+              });
+            }
+          })();
         }, 1500);
       }
     } catch (error) {
@@ -577,6 +583,7 @@ setLoadingEmail(true);
       setError(error.message || "Phone login failed. Please try again.");
       toast.error(error.message || "Phone login failed. Please try again.");
     } finally {
+      setVerifyingOtp(false);
       setLoadingSocial(false);
     }
   };
@@ -651,9 +658,9 @@ setLoadingEmail(true);
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={isBusy ? undefined : onClose}>
       <div className="modal-content1" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>&times;</button>
+        <button className="modal-close" onClick={isBusy ? undefined : onClose} disabled={isBusy}>&times;</button>
 
         <h2 className="modal-title">Login</h2>
         <p className="modal-subtitle">Start your journey to find love</p>
@@ -773,11 +780,14 @@ setLoadingEmail(true);
               </p>
             </>
           )}
+          <div
+            id="recaptcha-container"
+            ref={recaptchaContainerRef}
+            style={{ display: showPhoneLogin ? 'block' : 'none' }}
+          ></div>
           {/* PHONE LOGIN */}
           {showPhoneLogin && (
             <>
-              {/* reCAPTCHA container - must be rendered when phone login is shown */}
-              <div id="recaptcha-container"></div>
               {!confirmationResult ? (
                 <div className="form-group">
                   <label className="form-label">Phone Number</label>
@@ -812,9 +822,9 @@ setLoadingEmail(true);
                   <button
                     className="login-btn"
                     onClick={sendOtp}
-                    disabled={loadingSocial}
+                    disabled={loadingSocial || loadingRecaptcha}
                   >
-                    Send OTP
+                    {loadingRecaptcha ? 'Initializing security check...' : 'Send OTP'}
                   </button>
                 </div>
               ) : (
@@ -834,7 +844,7 @@ setLoadingEmail(true);
                     onClick={verifyOtp}
                     disabled={loadingSocial}
                   >
-                    Verify OTP
+                    {verifyingOtp ? 'Verifying...' : 'Verify OTP'}
                   </button>
                 </div>
               )}
