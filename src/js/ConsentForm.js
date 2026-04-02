@@ -1,5 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { auth } from '../firebase';
+import { signOut } from 'firebase/auth';
 import '../css/ConsentForm.css';
 
 export default function ConsentForm() {
@@ -11,7 +13,8 @@ export default function ConsentForm() {
     navigate('/create-account', { state: location.state });
   };
 
-  const handleBack = () => {
+  const handleBack = async () => {
+    await signOut(auth);
     navigate('/');
   };
 
