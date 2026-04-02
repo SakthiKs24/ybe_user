@@ -11,14 +11,37 @@
  * @returns {boolean}
  */
 export function isMandatoryComplete(userData) {
-  if (!userData) return false;
+  return getMandatoryMissingFields(userData).length === 0;
+}
 
-  const hasProfileInfo = !!(userData.name && userData.dateOfBirth);
-  const hasGender = !!userData.userGender;
-  const photoUrls = userData.profileImageUrls || [];
-  const hasEnoughPhotos = photoUrls.filter((url) => url && String(url).trim()).length >= 3;
+/**
+ * Returns a list of missing mandatory field labels for UI messages.
+ * @param {Object} userData
+ * @returns {string[]}
+ */
+export function getMandatoryMissingFields(userData) {
+  const missing = [];
 
-  return hasProfileInfo && hasGender && hasEnoughPhotos;
+  if (!userData?.name) missing.push('name');
+  if (!userData?.dateOfBirth) missing.push('date of birth');
+  if (!userData?.userGender) missing.push('gender');
+
+  const photoUrls = userData?.profileImageUrls || [];
+  const photoCount = photoUrls.filter((url) => url && String(url).trim()).length;
+  if (photoCount < 3) missing.push('at least 3 profile photos');
+
+  return missing;
+}
+
+/**
+ * Creates a user-friendly mandatory incomplete message.
+ * @param {Object} userData
+ * @returns {string}
+ */
+export function getMandatoryIncompleteMessage(userData) {
+  const missing = getMandatoryMissingFields(userData);
+  if (missing.length === 0) return 'Mandatory fields are complete.';
+  return `Please complete mandatory fields: ${missing.join(', ')}.`;
 }
 
 /** Routes that are allowed when mandatory fields are incomplete (user can only use these until complete). */

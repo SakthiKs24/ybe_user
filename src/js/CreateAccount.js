@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, query, where, getDocs, runTransaction } from 'firebase/firestore';
@@ -72,11 +72,17 @@ const getCurrentLocation = () => {
 
 export default function CreateAccount() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const provider = location.state?.provider?.toLowerCase() || '';
+  const prefilledName = location.state?.name || '';
+  const prefilledEmail = location.state?.email || '';
+  const hidePasswordFields = ['google', 'facebook', 'phone'].includes(provider);
+  const lockEmailField = ['google', 'facebook'].includes(provider) && !!prefilledEmail;
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
+    fullName: prefilledName,
+    email: prefilledEmail,
     // countryCode: '+91', // Commented out - phone number field removed
     // mobile: '', // Commented out - phone number field removed
     password: '',
@@ -96,9 +102,19 @@ export default function CreateAccount() {
   React.useEffect(() => {
     const accepted = sessionStorage.getItem('consentAccepted') === 'true';
     if (!accepted) {
-      navigate('/consent', { replace: true });
+      navigate('/consent', { replace: true, state: location.state });
     }
-  }, [navigate]);
+  }, [navigate, location.state]);
+
+  React.useEffect(() => {
+    if (prefilledName || prefilledEmail) {
+      setFormData(prev => ({
+        ...prev,
+        fullName: prefilledName || prev.fullName,
+        email: prefilledEmail || prev.email
+      }));
+    }
+  }, [prefilledName, prefilledEmail]);
   const getMaxDate = () => {
     const today = new Date();
     const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
@@ -131,16 +147,18 @@ export default function CreateAccount() {
     //   newErrors.mobile = 'Mobile number must be 7-15 digits';
     // }
 
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
+    if (!hidePasswordFields) {
+      if (!formData.password) {
+        newErrors.password = 'Password is required';
+      } else if (formData.password.length < 6) {
+        newErrors.password = 'Password must be at least 6 characters';
+      }
 
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      if (!formData.confirmPassword) {
+        newErrors.confirmPassword = 'Please confirm your password';
+      } else if (formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = 'Passwords do not match';
+      }
     }
 
     if (!formData.dateOfBirth) {
@@ -274,14 +292,19 @@ export default function CreateAccount() {
         return;
       }
 
-      // Create Firebase Auth user
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email.trim(),
-        formData.password
-      );
+      let authUser = auth.currentUser;
+      if (!hidePasswordFields) {
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          formData.email.trim(),
+          formData.password
+        );
+        authUser = userCredential.user;
+      }
 
-      const user = userCredential.user;
+      if (!authUser?.uid) {
+        throw new Error('Authentication session expired. Please login again.');
+      }
 
       // Generate userId from RegisteredUsers
       const userId = await generateUserId();
@@ -309,6 +332,9 @@ export default function CreateAccount() {
       await setDoc(userDocRef, {
         name: formData.fullName.trim(),
         email: formData.email.trim().toLowerCase(),
+        authUid: authUser.uid,
+        provider: provider || "email",
+        phoneNumber: location.state?.phone || authUser.phoneNumber || "",
         // phoneNumber: fullPhoneNumber, // Commented out - phone number field removed
         dateOfBirth: formData.dateOfBirth,
         userGender: formData.gender,
@@ -403,22 +429,13 @@ export default function CreateAccount() {
       // Show full screen success loader
       setSignupSuccess(true);
 
-      toast.success('Account created successfully!', {
-        position: "top-right",
-        autoClose: 1500,
-      });
+      sessionStorage.removeItem('socialAuthFlowInProgress');
 
       // Navigate after short delay
       setTimeout(() => {
         navigate('/profile-setup', { replace: true });
       }, 1500);
 
-
-      // Navigate to profile-setup after showing success message
-      // Delay allows success message to be visible before navigation
-      setTimeout(() => {
-        navigate('/profile-setup', { replace: true });
-      }, 2000);
 
     } catch (error) {
       console.error('Sign up error:', error);
@@ -543,7 +560,7 @@ export default function CreateAccount() {
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
                   placeholder="Enter your email"
-                  disabled={loading}
+                  disabled={loading || lockEmailField}
                 />
                 {errors.email && (
                   <span style={{ color: '#FF027D', fontSize: '13px', marginTop: '5px', display: 'block' }}>
@@ -592,81 +609,83 @@ export default function CreateAccount() {
             </div>
             */}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '25px' }}>
-              <div style={{ position: 'relative' }}>
-                <label className="form-label">Password</label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  className="form-input"
-                  value={formData.password}
-                  onChange={(e) => handleChange('password', e.target.value)}
-                  placeholder="Enter password"
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(prev => !prev)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  style={{
-                    position: 'absolute',
-                    right: '10px',
-                    top: '43px',
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '16px'
-                  }}
-                >
-                  <img
-                    src={showPassword ? '/images/hidden.png' : '/images/show.png'}
-                    alt={showPassword ? 'Hide password' : 'Show password'}
-                    style={{ width: '20px', height: '20px' }}
+            {!hidePasswordFields && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '25px' }}>
+                <div style={{ position: 'relative' }}>
+                  <label className="form-label">Password</label>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    className="form-input"
+                    value={formData.password}
+                    onChange={(e) => handleChange('password', e.target.value)}
+                    placeholder="Enter password"
+                    disabled={loading}
                   />
-                </button>
-                {errors.password && (
-                  <span style={{ color: '#FF027D', fontSize: '13px', marginTop: '5px', display: 'block' }}>
-                    {errors.password}
-                  </span>
-                )}
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(prev => !prev)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '43px',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '16px'
+                    }}
+                  >
+                    <img
+                      src={showPassword ? '/images/hidden.png' : '/images/show.png'}
+                      alt={showPassword ? 'Hide password' : 'Show password'}
+                      style={{ width: '20px', height: '20px' }}
+                    />
+                  </button>
+                  {errors.password && (
+                    <span style={{ color: '#FF027D', fontSize: '13px', marginTop: '5px', display: 'block' }}>
+                      {errors.password}
+                    </span>
+                  )}
+                </div>
 
-              <div style={{ position: 'relative' }}>
-                <label className="form-label">Confirm Password</label>
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  className="form-input"
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                  placeholder="Confirm password"
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(prev => !prev)}
-                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                  style={{
-                    position: 'absolute',
-                    right: '10px',
-                    top: '43px',
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '16px'
-                  }}
-                >
-                  <img
-                    src={showConfirmPassword ? '/images/hidden.png' : '/images/show.png'}
-                    alt={showConfirmPassword ? 'Hide password' : 'Show password'}
-                    style={{ width: '20px', height: '20px' }}
+                <div style={{ position: 'relative' }}>
+                  <label className="form-label">Confirm Password</label>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    className="form-input"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                    placeholder="Confirm password"
+                    disabled={loading}
                   />
-                </button>
-                {errors.confirmPassword && (
-                  <span style={{ color: '#FF027D', fontSize: '13px', marginTop: '5px', display: 'block' }}>
-                    {errors.confirmPassword}
-                  </span>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(prev => !prev)}
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '43px',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '16px'
+                    }}
+                  >
+                    <img
+                      src={showConfirmPassword ? '/images/hidden.png' : '/images/show.png'}
+                      alt={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      style={{ width: '20px', height: '20px' }}
+                    />
+                  </button>
+                  {errors.confirmPassword && (
+                    <span style={{ color: '#FF027D', fontSize: '13px', marginTop: '5px', display: 'block' }}>
+                      {errors.confirmPassword}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '25px' }}>
               <div>

@@ -1,13 +1,14 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '../css/ConsentForm.css';
 
 export default function ConsentForm() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleAccept = () => {
     sessionStorage.setItem('consentAccepted', 'true');
-    navigate('/create-account');
+    navigate('/create-account', { state: location.state });
   };
 
   const handleBack = () => {
@@ -46,4 +47,3 @@ export default function ConsentForm() {
     </div>
   );
 }
-

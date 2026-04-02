@@ -9,7 +9,6 @@ import { uploadProfileImageWithValidation } from '../utils/profilePhotoValidatio
 export default function ProfileSetup() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
-  const [uploadedPhotos, setUploadedPhotos] = useState([false, false, false, false, false, false]);
   const [loading, setLoading] = useState(false);
   const [uploadingPhotoIndex, setUploadingPhotoIndex] = useState(null);
   const totalSteps = 8;
@@ -32,7 +31,7 @@ export default function ProfileSetup() {
       movies: [], music: [], relaxWay: [], sleepingHabit: [], sports: [],
       tvShows: [], vacations: []
     },
-    profileImageUrls: ['', '', ''],
+    profileImageUrls: ['', '', '', '', '', ''],
     aboutMe: '',
     bodyBuild: '',
     selectedPersonalityTraitsMap: {
@@ -57,6 +56,74 @@ export default function ProfileSetup() {
   // Local flags to control "Others" input visibility in Step 4 selects
   const [degreeOther, setDegreeOther] = useState(false);
   const [dayJobOther, setDayJobOther] = useState(false);
+
+  const getUploadedPhotoCount = (urls) =>
+    (urls || []).filter((url) => url && String(url).trim()).length;
+
+  const toMillis = (value) => {
+    if (!value) return 0;
+    if (typeof value.toMillis === 'function') return value.toMillis();
+    const parsed = new Date(value).getTime();
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+
+  const pickPreferredUserDoc = (docs, normalizedEmail) => {
+    if (!docs || docs.length === 0) return null;
+    return [...docs].sort((a, b) => {
+      const aData = a.data() || {};
+      const bData = b.data() || {};
+
+      // Prefer canonical docs that have generated app userId.
+      const aHasUserId = !!aData.userId;
+      const bHasUserId = !!bData.userId;
+      if (aHasUserId !== bHasUserId) return aHasUserId ? -1 : 1;
+
+      // Prefer exact email match when available.
+      const aEmailMatch = normalizedEmail && (aData.email || '').toLowerCase() === normalizedEmail;
+      const bEmailMatch = normalizedEmail && (bData.email || '').toLowerCase() === normalizedEmail;
+      if (aEmailMatch !== bEmailMatch) return aEmailMatch ? -1 : 1;
+
+      // Prefer profile with more uploaded photos.
+      const aPhotos = getUploadedPhotoCount(aData.profileImageUrls);
+      const bPhotos = getUploadedPhotoCount(bData.profileImageUrls);
+      if (aPhotos !== bPhotos) return bPhotos - aPhotos;
+
+      // Prefer most recently updated profile.
+      const aUpdated = toMillis(aData.updatedAt || aData.createdAt);
+      const bUpdated = toMillis(bData.updatedAt || bData.createdAt);
+      return bUpdated - aUpdated;
+    })[0];
+  };
+
+  const resolveCurrentUserDoc = async (user) => {
+    const usersRef = collection(db, 'users');
+
+    // Prefer auth UID mapping for deterministic profile selection.
+    const byAuthUid = query(usersRef, where('authUid', '==', user.uid));
+    const authUidSnapshot = await getDocs(byAuthUid);
+    if (!authUidSnapshot.empty) {
+      const userDoc = pickPreferredUserDoc(authUidSnapshot.docs, user.email?.trim().toLowerCase()) || authUidSnapshot.docs[0];
+      return { userId: userDoc.id, userDoc };
+    }
+
+    // Fallback to email for legacy documents.
+    const normalizedEmail = user.email?.trim().toLowerCase();
+    if (!normalizedEmail) return null;
+
+    const byEmail = query(usersRef, where('email', '==', normalizedEmail));
+    const emailSnapshot = await getDocs(byEmail);
+    if (emailSnapshot.empty) return null;
+
+    const userDoc = pickPreferredUserDoc(emailSnapshot.docs, normalizedEmail) || emailSnapshot.docs[0];
+    try {
+      if (userDoc.data()?.authUid !== user.uid) {
+        await updateDoc(doc(db, 'users', userDoc.id), { authUid: user.uid, updatedAt: new Date() });
+      }
+    } catch (linkError) {
+      console.warn('Could not link authUid for profile setup user:', linkError);
+    }
+    return { userId: userDoc.id, userDoc };
+  };
 
   useEffect(() => {
     // Initialize flags if existing value is a custom one (not in the standard lists)
@@ -562,16 +629,14 @@ export default function ProfileSetup() {
     try {
       setUploadingPhotoIndex(index);
 
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('email', '==', user.email));
-      const querySnapshot = await getDocs(q);
-      if (querySnapshot.empty) {
+      const userRecord = await resolveCurrentUserDoc(user);
+      if (!userRecord) {
         toast.error('User profile not found');
         event.target.value = '';
         setUploadingPhotoIndex(null);
         return;
       }
-      const userId = querySnapshot.docs[0].id;
+      const userId = userRecord.userId;
 
       const result = await uploadProfileImageWithValidation(file, userId, {
         fileNamePrefix: userId,
@@ -592,11 +657,6 @@ export default function ProfileSetup() {
         newUrls[index] = result.url;
         return { ...prev, profileImageUrls: newUrls };
       });
-      setUploadedPhotos(prev => {
-        const newUploaded = [...prev];
-        newUploaded[index] = true;
-        return newUploaded;
-      });
       toast.success('Photo uploaded successfully!');
     } catch (error) {
       console.error('Error uploading photo:', error);
@@ -610,7 +670,7 @@ export default function ProfileSetup() {
   const nextStep = async () => {
     // Photo validation - at least 3 photos required
     if (currentStep === 6) {
-      const uploadedCount = uploadedPhotos.filter(p => p).length;
+      const uploadedCount = getUploadedPhotoCount(profileData.profileImageUrls);
       if (uploadedCount < 3) {
         toast.error('Please upload at least 3 photos to continue', {
           position: "top-right",
@@ -644,19 +704,13 @@ export default function ProfileSetup() {
         return;
       }
 
-      // Query to find the user document by email
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('email', '==', user.email));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
+      const userRecord = await resolveCurrentUserDoc(user);
+      if (!userRecord) {
         console.warn('User profile not found, skipping save');
         return;
       }
 
-      // Get the actual userId from the document
-      const userDoc = querySnapshot.docs[0];
-      const userId = userDoc.id;
+      const userId = userRecord.userId;
       const userDocRef = doc(db, 'users', userId);
 
       // Prepare update object based on current step
@@ -727,19 +781,13 @@ export default function ProfileSetup() {
         return;
       }
 
-      // Query to find the user document by email
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('email', '==', user.email));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
+      const userRecord = await resolveCurrentUserDoc(user);
+      if (!userRecord) {
         toast.error('User profile not found');
         return;
       }
 
-      // Get the actual userId from the document
-      const userDoc = querySnapshot.docs[0];
-      const userId = userDoc.id;
+      const userId = userRecord.userId;
 
       // Update user document with profile data
       const userDocRef = doc(db, 'users', userId);
@@ -779,7 +827,7 @@ export default function ProfileSetup() {
   };
 
   const startExploring = () => {
-    navigate('/dashboard');
+    navigate('/dashboard', { replace: true, state: { fromProfileSetup: true } });
   };
 
   // Render progress bar based on current step
@@ -1423,7 +1471,7 @@ export default function ProfileSetup() {
                 <button
                   className="btn btn-primary1"
                   onClick={nextStep}
-                  disabled={uploadedPhotos.filter(p => p).length < 3}
+                  disabled={getUploadedPhotoCount(profileData.profileImageUrls) < 3}
                 >
                   Continue
                 </button>
@@ -1466,6 +1514,8 @@ export default function ProfileSetup() {
               <div className="success-icon">
                 <img src="/images/setup.png" alt="Success" />
               </div>
+              <br></br>
+              <br></br>
               <h1 className="title">You're All Set! 🎉</h1>
               <p className="subtitle">Your profile is ready. Start searching and find your perfect match!</p>
 

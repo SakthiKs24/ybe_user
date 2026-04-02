@@ -4,7 +4,7 @@ import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, getDocs, query, where, doc, updateDoc, onSnapshot, orderBy, getDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-import { isMandatoryComplete, MANDATORY_INCOMPLETE_MESSAGE } from '../utils/mandatoryFields';
+import { isMandatoryComplete, getMandatoryIncompleteMessage } from '../utils/mandatoryFields';
 
 const Header = ({ userData, showProfileDropdown = false, setShowProfileDropdown = () => {}, dropdownRef = null, currentPage = '' }) => {
   const navigate = useNavigate();
@@ -12,7 +12,7 @@ const Header = ({ userData, showProfileDropdown = false, setShowProfileDropdown 
 
   const handleNavClick = (path) => {
     if (userData && !mandatoryComplete && path !== '/profile') {
-      toast.error(MANDATORY_INCOMPLETE_MESSAGE, { position: 'top-right', autoClose: 5000 });
+      toast.error(getMandatoryIncompleteMessage(userData), { position: 'top-right', autoClose: 5000 });
       navigate('/profile');
       return;
     }
@@ -214,7 +214,7 @@ const Header = ({ userData, showProfileDropdown = false, setShowProfileDropdown 
   // Handle notification click
   const handleNotificationClick = async (notification) => {
     if (userData && !mandatoryComplete) {
-      toast.error(MANDATORY_INCOMPLETE_MESSAGE, { position: 'top-right', autoClose: 5000 });
+      toast.error(getMandatoryIncompleteMessage(userData), { position: 'top-right', autoClose: 5000 });
       navigate('/profile');
       setShowNotificationDropdown(false);
       return;

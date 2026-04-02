@@ -21,6 +21,71 @@ export default function Profile() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [uploadingPhotoIndex, setUploadingPhotoIndex] = useState(null);
 
+  const countPhotos = (urls) =>
+    (urls || []).filter((url) => url && String(url).trim()).length;
+
+  const toMillis = (value) => {
+    if (!value) return 0;
+    if (typeof value.toMillis === 'function') return value.toMillis();
+    const parsed = new Date(value).getTime();
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+
+  const pickPreferredUserDoc = (docs, normalizedEmail) => {
+    if (!docs || docs.length === 0) return null;
+    return [...docs].sort((a, b) => {
+      const aData = a.data() || {};
+      const bData = b.data() || {};
+
+      const aHasUserId = !!aData.userId;
+      const bHasUserId = !!bData.userId;
+      if (aHasUserId !== bHasUserId) return aHasUserId ? -1 : 1;
+
+      const aEmailMatch = normalizedEmail && (aData.email || '').toLowerCase() === normalizedEmail;
+      const bEmailMatch = normalizedEmail && (bData.email || '').toLowerCase() === normalizedEmail;
+      if (aEmailMatch !== bEmailMatch) return aEmailMatch ? -1 : 1;
+
+      const aPhotos = countPhotos(aData.profileImageUrls);
+      const bPhotos = countPhotos(bData.profileImageUrls);
+      if (aPhotos !== bPhotos) return bPhotos - aPhotos;
+
+      const aUpdated = toMillis(aData.updatedAt || aData.createdAt);
+      const bUpdated = toMillis(bData.updatedAt || bData.createdAt);
+      return bUpdated - aUpdated;
+    })[0];
+  };
+
+  const resolveCurrentUserDoc = async (user) => {
+    const usersRef = collection(db, 'users');
+    const normalizedEmail = user.email?.trim().toLowerCase();
+
+    const byAuthUid = query(usersRef, where('authUid', '==', user.uid));
+    const authUidSnapshot = await getDocs(byAuthUid);
+    if (!authUidSnapshot.empty) {
+      return pickPreferredUserDoc(authUidSnapshot.docs, normalizedEmail) || authUidSnapshot.docs[0];
+    }
+
+    if (!normalizedEmail) return null;
+
+    const byEmail = query(usersRef, where('email', '==', normalizedEmail));
+    const emailSnapshot = await getDocs(byEmail);
+    if (emailSnapshot.empty) return null;
+
+    const preferredDoc = pickPreferredUserDoc(emailSnapshot.docs, normalizedEmail) || emailSnapshot.docs[0];
+    try {
+      if (preferredDoc.data()?.authUid !== user.uid) {
+        await updateDoc(doc(db, 'users', preferredDoc.id), {
+          authUid: user.uid,
+          updatedAt: new Date(),
+        });
+      }
+    } catch (linkError) {
+      console.warn('Could not link authUid for profile user:', linkError);
+    }
+
+    return preferredDoc;
+  };
+
   // Form data state for editing
   const [formData, setFormData] = useState({
     name: '',
@@ -277,12 +342,8 @@ export default function Profile() {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         try {
-          const usersRef = collection(db, 'users');
-          const q = query(usersRef, where('email', '==', user.email));
-          const querySnapshot = await getDocs(q);
-
-          if (!querySnapshot.empty) {
-            const userDoc = querySnapshot.docs[0];
+          const userDoc = await resolveCurrentUserDoc(user);
+          if (userDoc) {
             const data = {
               uid: user.uid,
               docId: userDoc.id,

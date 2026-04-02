@@ -6,7 +6,6 @@ import {
   signInWithPopup,
   RecaptchaVerifier,
   signInWithPhoneNumber,
-  signOut,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { toast } from 'react-toastify';
@@ -113,6 +112,7 @@ const updateUserLocation = async (userId) => {
 };
 
 export default function Login({ isOpen, onClose }) {
+  const SOCIAL_AUTH_FLOW_FLAG = "socialAuthFlowInProgress";
   const navigate = useNavigate();
   const [showPhoneLogin, setShowPhoneLogin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -199,13 +199,7 @@ setLoadingEmail(true);
         const userData = userDoc.data();
         console.log('User data from Firestore:', userData);
 
-        // Update user location
-        await updateUserLocation(user.uid);
-
-        // Set onlineStatus to true
-        await updateDoc(userDocRef, {
-          onlineStatus: true
-        });
+        runPostLoginTasks(userDocRef, user.uid);
 
         // Check if mandatory fields are complete
         const mandatoryComplete = isMandatoryComplete(userData);
@@ -219,15 +213,12 @@ setLoadingEmail(true);
           draggable: true,
         });
 
-        // Close modal and navigate based on mandatory fields completion
-        setTimeout(() => {
-          onClose();
-          if (mandatoryComplete) {
-            navigate('/dashboard');
-          } else {
-            navigate('/profile');
-          }
-        }, 1500);
+        onClose();
+        if (mandatoryComplete) {
+          navigate('/dashboard', { replace: true });
+        } else {
+          navigate('/profile', { replace: true });
+        }
       } else {
         // Try to find user by email
         const usersRef = collection(db, 'users');
@@ -238,22 +229,21 @@ setLoadingEmail(true);
           const foundDoc = querySnapshot.docs[0];
           const userData = foundDoc.data();
           
-          // Update user location
-          await updateUserLocation(foundDoc.id);
+          runPostLoginTasks(doc(db, 'users', foundDoc.id), foundDoc.id);
           
           // Check mandatory fields
           const mandatoryComplete = isMandatoryComplete(userData);
           
           onClose();
           if (mandatoryComplete) {
-            navigate('/dashboard');
+            navigate('/dashboard', { replace: true });
           } else {
-            navigate('/profile');
+            navigate('/profile', { replace: true });
           }
         } else {
           console.log('No user document found in Firestore');
           onClose();
-          navigate('/profile');
+          navigate('/profile', { replace: true });
         }
       }
 
@@ -286,48 +276,91 @@ setLoadingEmail(true);
       setLoadingEmail(false);
     }
   };
+
+  const findExistingUserByUidOrEmail = async (user) => {
+    // Try by Firebase Auth UID first
+    const uidDocRef = doc(db, "users", user.uid);
+    const uidDoc = await getDoc(uidDocRef);
+    if (uidDoc.exists()) {
+      return {
+        exists: true,
+        userDocRef: uidDocRef,
+        userId: user.uid,
+        userData: uidDoc.data(),
+      };
+    }
+
+    // Fallback by email (for accounts created with custom userId doc ids)
+    const normalizedEmail = user.email?.trim().toLowerCase();
+    if (normalizedEmail) {
+      const usersRef = collection(db, "users");
+      const emailQuery = query(usersRef, where("email", "==", normalizedEmail));
+      const emailSnapshot = await getDocs(emailQuery);
+
+      if (!emailSnapshot.empty) {
+        const foundDoc = emailSnapshot.docs[0];
+        const foundRef = doc(db, "users", foundDoc.id);
+
+        // Store auth UID so future lookups by UID can be supported if needed.
+        try {
+          await updateDoc(foundRef, {
+            authUid: user.uid,
+            updatedAt: new Date(),
+          });
+        } catch (updateError) {
+          console.warn("Could not link auth UID to existing user:", updateError);
+        }
+
+        return {
+          exists: true,
+          userDocRef: foundRef,
+          userId: foundDoc.id,
+          userData: foundDoc.data(),
+        };
+      }
+    }
+
+    return { exists: false };
+  };
+
+  const runPostLoginTasks = (userDocRef, userId) => {
+    // Keep login UX fast by not waiting for non-critical updates.
+    updateUserLocation(userId).catch((locationError) => {
+      console.warn("Location update failed after login:", locationError);
+    });
+    updateDoc(userDocRef, {
+      onlineStatus: true
+    }).catch((statusError) => {
+      console.warn("Online status update failed after login:", statusError);
+    });
+  };
+
   const handleGoogleLogin = async () => {
     setLoadingSocial(true);
     setError("");
+    let keepSocialFlow = false;
 
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
+      sessionStorage.setItem(SOCIAL_AUTH_FLOW_FLAG, "true");
 
       console.log("Google user:", user.uid);
 
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
+      const existingUser = await findExistingUserByUidOrEmail(user);
 
       // ✅ IF USER EXISTS → LOGIN
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        
-        // Update user location
-        await updateUserLocation(user.uid);
-
-        // Set onlineStatus to true
-        await updateDoc(userDocRef, {
-          onlineStatus: true
-        });
-
-        // Check if mandatory fields are complete
-        const mandatoryComplete = isMandatoryComplete(userData);
+      if (existingUser.exists) {
+        runPostLoginTasks(existingUser.userDocRef, existingUser.userId);
 
         toast.success("Login successful!", {
           position: "top-right",
           autoClose: 2000,
         });
 
-        setTimeout(() => {
-          onClose();
-          // Navigate based on mandatory fields completion
-          if (mandatoryComplete) {
-            navigate("/dashboard");
-          } else {
-            navigate("/profile");
-          }
-        }, 1500);
+        sessionStorage.removeItem(SOCIAL_AUTH_FLOW_FLAG);
+        onClose();
+        navigate("/dashboard", { replace: true });
       }
       // IF USER DOES NOT EXIST → REDIRECT TO SIGNUP
       else {
@@ -338,27 +371,20 @@ setLoadingEmail(true);
           autoClose: 2000,
         });
 
-        setTimeout(() => {
-          (async () => {
-            try {
-              // /create-account is a public route; sign out temp social auth session first.
-              await signOut(auth);
-            } catch (signOutError) {
-              console.warn("Failed to sign out before redirecting to create account:", signOutError);
-            } finally {
-              onClose();
-              navigate("/create-account", {
-                state: {
-                  email: user.email,
-                  name: user.displayName,
-                  photoURL: user.photoURL,
-                  provider: "google",
-                  uid: user.uid,
-                },
-              });
-            }
-          })();
-        }, 1500);
+        // Keep auth session for provider-based signup, force consent to show.
+        keepSocialFlow = true;
+        sessionStorage.removeItem("consentAccepted");
+        onClose();
+        navigate("/consent", {
+          replace: true,
+          state: {
+            email: user.email,
+            name: user.displayName,
+            photoURL: user.photoURL,
+            provider: "google",
+            uid: user.uid,
+          },
+        });
       }
 
     } catch (error) {
@@ -376,6 +402,9 @@ setLoadingEmail(true);
         setError(error.message || "Google sign-in failed. Please try again.");
       }
     } finally {
+      if (!keepSocialFlow) {
+        sessionStorage.removeItem(SOCIAL_AUTH_FLOW_FLAG);
+      }
       setLoadingSocial(false);
     }
   };
@@ -480,10 +509,12 @@ setLoadingEmail(true);
     setLoadingSocial(true);
     setVerifyingOtp(true);
     setError("");
+    let keepSocialFlow = false;
 
     try {
       const result = await confirmationResult.confirm(otp);
       const user = result.user;
+      sessionStorage.setItem(SOCIAL_AUTH_FLOW_FLAG, "true");
       const phoneNumber = user.phoneNumber || fullPhoneNumber;
 
       // First, check if user document exists by Firebase Auth UID
@@ -522,14 +553,8 @@ setLoadingEmail(true);
       if (userDoc.exists()) {
         const userData = userDoc.data();
         
-        // Update user location
-        await updateUserLocation(userId);
-
-        // Set onlineStatus to true
         const userDocRef = doc(db, "users", userId);
-        await updateDoc(userDocRef, {
-          onlineStatus: true
-        });
+        runPostLoginTasks(userDocRef, userId);
 
         // Check if mandatory fields are complete
         const mandatoryComplete = isMandatoryComplete(userData);
@@ -539,15 +564,13 @@ setLoadingEmail(true);
           autoClose: 2000,
         });
 
-        setTimeout(() => {
-          onClose();
-          // Navigate based on mandatory fields completion
-          if (mandatoryComplete) {
-            navigate("/dashboard");
-          } else {
-            navigate("/profile");
-          }
-        }, 1500);
+        sessionStorage.removeItem(SOCIAL_AUTH_FLOW_FLAG);
+        onClose();
+        if (mandatoryComplete) {
+          navigate("/dashboard", { replace: true });
+        } else {
+          navigate("/profile", { replace: true });
+        }
       }
       // IF USER DOES NOT EXIST → REDIRECT TO SIGNUP
       else {
@@ -558,31 +581,26 @@ setLoadingEmail(true);
           autoClose: 2000,
         });
 
-        setTimeout(() => {
-          (async () => {
-            try {
-              // /create-account is a public route, so sign out the temporary phone-auth session.
-              await signOut(auth);
-            } catch (signOutError) {
-              console.warn("Failed to sign out before redirecting to create account:", signOutError);
-            } finally {
-              onClose();
-              navigate("/create-account", {
-                state: {
-                  phone: phoneNumber,
-                  uid: user.uid,
-                  provider: "phone",
-                },
-              });
-            }
-          })();
-        }, 1500);
+        keepSocialFlow = true;
+        sessionStorage.removeItem("consentAccepted");
+        onClose();
+        navigate("/consent", {
+          replace: true,
+          state: {
+            phone: phoneNumber,
+            uid: user.uid,
+            provider: "phone",
+          },
+        });
       }
     } catch (error) {
       console.error("Phone login error:", error);
       setError(error.message || "Phone login failed. Please try again.");
       toast.error(error.message || "Phone login failed. Please try again.");
     } finally {
+      if (!keepSocialFlow) {
+        sessionStorage.removeItem(SOCIAL_AUTH_FLOW_FLAG);
+      }
       setVerifyingOtp(false);
       setLoadingSocial(false);
     }
@@ -591,44 +609,39 @@ setLoadingEmail(true);
   const handleFacebookLogin = async () => {
     setLoadingSocial(true);
     setError("");
+    let keepSocialFlow = false;
 
     try {
       const result = await signInWithPopup(auth, facebookProvider);
       const user = result.user;
+      sessionStorage.setItem(SOCIAL_AUTH_FLOW_FLAG, "true");
 
       console.log("Facebook user:", user.uid);
 
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
+      const existingUser = await findExistingUserByUidOrEmail(user);
 
-      if (userDoc.exists()) {
-        // Update user location
-        await updateUserLocation(user.uid);
-
-        // Set onlineStatus to true
-        await updateDoc(userDocRef, {
-          onlineStatus: true
-        });
+      if (existingUser.exists) {
+        runPostLoginTasks(existingUser.userDocRef, existingUser.userId);
 
         toast.success("Login successful!", { autoClose: 2000 });
-        setTimeout(() => {
-          onClose();
-          navigate("/dashboard");
-        }, 1500);
+        sessionStorage.removeItem(SOCIAL_AUTH_FLOW_FLAG);
+        onClose();
+        navigate("/dashboard", { replace: true });
       } else {
         toast.info("Please complete signup", { autoClose: 2000 });
-        setTimeout(() => {
-          onClose();
-          navigate("/create-account", {
-            state: {
-              email: user.email,
-              name: user.displayName,
-              photoURL: user.photoURL,
-              provider: "facebook",
-              uid: user.uid,
-            },
-          });
-        }, 1500);
+        keepSocialFlow = true;
+        sessionStorage.removeItem("consentAccepted");
+        onClose();
+        navigate("/consent", {
+          replace: true,
+          state: {
+            email: user.email,
+            name: user.displayName,
+            photoURL: user.photoURL,
+            provider: "facebook",
+            uid: user.uid,
+          },
+        });
       }
     } catch (error) {
       console.error("Facebook login error:", error);
@@ -645,6 +658,9 @@ setLoadingEmail(true);
         setError(error.message || "Facebook sign-in failed. Please try again.");
       }
     } finally {
+      if (!keepSocialFlow) {
+        sessionStorage.removeItem(SOCIAL_AUTH_FLOW_FLAG);
+      }
       setLoadingSocial(false);
     }
   };
